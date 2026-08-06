@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% set active = 'explorer' %}
+{% block title %}数据探索{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>数据探索</h1>
+    <p class="subtitle">交互式查看各货币历史数据与官方数据来源</p>
+</div>
+
+<h2 class="section-title">交互式图表</h2>
+<div class="control-bar">
+    <label>货币：</label>
+    <select id="cur-select">
+        {% for code, cur in currencies.items() %}
+        <option value="{{ code }}">{{ cur.name }} ({{ cur.pair }})</option>
+        {% endfor %}
+    </select>
+    <button id="load-btn">加载图表</button>
+    <button id="export-btn" class="green">导出 JSON</button>
+</div>
+<div class="chart-box">
+    <div id="explore-chart" style="width:100%;height:450px;"></div>
+</div>
+
+<h2 class="section-title">利率数据表</h2>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>年份</th>
+            <th>美国 (%)</th>
+            <th>日本 (%)</th>
+            <th>中国 (%)</th>
+            <th>欧元区 (%)</th>
+            <th>英国 (%)</th>
+            <th>澳大利亚 (%)</th>
+            <th>瑞士 (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in rates %}
+        <tr>
+            <td>{{ r.date }}</td>
+            <td>{{ r.us }}</td>
+            <td>{{ r.jp }}</td>
+            <td>{{ r.cn }}</td>
+            <td>{{ r.eu }}</td>
+            <td>{{ r.gb }}</td>
+            <td>{{ r.au }}</td>
+            <td>{{ r.ch }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 class="section-title">官方数据来源</h2>
+<div class="callout info">
+    <div class="callout-title">数据可追溯</div>
+    本平台所有数据均可通过以下官方来源核验。点击链接直达原始数据页。
+</div>
+<table class="data-table">
+    <thead>
+        <tr><th>数据集</th><th>FRED 系列</th><th>说明</th><th>链接</th></tr>
+    </thead>
+    <tbody>
+        {% for s in sources %}
+        <tr>
+            <td>{{ s.name }}</td>
+            <td><code>{{ s.series }}</code></td>
+            <td>{{ s.desc }}</td>
+            <td><a href="{{ s.url }}" target="_blank">查看 →</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 class="section-title">实时汇率</h2>
+<div class="control-bar">
+    <label>基准货币：</label>
+    <select id="live-base">
+        <option value="USD">USD 美元</option>
+        <option value="EUR">EUR 欧元</option>
+        <option value="JPY">JPY 日元</option>
+        <option value="GBP">GBP 英镑</option>
+        <option value="CNY">CNY 人民币</option>
+        <option value="AUD">AUD 澳元</option>
+        <option value="CHF">CHF 瑞郎</option>
+    </select>
+    <button id="live-btn">获取实时汇率</button>
+</div>
+<div id="live-rates" class="live-grid"></div>
+<div id="live-meta" class="live-meta"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script>
+const COLORS = {jpy:'#ff6b6b',cny:'#3fb950',eur:'#58a6ff',gbp:'#bc8cff',aud:'#f0883e',chf:'#a5d6ff',usd:'#7ee787'};
+
+document.getElementById('load-btn').addEventListener('click', () => {
+    const code = document.getElementById('cur-select').value;
+    fetch('/api/currency/'+code+'/history').then(r=>r.json()).then(data => {
+        Plotly.newPlot('explore-chart', [{
+            x: data.map(d=>d.date), y: data.map(d=>d.rate),
+            type: 'scatter', mode: 'lines+markers',
+            line: { color: COLORS[code] || '#58a6ff', width: 3 },
+            text: data.map(d=>d.event), hoverinfo: 'x+y+text'
+        }], {
+            paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+            font: { color: '#e6edf3', size: 12 },
+            title: { text: '历史走势', font: {color:'#e6edf3'} },
+            xaxis: { gridcolor: '#30363d' }, yaxis: { gridcolor: '#30363d' },
+            margin: { t: 50, b: 50 }
+        }, { responsive: true });
+    });
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+    const code = document.getElementById('cur-select').value;
+    fetch('/api/currency/'+code+'/history').then(r=>r.json()).then(data => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = code + '_history.json';
+        a.click(); URL.revokeObjectURL(url);
+    });
+});
+
+document.getElementById('live-btn').addEventListener('click', () => {
+    const base = document.getElementById('live-base').value;
+    fetch('/api/live/'+base).then(r=>r.json()).then(data => {
+        if (data.error) {
+            document.getElementById('live-rates').innerHTML = '<div class="live-error">'+data.error+'</div>';
+            return;
+        }
+        const rates = data.rates || {};
+        let html = '';
+        Object.entries(rates).forEach(([k,v]) => {
+            html += `<div class="live-card ${k===data.base?'base':''}">
+                <div class="live-pair">${data.base}/${k}</div>
+                <div class="live-rate">${v.toFixed(4)}</div>
+                <div class="live-label">${k===data.base?'基准':'关联'}</div>
+            </div>`;
+        });
+        document.getElementById('live-rates').innerHTML = html;
+        document.getElementById('live-meta').textContent = '数据日期：'+data.date+' · 来源：ECB Frankfurter';
+    });
+});
+
+// 初始加载
+document.getElementById('load-btn').click();
+</script>
+{% endblock %}

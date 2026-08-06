@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% set active = 'feedback' %}
+{% block title %}反馈与建议{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>反馈与建议</h1>
+    <p class="subtitle">提交您的建议、问题或想法，帮助改进这个平台</p>
+</div>
+
+<div class="callout info">
+    <div class="callout-title">关于反馈</div>
+    您提交的反馈会保存在平台本地，管理员可据此实施改进。可以是数据补充、功能建议、内容修正或任何想法。
+</div>
+
+<h2 class="section-title">提交反馈</h2>
+<div class="card">
+    <div class="feedback-form">
+        <div class="form-row">
+            <label for="fb-category">分类</label>
+            <select id="fb-category">
+                <option value="功能建议">功能建议</option>
+                <option value="数据补充">数据补充</option>
+                <option value="内容修正">内容修正</option>
+                <option value="问题报告">问题报告</option>
+                <option value="其他">其他</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="fb-content">内容 <span style="color:var(--accent)">*</span></label>
+            <textarea id="fb-content" rows="6" placeholder="请详细描述您的建议或问题..." required></textarea>
+        </div>
+        <div class="form-row">
+            <label for="fb-contact">联系方式（选填）</label>
+            <input type="text" id="fb-contact" placeholder="邮箱或其他联系方式，方便回复">
+        </div>
+        <div class="form-row">
+            <button id="fb-submit" class="green">提交反馈</button>
+        </div>
+        <div id="fb-status" class="fb-status"></div>
+    </div>
+</div>
+
+<h2 class="section-title">已收到的反馈</h2>
+<div id="fb-list">
+    {% if feedbacks %}
+    {% for fb in feedbacks %}
+    <div class="fb-item">
+        <div class="fb-header">
+            <span class="fb-tag">{{ fb.category }}</span>
+            <span class="fb-time">{{ fb.time }}</span>
+        </div>
+        <div class="fb-content">{{ fb.content }}</div>
+        {% if fb.contact %}
+        <div class="fb-contact">联系方式：{{ fb.contact }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card" style="text-align:center;color:var(--text-light)">
+        暂无反馈，期待您的第一条建议。
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('fb-submit').addEventListener('click', () => {
+    const category = document.getElementById('fb-category').value;
+    const content = document.getElementById('fb-content').value.trim();
+    const contact = document.getElementById('fb-contact').value.trim();
+    const status = document.getElementById('fb-status');
+
+    if (!content) {
+        status.className = 'fb-status error';
+        status.textContent = '请填写反馈内容';
+        return;
+    }
+
+    const btn = document.getElementById('fb-submit');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, content, contact })
+    }).then(r => r.json()).then(data => {
+        if (data.error) {
+            status.className = 'fb-status error';
+            status.textContent = data.error;
+        } else {
+            status.className = 'fb-status success';
+            status.textContent = data.message;
+            document.getElementById('fb-content').value = '';
+            document.getElementById('fb-contact').value = '';
+            // 刷新页面以显示新反馈
+            setTimeout(() => location.reload(), 1500);
+        }
+    }).catch(err => {
+        status.className = 'fb-status error';
+        status.textContent = '提交失败，请稍后重试';
+    }).finally(() => {
+        btn.disabled = false;
+        btn.textContent = '提交反馈';
+    });
+});
+</script>
+{% endblock %}

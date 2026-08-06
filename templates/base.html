@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Parité{% endblock %} · 多货币研究平台</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">
+        <span class="brand-text">Parité</span>
+        <span class="brand-sub">FOREX</span>
+    </div>
+    <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}" class="{% if active == 'index' %}active{% endif %}">总览</a></li>
+        <li><a href="{{ url_for('basics') }}" class="{% if active == 'basics' %}active{% endif %}">基础</a></li>
+        <li class="nav-dropdown">
+            <a href="#" class="{% if active and active.startswith('cur_') %}active{% endif %}">货币研究 ▾</a>
+            <ul class="dropdown-menu">
+                {% for item in currency_nav %}
+                <li><a href="{{ url_for('currency_page', code=item.code) }}" class="{% if active == 'cur_' + item.code %}active{% endif %}">{{ item.label }} <span class="pair-tag">{{ item.pair }}</span></a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        <li><a href="{{ url_for('comparison') }}" class="{% if active == 'comparison' %}active{% endif %}">对比思考</a></li>
+        <li><a href="{{ url_for('explorer') }}" class="{% if active == 'explorer' %}active{% endif %}">数据</a></li>
+        <li><a href="{{ url_for('feedback') }}" class="{% if active == 'feedback' %}active{% endif %}">反馈</a></li>
+        <li><a href="{{ url_for('ai_config') }}" class="{% if active == 'ai_config' %}active{% endif %}">AI配置</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+
+<footer class="footer">
+    <div class="footer-inner">
+        <div>Parité · 多货币研究平台 | 数据来源：美联储 H.10/H.15、OECD、ECB Frankfurter、PBOC</div>
+        <div class="footer-note">教学与研究用途 · 数据更新于 2026-08-05 · 实时汇率由欧洲央行 Frankfurter API 提供</div>
+    </div>
+</footer>
+
+{% block scripts %}{% endblock %}
+
+<!-- ============ 全局 AI 研究助手 ============ -->
+<!-- 右下角浮动按钮 -->
+<button id="ai-fab" class="ai-fab" title="蓝莓 AI 研究助手" aria-label="蓝莓 AI 研究助手">
+    <svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <!-- 蓝莓果实主体 -->
+        <defs>
+            <radialGradient id="blueberryBody" cx="35%" cy="35%" r="75%" fx="35%" fy="35%">
+                <stop offset="0%" stop-color="#7a6ff0"/>
+                <stop offset="50%" stop-color="#4e46c7"/>
+                <stop offset="100%" stop-color="#2d278c"/>
+            </radialGradient>
+            <radialGradient id="blueberryShine" cx="30%" cy="25%" r="30%" fx="30%" fy="25%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="calyxGrad" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" stop-color="#65b05e"/>
+                <stop offset="100%" stop-color="#2f6d34"/>
+            </radialGradient>
+        </defs>
+        <!-- 果实 -->
+        <circle cx="16" cy="18" r="11" fill="url(#blueberryBody)"/>
+        <!-- 果粉小斑点 -->
+        <circle cx="10.5" cy="16" r="0.95" fill="#ffffff" fill-opacity="0.52"/>
+        <circle cx="13" cy="21.5" r="0.8" fill="#ffffff" fill-opacity="0.48"/>
+        <circle cx="18.5" cy="15" r="0.75" fill="#ffffff" fill-opacity="0.45"/>
+        <circle cx="20.5" cy="20.5" r="0.9" fill="#ffffff" fill-opacity="0.5"/>
+        <circle cx="16" cy="24.5" r="0.7" fill="#ffffff" fill-opacity="0.42"/>
+        <circle cx="8.5" cy="19.5" r="0.65" fill="#ffffff" fill-opacity="0.4"/>
+        <!-- 高光 -->
+        <ellipse cx="12.5" cy="14.5" rx="3.5" ry="3" fill="url(#blueberryShine)"/>
+        <!-- 花萼（顶部五角星小叶） -->
+        <g transform="translate(16, 8.2)">
+            <path d="M0,-4 L1.6,-1 L4.8,-0.2 L2.5,2.1 L3.2,5.4 L0,3.6 L-3.2,5.4 L-2.5,2.1 L-4.8,-0.2 L-1.6,-1 Z"
+                  fill="url(#calyxGrad)" stroke="#244a27" stroke-width="0.5" stroke-linejoin="round"/>
+            <!-- 花萼中心凹陷小点 -->
+            <circle cx="0" cy="0.8" r="1" fill="#1f3f22" opacity="0.55"/>
+        </g>
+        <!-- 小果柄 -->
+        <rect x="15.3" y="3.2" width="1.4" height="2.6" rx="0.7" fill="#8b5a2b" stroke="#5a3b1c" stroke-width="0.3"/>
+    </svg>
+</button>
+
+<!-- 聊天面板 -->
+<div id="ai-panel" class="ai-panel" style="display:none;">
+    <div class="ai-panel-header">
+        <span class="ai-panel-title">AI 研究助手</span>
+        <button id="ai-panel-close" class="ai-panel-close" title="关闭" aria-label="关闭">&times;</button>
+    </div>
+    <div id="ai-messages" class="ai-messages">
+        <div class="ai-msg bot">
+            <div class="ai-msg-content">你好，我是 AI 研究助手，可以帮你解答外汇、货币政策、汇率分析等问题。也可以在页面选中文字后点击"询问AI"。</div>
+        </div>
+    </div>
+    <div class="ai-input-area">
+        <textarea id="ai-input" class="ai-input" placeholder="输入问题，回车发送..." rows="1"></textarea>
+        <button id="ai-send" class="ai-send" title="发送" aria-label="发送">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<!-- 框选文字时的"询问AI"浮动按钮 -->
+<button id="ai-ask-btn" class="ai-ask-btn" style="display:none;">询问AI</button>
+
+<script>
+// ============ AI 研究助手逻辑（原生 JS，无依赖） ============
+(function () {
+    var fab = document.getElementById('ai-fab');
+    var panel = document.getElementById('ai-panel');
+    var panelClose = document.getElementById('ai-panel-close');
+    var messages = document.getElementById('ai-messages');
+    var input = document.getElementById('ai-input');
+    var sendBtn = document.getElementById('ai-send');
+    var askBtn = document.getElementById('ai-ask-btn');
+
+    // 标记是否已检查过配置状态
+    var configChecked = false;
+    var hasConfigured = false;
+
+    // ---------- 面板展开/收起 ----------
+    function togglePanel() {
+        if (panel.style.display === 'none') {
+            panel.style.display = 'flex';
+            checkConfig();
+            input.focus();
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    fab.addEventListener('click', togglePanel);
+    panelClose.addEventListener('click', function () {
+        panel.style.display = 'none';
+    });
+
+    // ---------- 配置状态检查 ----------
+    function checkConfig() {
+        if (configChecked) return;
+        configChecked = true;
+        fetch('/api/ai/config').then(function (r) { return r.json(); }).then(function (data) {
+            hasConfigured = !!data.has_key;
+            if (!hasConfigured) {
+                appendBotMsg('检测到尚未配置 AI 密钥，请先前往 ' +
+                    '<a href="/ai-config">AI 配置页面</a> 设置 API 密钥后再使用。');
+            }
+        }).catch(function () { /* 静默失败 */ });
+    }
+
+    // ---------- 消息渲染 ----------
+    function appendUserMsg(text) {
+        var wrap = document.createElement('div');
+        wrap.className = 'ai-msg user';
+        var content = document.createElement('div');
+        content.className = 'ai-msg-content';
+        content.textContent = text;
+        wrap.appendChild(content);
+        messages.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    function appendBotMsg(html) {
+        var wrap = document.createElement('div');
+        wrap.className = 'ai-msg bot';
+        var content = document.createElement('div');
+        content.className = 'ai-msg-content';
+        content.innerHTML = html;
+        wrap.appendChild(content);
+        messages.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    function appendContextMsg(text) {
+        var wrap = document.createElement('div');
+        wrap.className = 'ai-msg context';
+        var content = document.createElement('div');
+        content.className = 'ai-msg-content';
+        content.textContent = '【选中内容】' + (text.length > 120 ? text.slice(0, 120) + '...' : text);
+        wrap.appendChild(content);
+        messages.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    function showLoading() {
+        var wrap = document.createElement('div');
+        wrap.className = 'ai-msg bot';
+        wrap.id = 'ai-loading-msg';
+        var content = document.createElement('div');
+        content.className = 'ai-msg-content ai-loading';
+        content.textContent = '思考中...';
+        wrap.appendChild(content);
+        messages.appendChild(wrap);
+        scrollToBottom();
+    }
+
+    function removeLoading() {
+        var node = document.getElementById('ai-loading-msg');
+        if (node) node.parentNode.removeChild(node);
+    }
+
+    function scrollToBottom() {
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    // 转义 HTML，避免 AI 回答中的标签被直接解析
+    function escapeHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // 将回答渲染：保留换行，链接可点击
+    function renderAnswer(text) {
+        var safe = escapeHtml(text);
+        // 简单的换行处理
+        safe = safe.replace(/\n/g, '<br>');
+        return safe;
+    }
+
+    // ---------- 发送问题 ----------
+    function sendQuestion(question, context) {
+        if (!question && !context) return;
+        if (!question) question = context;
+        if (context) {
+            appendContextMsg(context);
+        }
+        appendUserMsg(question);
+        input.value = '';
+        autoResize();
+        showLoading();
+        sendBtn.disabled = true;
+
+        fetch('/api/ai/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: question, context: context || '' })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            removeLoading();
+            if (data.need_config) {
+                appendBotMsg('请先前往 <a href="/ai-config">AI 配置页面</a> 设置 API 密钥。');
+            } else if (data.error) {
+                appendBotMsg('<span class="ai-error">出错：' + escapeHtml(data.error) + '</span>');
+            } else {
+                appendBotMsg(renderAnswer(data.answer));
+            }
+        }).catch(function () {
+            removeLoading();
+            appendBotMsg('<span class="ai-error">请求失败，请稍后重试。</span>');
+        }).finally(function () {
+            sendBtn.disabled = false;
+        });
+    }
+
+    // ---------- 发送按钮 & 回车 ----------
+    sendBtn.addEventListener('click', function () {
+        var q = input.value.trim();
+        if (q) sendQuestion(q, '');
+    });
+
+    input.addEventListener('keydown', function (e) {
+        // 回车发送，Shift+回车换行
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            var q = input.value.trim();
+            if (q) sendQuestion(q, '');
+        }
+    });
+
+    // 输入框自适应高度
+    function autoResize() {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    }
+    input.addEventListener('input', autoResize);
+
+    // ---------- 框选文字询问 ----------
+    var pendingContext = '';
+
+    document.addEventListener('mouseup', function (e) {
+        // 忽略面板和按钮内的选择
+        if (panel.contains(e.target) || fab.contains(e.target) || askBtn.contains(e.target)) {
+            return;
+        }
+        var sel = window.getSelection();
+        var text = sel ? sel.toString().trim() : '';
+        if (text.length > 2) {
+            pendingContext = text;
+            // 计算选区位置，显示"询问AI"按钮
+            var range = sel.getRangeAt(0);
+            var rect = range.getBoundingClientRect();
+            askBtn.style.display = 'block';
+            askBtn.style.left = (rect.left + window.pageXOffset + (rect.width / 2) - 30) + 'px';
+            askBtn.style.top = (rect.top + window.pageYOffset - 36) + 'px';
+        } else {
+            askBtn.style.display = 'none';
+            pendingContext = '';
+        }
+    });
+
+    // 点击"询问AI"按钮
+    askBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!pendingContext) return;
+        // 展开面板
+        panel.style.display = 'flex';
+        checkConfig();
+        // 弹出输入框让用户补充问题（可选）
+        var extra = window.prompt('请输入你的问题（可留空，将直接对选中内容提问）：', '');
+        // 清除选区与按钮
+        window.getSelection().removeAllRanges();
+        askBtn.style.display = 'none';
+        var ctx = pendingContext;
+        pendingContext = '';
+        var q = (extra || '').trim();
+        sendQuestion(q, ctx);
+    });
+
+    // 点击页面其他地方隐藏"询问AI"按钮
+    document.addEventListener('mousedown', function (e) {
+        if (askBtn.contains(e.target)) return;
+        if (window.getSelection().toString().trim().length <= 2) {
+            askBtn.style.display = 'none';
+            pendingContext = '';
+        }
+    });
+
+    // 滚动时隐藏"询问AI"按钮
+    window.addEventListener('scroll', function () {
+        askBtn.style.display = 'none';
+        pendingContext = '';
+    }, true);
+})();
+</script>
+
+</body>
+</html>

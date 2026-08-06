@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# 本地运行产物
+*.exe
+cloudflared.exe
+
+# 本地数据文件（部署后通过 /tmp 或 Vercel 环境变量管理）
+feedback.json
+admin_config.json
+ai_config.json
+
+# 环境变量
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Vercel
+.vercel/
+
+# 日志
+*.log

@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+{% block title %}{{ cur.name }} · {{ cur.pair }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ cur.name }} <span class="pair-badge">{{ cur.pair }}</span></h1>
+    <p class="subtitle">{{ cur.pair_label }} · {{ cur.region }} · {{ cur.category }}</p>
+</div>
+
+<div class="callout info">
+    <div class="callout-title">{{ cur.pair }} 现状</div>
+    {{ cur.intro }}
+</div>
+
+<!-- 当前汇率卡 -->
+<div class="grid-3" style="margin-bottom:20px">
+    <div class="metric-card">
+        <div class="label">当前汇率</div>
+        <div class="value">{{ cur.current.rate }}</div>
+        <div class="trend {% if cur.trend_dir == 'up' %}down{% elif cur.trend_dir == 'down' %}up{% endif %}">{{ cur.trend }}</div>
+        <div class="note">{{ cur.current.date }} · {{ cur.current.source }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">利率分析维度</div>
+        <div class="value" style="font-size:18px">{{ cur.rate_context }}</div>
+        <div class="note">用于解释汇率驱动</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">货币类别</div>
+        <div class="value" style="font-size:18px">{{ cur.category }}</div>
+        <div class="note">{{ cur.region }}</div>
+    </div>
+</div>
+
+{% if deep.currency_role %}
+<!-- 货币角色与特性 -->
+<h2 class="section-title">货币角色与特性</h2>
+<div class="card deep-role-card">
+    <p class="deep-role-text">{{ deep.currency_role }}</p>
+</div>
+{% endif %}
+
+<!-- 历史走势（年度） -->
+<h2 class="section-title">{{ cur.pair }} 历史走势（年度）</h2>
+<div class="chart-box">
+    <div id="history-chart" style="width:100%;height:400px;"></div>
+</div>
+
+<!-- 近一年月度走势 -->
+<h2 class="section-title">{{ cur.pair }} 近一年月度走势</h2>
+<div class="callout info">
+    <div class="callout-title">数据说明</div>
+    数据来自欧洲央行 Frankfurter API，每月取最后一个工作日的汇率，反映月度趋势。
+</div>
+<div class="chart-box">
+    <div id="monthly-chart" style="width:100%;height:320px;"></div>
+</div>
+
+<!-- 近一月日度走势 -->
+<h2 class="section-title">{{ cur.pair }} 近一月日度走势</h2>
+<div class="callout info">
+    <div class="callout-title">数据说明</div>
+    数据来自欧洲央行 Frankfurter API，为工作日度数据，反映近期波动细节。
+</div>
+<div class="chart-box">
+    <div id="daily-chart" style="width:100%;height:320px;"></div>
+</div>
+
+<!-- 利差对比 -->
+<h2 class="section-title">{{ cur.rate_context }} vs {{ cur.pair }}</h2>
+<div class="callout info">
+    <div class="callout-title">核心关系</div>
+    利差（柱状）与汇率（折线）的双轴对比，观察两者的相关性。
+</div>
+<div class="chart-box">
+    <div id="spread-chart" style="width:100%;height:380px;"></div>
+</div>
+
+{% if deep.recent_events %}
+<!-- 近期大事件深度分析 -->
+<h2 class="section-title">近期大事件深度分析</h2>
+{% for ev in deep.recent_events %}
+<div class="event-card">
+    <div class="event-header">
+        <span class="event-date">{{ ev.date }}</span>
+        <span class="event-title">{{ ev.title }}</span>
+    </div>
+    <div class="event-desc">{{ ev.description }}</div>
+    <div class="event-impact"><span class="impact-label">影响分析：</span>{{ ev.impact }}</div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- 驱动因素 -->
+<h2 class="section-title">{{ cur.name }}驱动因素详解</h2>
+{% for d in drivers %}
+<div class="driver-card {% if code == 'cny' %}cny{% elif code == 'jpy' %}jpy{% endif %}">
+    <div class="driver-icon">{{ loop.index }}</div>
+    <div>
+        <h3>{{ d.title }}
+            <span class="weight-tag
+                {% if d.weight == '核心驱动' %}core
+                {% elif '基本面' in d.weight %}fundamental
+                {% elif '结构' in d.weight or '长期' in d.weight %}structural
+                {% else %}amplifier{% endif %}">{{ d.weight }}</span>
+        </h3>
+        <p class="mechanism">{{ d.mechanism }}</p>
+        <div class="key-point">{{ d.key_point }}</div>
+        {% if d.links %}
+        <div class="driver-links">
+            {% for link in d.links %}
+            <a href="{{ link.url }}" target="_blank" class="link-btn {% if link.type == 'ths' %}ths{% elif link.type == 'article' %}article{% else %}official{% endif %}">
+                {% if link.type == 'ths' %}同花顺{% elif link.type == 'article' %}文章{% else %}官方{% endif %} · {{ link.text }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% if deep.deep_drivers %}
+<!-- 深度驱动因素 -->
+<h2 class="section-title">深度驱动因素分析</h2>
+{% for dd in deep.deep_drivers %}
+<div class="deep-driver-card">
+    <div class="dd-category-tag
+        {% if '结构' in dd.category %}structural
+        {% elif '周期' in dd.category %}cyclical
+        {% else %}event{% endif %}">{{ dd.category }}</div>
+    <h3 class="dd-factor">{{ dd.factor }}</h3>
+    <p class="dd-mechanism">{{ dd.mechanism }}</p>
+    <div class="dd-detail"><span class="detail-label">详解：</span>{{ dd.detail }}</div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- 自由思考 -->
+<h2 class="section-title">自由思考</h2>
+<div class="callout tip">
+    <div class="callout-title">独立思考</div>
+    基于以上分析，尝试回答以下问题，形成自己的观点。
+</div>
+<div class="card">
+    <ul class="question-list">
+        {% for q in questions %}
+        <li>{{ q }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- 历史数据表 -->
+<h2 class="section-title">历史数据明细</h2>
+<table class="data-table">
+    <thead><tr><th>年份</th><th>{{ cur.pair }}</th><th>关键事件</th></tr></thead>
+    <tbody>
+        {% for h in history %}
+        <tr><td>{{ h.date }}</td><td><strong>{{ h.rate }}</strong></td><td>{{ h.event }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 实时汇率小窗（底部，自动刷新） -->
+<div class="live-section">
+    <h2 class="section-title">实时汇率 · {{ cur.code }}</h2>
+    <div class="callout warn">
+        <div class="callout-title">实时数据 · 每 60 秒自动刷新</div>
+        以下为欧洲央行参考汇率（通过 Frankfurter API 获取），工作日更新。关联货币按相关性排序。页面保持打开时数据会自动刷新。
+    </div>
+    <div id="live-rates" class="live-grid">
+        <div class="live-loading">加载中...</div>
+    </div>
+    <div id="live-meta" class="live-meta"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script>
+const CODE = "{{ cur.code }}";
+const PAIR = "{{ cur.pair }}";
+const TREND_COLOR = "{% if code == 'cny' %}#3fb950{% elif code == 'jpy' %}#ff6b6b{% elif code == 'usd' %}#58a6ff{% else %}#bc8cff{% endif %}";
+
+// 历史走势图（年度）
+fetch('/api/currency/' + CODE + '/history').then(r => r.json()).then(data => {
+    Plotly.newPlot('history-chart', [{
+        x: data.map(d => d.date), y: data.map(d => d.rate),
+        type: 'scatter', mode: 'lines+markers',
+        line: { color: TREND_COLOR, width: 3 },
+        marker: { size: 7 },
+        text: data.map(d => d.event), hoverinfo: 'x+y+text'
+    }], {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: PAIR + ' 历史走势（年度·官方数据）', font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d', title: '年份' },
+        yaxis: { gridcolor: '#30363d', title: PAIR },
+        margin: { t: 50, b: 50 }
+    }, { responsive: true });
+});
+
+// 近一年月度走势图
+fetch('/api/currency/' + CODE + '/monthly').then(r => r.json()).then(data => {
+    if (data.error) {
+        document.getElementById('monthly-chart').innerHTML = '<div class="live-error">月度数据加载失败：' + data.error + '</div>';
+        return;
+    }
+    const items = data.data || [];
+    if (items.length === 0) {
+        document.getElementById('monthly-chart').innerHTML = '<div class="live-error">暂无月度数据</div>';
+        return;
+    }
+    Plotly.newPlot('monthly-chart', [{
+        x: items.map(d => d.date), y: items.map(d => d.rate),
+        type: 'scatter', mode: 'lines+markers',
+        line: { color: TREND_COLOR, width: 2 },
+        marker: { size: 7 }
+    }], {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: data.pair + ' 近一年月度走势（ECB）', font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d', title: '月份' },
+        yaxis: { gridcolor: '#30363d', title: data.pair },
+        margin: { t: 50, b: 50 }
+    }, { responsive: true });
+}).catch(err => {
+    document.getElementById('monthly-chart').innerHTML = '<div class="live-error">月度数据加载失败</div>';
+});
+
+// 近一月日度走势图
+fetch('/api/currency/' + CODE + '/daily').then(r => r.json()).then(data => {
+    if (data.error) {
+        document.getElementById('daily-chart').innerHTML = '<div class="live-error">日度数据加载失败：' + data.error + '</div>';
+        return;
+    }
+    const items = data.data || [];
+    if (items.length === 0) {
+        document.getElementById('daily-chart').innerHTML = '<div class="live-error">暂无日度数据</div>';
+        return;
+    }
+    Plotly.newPlot('daily-chart', [{
+        x: items.map(d => d.date), y: items.map(d => d.rate),
+        type: 'scatter', mode: 'lines+markers',
+        line: { color: TREND_COLOR, width: 2 },
+        marker: { size: 5 }
+    }], {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: data.pair + ' 近一月日度走势（ECB）', font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d', title: '日期' },
+        yaxis: { gridcolor: '#30363d', title: data.pair },
+        margin: { t: 50, b: 50 }
+    }, { responsive: true });
+}).catch(err => {
+    document.getElementById('daily-chart').innerHTML = '<div class="live-error">日度数据加载失败</div>';
+});
+
+// 利差图
+fetch('/api/rates').then(r => r.json()).then(data => {
+    const yrs = data.filter(d => !d.date.includes('-')).map(d => d.date);
+    const spreads = data.filter(d => !d.date.includes('-')).map(d => d.a !== null && d.b !== null ? d.a - d.b : null);
+    const histMap = {{ history | tojson }};
+    const hm = {}; histMap.forEach(h => hm[h.date] = h.rate);
+    const rates = yrs.map(y => hm[y] || null);
+    Plotly.newPlot('spread-chart', [
+        { x: yrs, y: spreads, name: '{{ cur.rate_context }}(%)', yaxis: 'y', type: 'bar', marker: { color: '#58a6ff', opacity: 0.7 } },
+        { x: yrs, y: rates, name: PAIR, yaxis: 'y2', type: 'scatter', mode: 'lines+markers', line: { color: TREND_COLOR, width: 3 } }
+    ], {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: '{{ cur.rate_context }} vs ' + PAIR, font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d' },
+        yaxis: { title: '利差 (%)', gridcolor: '#30363d' },
+        yaxis2: { title: PAIR, overlaying: 'y', side: 'right' },
+        legend: { orientation: 'h', y: 1.15 },
+        margin: { t: 60, b: 50 }
+    }, { responsive: true });
+});
+
+// 实时汇率（自动刷新，每 60 秒，带涨跌颜色 + 指数退避重试 + fallback 提示）
+let liveRefreshTimer = null;
+let countdown = 60;
+let prevRates = {};           // 保存上一次汇率用于对比
+let retryAttempt = 0;         // 当前连续失败次数（用于指数退避）
+let fallbackNextRetryAt = 0;  // fallback 模式下的下一次自动重试时间戳
+
+function describeLiveSource(data) {
+    if (data && data._source) return data._source;
+    if (data && data._fallback) return data._fallbackSource || '备用静态数据';
+    return '欧洲央行 Frankfurter API';
+}
+
+function loadLiveRates() {
+    const meta = document.getElementById('live-meta');
+    const now = Date.now();
+
+    // fallback 模式：如果还没到重试时间，就不请求，避免浪费
+    if (fallbackNextRetryAt && now < fallbackNextRetryAt && Object.keys(prevRates).length) {
+        const secs = Math.ceil((fallbackNextRetryAt - now) / 1000);
+        if (meta) {
+            meta.textContent = meta.textContent.replace(/下次刷新：\d+s/, '下次重试：' + secs + 's（已启用备用数据）');
+        }
+        return;
+    }
+
+    fetch('/api/live/' + CODE, { cache: 'no-store' }).then(r => r.json()).then(data => {
+        if (!data || !data.rates || Object.keys(data.rates).length === 0) {
+            throw new Error('empty response');
+        }
+
+        // 请求成功 → 重置重试计数器
+        retryAttempt = 0;
+        fallbackNextRetryAt = 0;
+
+        const base = data.base;
+        const rates = data.rates || {};
+        const date = data.date;
+        const isFallback = !!data._fallback;
+        const source = describeLiveSource(data);
+        const items = Object.entries(rates).map(([k, v]) => ({ code: k, rate: v }));
+
+        let html = '';
+        items.forEach(item => {
+            const isBase = item.code === base;
+            const prev = prevRates[item.code];
+            let trendClass = 'rate-flat';
+            let trendArrow = '—';
+            let trendDelta = '';
+            if (prev !== undefined && !isBase) {
+                const diff = item.rate - prev;
+                if (Math.abs(diff) < 0.000001) {
+                    trendClass = 'rate-flat';
+                    trendArrow = '—';
+                } else if (diff > 0) {
+                    trendClass = 'rate-up';
+                    trendArrow = '▲';
+                } else {
+                    trendClass = 'rate-down';
+                    trendArrow = '▼';
+                }
+                trendDelta = Math.abs(diff).toFixed(4);
+            }
+            html += `
+            <div class="live-card ${isBase ? 'base' : ''}">
+                <div class="live-pair">${base}/${item.code}</div>
+                <div class="live-rate ${trendClass}">${item.rate.toFixed(4)}${!isBase && trendArrow !== '—' ? ' <span class="rate-arrow">' + trendArrow + '</span>' : ''}</div>
+                ${!isBase && trendDelta ? '<div class="rate-delta ' + trendClass + '">' + (trendArrow === '▲' ? '+' : '−') + trendDelta + '</div>' : ''}
+                <div class="live-label">${isBase ? '基准货币' : '关联货币'}</div>
+            </div>`;
+        });
+
+        if (isFallback) {
+            html += `<div class="fallback-banner" style="grid-column:1/-1;margin-top:8px;padding:8px 12px;background:rgba(255, 193, 7, 0.12);border:1px solid rgba(255, 193, 7, 0.35);border-radius:6px;color:var(--text-light);font-size:13px;">
+                ⚠ 实时接口暂时不稳，当前显示<span style="color:#e6a800;font-weight:600;">备用静态数据</span>（${date || '最近更新'}），系统会在后台自动重试主源，恢复后立即切换。
+            </div>`;
+            // fallback 模式：安排下一次重试（指数退避，30s → 60s → 120s，上限 120s）
+            retryAttempt = Math.min(retryAttempt + 1, 3);
+            const backoffSec = Math.min(30 * Math.pow(2, retryAttempt - 1), 120);
+            fallbackNextRetryAt = Date.now() + backoffSec * 1000;
+            countdown = backoffSec;
+        }
+
+        document.getElementById('live-rates').innerHTML = html;
+        if (meta) {
+            meta.textContent = '数据日期：' + date + ' · 来源：' + source + ' · 下次刷新：' + countdown + 's';
+        }
+        prevRates = Object.assign({}, rates);
+    }).catch(err => {
+        // 网络层失败
+        retryAttempt = Math.min(retryAttempt + 1, 3);
+        const backoffSec = Math.min(15 * Math.pow(2, retryAttempt - 1), 60);
+        fallbackNextRetryAt = Date.now() + backoffSec * 1000;
+        countdown = backoffSec;
+
+        // 如果已有缓存数据（prevRates 非空），就继续显示它，加一个 banner 说明
+        if (Object.keys(prevRates).length) {
+            const ratesEl = document.getElementById('live-rates');
+            if (!ratesEl.querySelector('.fallback-banner')) {
+                const base = CODE.toUpperCase();
+                ratesEl.insertAdjacentHTML('beforeend', `
+                    <div class="fallback-banner" style="grid-column:1/-1;margin-top:8px;padding:8px 12px;background:rgba(255, 193, 7, 0.12);border:1px solid rgba(255, 193, 7, 0.35);border-radius:6px;color:var(--text-light);font-size:13px;">
+                        ⚠ 实时刷新失败，继续显示最近一次成功加载的汇率（${backoffSec}s 后自动重试）。
+                    </div>`);
+            }
+        } else {
+            document.getElementById('live-rates').innerHTML =
+                '<div class="live-error">实时数据加载中遇到问题，' + backoffSec + 's 后自动重试…</div>';
+        }
+        if (meta) meta.textContent = '加载失败，' + backoffSec + 's 后自动重试...';
+    });
+}
+
+function startLiveRefresh() {
+    loadLiveRates();
+    if (liveRefreshTimer) clearInterval(liveRefreshTimer);
+    liveRefreshTimer = setInterval(() => {
+        countdown -= 1;
+        if (countdown <= 0) {
+            countdown = fallbackNextRetryAt ? 60 : 60; // 无论哪种模式，正常间隔都是 60s
+            loadLiveRates();
+        } else {
+            const meta = document.getElementById('live-meta');
+            if (!meta) return;
+            if (fallbackNextRetryAt && meta.textContent.includes('下次重试')) {
+                meta.textContent = meta.textContent.replace(/下次重试：\d+s/, '下次重试：' + countdown + 's（已启用备用数据）');
+            } else if (meta.textContent.includes('下次刷新')) {
+                meta.textContent = meta.textContent.replace(/下次刷新：\d+s/, '下次刷新：' + countdown + 's');
+            }
+        }
+    }, 1000);
+}
+
+startLiveRefresh();
+</script>
+{% endblock %}

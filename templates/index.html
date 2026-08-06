@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set active = 'index' %}
+{% block title %}总览{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>市场总览</h1>
+    <p class="subtitle">主要货币汇率与利率快照 · 数据更新于 {{ snapshot.as_of }}</p>
+</div>
+
+<div class="callout info">
+    <div class="callout-title">关于 Parité</div>
+    Parité 是一个多货币研究平台，研究主要货币的汇率驱动因素、历史走势、利差分析与实时数据。数据来自美联储、ECB、OECD、PBOC 等官方权威源。
+</div>
+
+<h2 class="section-title">市场快照</h2>
+<div class="grid-3">
+    {% for item in snapshot.data_items %}
+    <div class="metric-card">
+        <div class="label">{{ item.pair }}</div>
+        <div class="value">{{ item.value }}</div>
+        <div class="trend {% if '升' in item.trend or '强' in item.trend %}up{% elif '贬' in item.trend or '回落' in item.trend %}down{% endif %}">{{ item.trend }}</div>
+        <div class="note">{{ item.note }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<h2 class="section-title">货币研究栏目</h2>
+<p style="color:var(--text-light);margin-bottom:16px">点击进入各货币的深度研究页面，含历史走势、驱动因素、利差分析与实时汇率。</p>
+<div class="grid-3">
+    {% for code, cur in currencies.items() %}
+    <a href="{{ url_for('currency_page', code=code) }}" class="currency-card">
+        <div class="cc-header">
+            <span class="cc-name">{{ cur.name }} <span style="color:var(--text-dim);font-size:13px">{{ cur.code }}</span></span>
+            <span class="cc-pair">{{ cur.pair }}</span>
+        </div>
+        <div class="cc-rate">{{ cur.current.rate }}</div>
+        <div class="cc-trend {% if cur.trend_dir == 'up' %}down{% elif cur.trend_dir == 'down' %}up{% endif %}">{{ cur.trend }}</div>
+        <div class="cc-category">{{ cur.category }}</div>
+    </a>
+    {% endfor %}
+</div>
+
+<h2 class="section-title">快速入口</h2>
+<div class="grid-2">
+    <a href="{{ url_for('basics') }}" class="card" style="text-decoration:none;color:inherit">
+        <h3>外汇基础概念</h3>
+        <p style="color:var(--text-light);font-size:14px">利率平价、套息交易、购买力平价、不可能三角等核心理论，含公式与实例。</p>
+    </a>
+    <a href="{{ url_for('comparison') }}" class="card" style="text-decoration:none;color:inherit">
+        <h3>对比与自由思考</h3>
+        <p style="color:var(--text-light);font-size:14px">多货币归一化对比、利差-汇率回归分析、17 个深度问题与参考分析。</p>
+    </a>
+</div>
+{% endblock %}

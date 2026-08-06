@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% set active = 'comparison' %}
+{% block title %}对比与自由思考{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>对比与自由思考</h1>
+    <p class="subtitle">货币间的共振与分化 · 数据驱动与机制分析</p>
+</div>
+
+<div class="callout info">
+    <div class="callout-title">核心洞察</div>
+    所有货币都与"美元因素"相关，但各自的驱动逻辑不同。理解货币的关键是区分"共同驱动"（美元周期、风险偏好）与"特异性驱动"（本国利率、贸易、政策）。对比分析能揭示哪些是系统性因素，哪些是个体因素。
+</div>
+
+<h2 class="section-title">多货币归一化对比</h2>
+<div class="callout warn">
+    <div class="callout-title">阅读方法</div>
+    以 2010 年为基准 100。USD/XXX 指数上升=该货币贬值；EUR/USD、GBP/USD、AUD/USD 指数上升=该货币升值。观察各货币的分化与共振。
+</div>
+<div class="chart-box">
+    <div id="compare-chart" style="width:100%;height:520px;"></div>
+</div>
+
+<h2 class="section-title">利差对汇率的回归分析</h2>
+<div class="callout tip">
+    <div class="callout-title">研究方法</div>
+    用 OLS 拟合 <strong>汇率 ≈ α + β × 利差</strong>，量化利差对汇率的线性解释力。选择下方货币查看其回归结果。
+</div>
+
+<div class="control-bar">
+    <label>选择货币：</label>
+    <select id="reg-select">
+        <option value="jpy">日元 JPY · 美日利差</option>
+        <option value="cny">人民币 CNY · 中美利差</option>
+        <option value="eur">欧元 EUR · 欧美利差</option>
+        <option value="gbp">英镑 GBP · 英美利差</option>
+        <option value="aud">澳元 AUD · 美澳利差</option>
+        <option value="chf">瑞郎 CHF · 美瑞利差</option>
+    </select>
+</div>
+
+<div id="reg-stats" class="regression-stats"></div>
+<div class="chart-box">
+    <div id="reg-chart" style="width:100%;height:420px;"></div>
+</div>
+<div id="reg-interpretation" class="callout info"></div>
+
+<div class="callout warn">
+    <div class="callout-title">回归分析的局限</div>
+    <ul style="margin:8px 0 0 20px">
+        <li>线性回归假设关系稳定，但汇率-利差关系可能存在结构性变化</li>
+        <li>R²高不代表因果关系，可能存在遗漏变量</li>
+        <li>年度数据样本量有限（16年），统计显著性需谨慎解读</li>
+        <li>建议结合基本面分析，不应仅凭回归结果下结论</li>
+    </ul>
+</div>
+
+<h2 class="section-title">自由思考 · 问题与参考分析</h2>
+<div class="callout tip">
+    <div class="callout-title">使用说明</div>
+    每个问题附"参考分析"，是基于数据与理论的学术性思考框架，<strong>非标准答案</strong>。建议先独立思考，再对照参考分析修正自己的观点。
+</div>
+
+{% for group in questions %}
+<div class="question-group">
+    <h3>{{ group.category }}</h3>
+    {% for item in group.questions %}
+    <div class="question-item">
+        <div class="q-text">{{ item.q }}</div>
+        <div class="ref-answer">
+            <div class="ref-label">参考分析</div>
+            {{ item.ref }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+
+<h2 class="section-title">观点形成框架</h2>
+<div class="card">
+    <ol style="margin:0 0 0 20px;color:#8b949e;line-height:2.2">
+        <li><strong style="color:#e6edf3">事实陈述</strong>：用数据描述"发生了什么"</li>
+        <li><strong style="color:#e6edf3">机制解释</strong>：用理论解释"为什么会这样"</li>
+        <li><strong style="color:#e6edf3">反向检验</strong>：寻找反例或不一致之处</li>
+        <li><strong style="color:#e6edf3">形成判断</strong>：给出有条件的预测</li>
+    </ol>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script>
+const PAIR_COLORS = {
+    jpy: '#ff6b6b', cny: '#3fb950', eur: '#58a6ff',
+    gbp: '#bc8cff', aud: '#f0883e', chf: '#a5d6ff', usd: '#7ee787'
+};
+const PAIR_LABELS = {
+    jpy: 'USD/JPY (日元)', cny: 'USD/CNY (人民币)', eur: 'EUR/USD (欧元)',
+    gbp: 'GBP/USD (英镑)', aud: 'AUD/USD (澳元)', chf: 'USD/CHF (瑞郎)'
+};
+
+// 多货币归一化对比
+const allCodes = ['jpy','cny','eur','gbp','aud','chf'];
+Promise.all(allCodes.map(c => fetch('/api/currency/'+c+'/history').then(r=>r.json()))).then(allData => {
+    const traces = allData.map((data, i) => {
+        const code = allCodes[i];
+        const base = data[0].rate;
+        return {
+            x: data.map(d => d.date),
+            y: data.map(d => (d.rate/base)*100),
+            name: PAIR_LABELS[code],
+            type: 'scatter', mode: 'lines',
+            line: { color: PAIR_COLORS[code], width: 2 }
+        };
+    });
+    Plotly.newPlot('compare-chart', traces, {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: '多货币归一化对比（2010=100）', font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d', title: '年份' },
+        yaxis: { gridcolor: '#30363d', title: '指数（2010=100）' },
+        legend: { x: 1.02, y: 1, xanchor: 'left', font: { size: 11 }, bgcolor: 'rgba(28,33,40,0.8)' },
+        margin: { t: 50, b: 50, r: 140 }
+    }, { responsive: true });
+});
+
+// 回归分析
+let regData = null;
+fetch('/api/regression').then(r => r.json()).then(data => {
+    regData = data;
+    renderRegression('jpy');
+});
+
+document.getElementById('reg-select').addEventListener('change', e => {
+    renderRegression(e.target.value);
+});
+
+function renderRegression(code) {
+    const d = regData[code];
+    const reg = d.regression;
+    if (!reg) {
+        document.getElementById('reg-stats').innerHTML = '<div class="callout warn">数据不足</div>';
+        return;
+    }
+    document.getElementById('reg-stats').innerHTML = `
+        <div class="stat-box"><div class="stat-label">回归方程</div><div class="stat-value" style="font-size:14px">${reg.equation}</div></div>
+        <div class="stat-box"><div class="stat-label">斜率 β</div><div class="stat-value">${reg.slope}</div></div>
+        <div class="stat-box"><div class="stat-label">R²</div><div class="stat-value">${reg.r_squared}</div></div>
+        <div class="stat-box"><div class="stat-label">样本数</div><div class="stat-value">${reg.n}</div></div>
+    `;
+    document.getElementById('reg-interpretation').innerHTML = '<div class="callout-title">解读</div>' + d.interpretation;
+    const pts = d.points;
+    const xMin = Math.min(...pts.map(p=>p.x)) - 0.5;
+    const xMax = Math.max(...pts.map(p=>p.x)) + 0.5;
+    const line = [{x: xMin, y: reg.intercept + reg.slope*xMin}, {x: xMax, y: reg.intercept + reg.slope*xMax}];
+    const hover = pts.map(p => `${d.x_label}: ${p.x}<br>${d.y_label}: ${p.y}<br>年份: ${p.year}`);
+    Plotly.newPlot('reg-chart', [
+        { x: pts.map(p=>p.x), y: pts.map(p=>p.y), type: 'scatter', mode: 'markers',
+          name: '年度数据', text: hover, hoverinfo: 'text',
+          marker: { size: 10, color: PAIR_COLORS[code], opacity: 0.8 } },
+        { x: line.map(p=>p.x), y: line.map(p=>p.y), type: 'scatter', mode: 'lines',
+          name: '回归线', line: { color: '#ff6b6b', width: 3 } }
+    ], {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: `${d.x_label} vs ${d.y_label}（R²=${reg.r_squared}）`, font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d', title: d.x_label, zeroline: true, zerolinecolor: '#30363d' },
+        yaxis: { gridcolor: '#30363d', title: d.y_label },
+        legend: { orientation: 'h', y: 1.12 },
+        margin: { t: 60, b: 50 }
+    }, { responsive: true });
+}
+</script>
+{% endblock %}

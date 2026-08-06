@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% set active = 'basics' %}
+{% block title %}外汇基础{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>外汇基础概念</h1>
+    <p class="subtitle">点击每个模块展开，含核心定义、数学公式、实例解析与官方数据链接</p>
+</div>
+
+<div class="callout info">
+    <div class="callout-title">使用说明</div>
+    每张卡片均可点击展开，内含<strong>核心定义 → 数学公式 → 实例解析 → 官方数据链接</strong>四层结构。
+    建议按顺序学习，建立完整的外汇分析框架。
+</div>
+
+<div class="grid-2">
+    {% for c in concepts %}
+    <details class="concept-card">
+        <summary>
+            <span class="concept-num">{{ loop.index }}</span>
+            <span>{{ c.title }}</span>
+        </summary>
+        <div class="card-body">
+            <div class="summary">{{ c.summary }}</div>
+            <p class="detail">{{ c.detail }}</p>
+            {% if c.formula %}
+            <div class="formula">{{ c.formula }}</div>
+            {% endif %}
+            {% if c.example %}
+            <div class="example">
+                <strong>实例：</strong>{{ c.example }}
+            </div>
+            {% endif %}
+            {% if c.links %}
+            <div class="driver-links">
+                {% for link in c.links %}
+                <a href="{{ link.url }}" target="_blank" class="link-btn {% if link.type == 'ths' %}ths{% elif link.type == 'article' %}article{% else %}official{% endif %}">
+                    {% if link.type == 'ths' %}同花顺{% elif link.type == 'article' %}文章{% else %}官方{% endif %} · {{ link.text }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </details>
+    {% endfor %}
+</div>
+
+<h2 class="section-title">学习路径</h2>
+<div class="callout tip">
+    <div class="callout-title">七步建立外汇分析能力</div>
+    按以下顺序学习，从基础到进阶，最终形成自己的分析框架。
+</div>
+{% for step in learning_path %}
+<div class="path-step">
+    <div class="step-num">{{ step.step }}</div>
+    <div>
+        <div class="step-title">{{ step.title }}</div>
+        <div class="step-task">{{ step.task }}</div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="callout warn" style="margin-top:24px">
+    <div class="callout-title">学习建议</div>
+    概念学习后，建议到 <a href="/currency/jpy">日元</a>、<a href="/currency/cny">人民币</a> 等货币页面，
+    用真实数据验证这些理论；再到 <a href="/comparison">对比与自由思考</a> 页面形成自己的判断。
+</div>
+{% endblock %}

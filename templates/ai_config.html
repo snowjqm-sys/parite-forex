@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% set active = 'ai_config' %}
+{% block title %}AI助手配置{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>AI助手配置 <span class="pair-badge">{{ '管理员' if is_admin else '访客' }}</span></h1>
+    <p class="subtitle">配置 OpenAI 兼容接口，启用全站 AI 研究助手</p>
+</div>
+
+<div class="callout info">
+    <div class="callout-title">配置说明 · 共享机制</div>
+    AI 密钥保存在服务器本地的 <code>ai_config.json</code> 文件中。<strong>管理员只需配置一次，所有访问共享链接的用户都能直接使用 AI 助手，无需各自配置。</strong>
+    本平台支持所有 OpenAI 兼容的接口，包括 DeepSeek、OpenAI、Gemini、通义千问、Moonshot 等。
+    {% if not is_admin %}
+    <br><strong style="color:var(--accent-orange)">当前为访客模式，仅可查看，修改配置需管理员登录。</strong>
+    <a href="{{ url_for('admin_login') }}" class="link-btn official" style="margin-left:8px;">管理员登录</a>
+    {% else %}
+    <br><a href="{{ url_for('admin_logout') }}" class="link-btn" style="margin-left:8px;">退出管理员</a>
+    {% endif %}
+</div>
+
+<h2 class="section-title">基本配置</h2>
+<div class="card">
+    <div class="feedback-form">
+        <div class="form-row">
+            <label for="ai-base-url">API 地址 (base_url) <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="ai-base-url" placeholder="例如：https://api.deepseek.com/v1">
+        </div>
+        <div class="form-row">
+            <label for="ai-api-key">API 密钥 (api_key)</label>
+            <input type="password" id="ai-api-key" placeholder="sk-...（已配置时会显示脱敏值，留空表示不修改）">
+        </div>
+        <div class="form-row">
+            <label for="ai-model">模型名称 (model) <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="ai-model" placeholder="例如：deepseek-chat">
+        </div>
+        <div class="form-row" style="flex-direction:row; gap:12px; align-items:center;">
+            <button id="ai-save-btn">保存配置</button>
+            <button id="ai-test-btn" type="button" class="green">测试连接</button>
+            <span id="ai-status" class="fb-status"></span>
+        </div>
+    </div>
+</div>
+
+<h2 class="section-title">推荐配置示例</h2>
+<div class="grid-2">
+    <div class="card">
+        <h3>DeepSeek</h3>
+        <div class="ref-answer" style="margin-left:0;">
+            <div class="ref-label">推荐配置</div>
+            base_url：<code>https://api.deepseek.com/v1</code><br>
+            model：<code>deepseek-chat</code><br>
+            获取密钥：<a href="https://platform.deepseek.com/" target="_blank" rel="noopener">platform.deepseek.com</a>
+        </div>
+        <button class="link-btn official ai-preset" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">填入此配置</button>
+    </div>
+    <div class="card">
+        <h3>OpenAI</h3>
+        <div class="ref-answer" style="margin-left:0;">
+            <div class="ref-label">推荐配置</div>
+            base_url：<code>https://api.openai.com/v1</code><br>
+            model：<code>gpt-4o-mini</code><br>
+            获取密钥：<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a>
+        </div>
+        <button class="link-btn official ai-preset" data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">填入此配置</button>
+    </div>
+    <div class="card">
+        <h3>通义千问</h3>
+        <div class="ref-answer" style="margin-left:0;">
+            <div class="ref-label">推荐配置</div>
+            base_url：<code>https://dashscope.aliyuncs.com/compatible-mode/v1</code><br>
+            model：<code>qwen-plus</code><br>
+            获取密钥：<a href="https://dashscope.console.aliyun.com/" target="_blank" rel="noopener">dashscope.console.aliyun.com</a>
+        </div>
+        <button class="link-btn official ai-preset" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-plus">填入此配置</button>
+    </div>
+    <div class="card">
+        <h3>Moonshot (Kimi)</h3>
+        <div class="ref-answer" style="margin-left:0;">
+            <div class="ref-label">推荐配置</div>
+            base_url：<code>https://api.moonshot.cn/v1</code><br>
+            model：<code>moonshot-v1-8k</code><br>
+            获取密钥：<a href="https://platform.moonshot.cn/" target="_blank" rel="noopener">platform.moonshot.cn</a>
+        </div>
+        <button class="link-btn official ai-preset" data-base="https://api.moonshot.cn/v1" data-model="moonshot-v1-8k">填入此配置</button>
+    </div>
+    <div class="card">
+        <h3>Google Gemini</h3>
+        <div class="ref-answer" style="margin-left:0;">
+            <div class="ref-label">推荐配置（OpenAI 兼容端点）</div>
+            base_url：<code>https://generativelanguage.googleapis.com/v1beta/openai</code><br>
+            model：<code>gemini-1.5-flash</code><br>
+            获取密钥：<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
+        </div>
+        <button class="link-btn official ai-preset" data-base="https://generativelanguage.googleapis.com/v1beta/openai" data-model="gemini-1.5-flash">填入此配置</button>
+    </div>
+    <div class="card">
+        <h3>SiliconFlow</h3>
+        <div class="ref-answer" style="margin-left:0;">
+            <div class="ref-label">推荐配置（聚合多模型）</div>
+            base_url：<code>https://api.siliconflow.cn/v1</code><br>
+            model：<code>Qwen/Qwen2.5-7B-Instruct</code><br>
+            获取密钥：<a href="https://cloud.siliconflow.cn/" target="_blank" rel="noopener">cloud.siliconflow.cn</a>
+        </div>
+        <button class="link-btn official ai-preset" data-base="https://api.siliconflow.cn/v1" data-model="Qwen/Qwen2.5-7B-Instruct">填入此配置</button>
+    </div>
+</div>
+
+{% if is_admin %}
+<!-- 管理员设置 -->
+<h2 class="section-title">管理员设置</h2>
+<div class="callout warn">
+    <div class="callout-title">管理员密码与邮箱通知</div>
+    设置管理员密码后，<code>/ai-config</code> 页面将需要密码登录才能修改配置（防止访客篡改）。
+    配置 163 邮箱授权码后，用户提交反馈时会自动发送邮件通知到 <code>{{ admin_config.mail_address }}</code>。
+    <a href="https://mail.163.com" target="_blank" style="margin-left:6px;">登录163邮箱 → 设置 → POP3/SMTP/IMAP → 开启 SMTP 服务并获取授权码</a>
+</div>
+<div class="card">
+    <div class="feedback-form">
+        <div class="form-row">
+            <label for="admin-password">管理员密码（留空则不启用密码保护）</label>
+            <input type="password" id="admin-password" placeholder="设置或修改管理员密码">
+        </div>
+        <div class="form-row">
+            <label for="mail-address">收件邮箱</label>
+            <input type="text" id="mail-address" value="{{ admin_config.mail_address }}" placeholder="snowjqm@163.com">
+        </div>
+        <div class="form-row">
+            <label for="mail-auth-code">163邮箱 SMTP 授权码 <span style="color:var(--accent-orange)">(非登录密码)</span></label>
+            <input type="password" id="mail-auth-code" placeholder="在163邮箱设置中开启SMTP后获取的授权码">
+        </div>
+        <div class="form-row" style="flex-direction:row; gap:12px; align-items:center;">
+            <button id="admin-save-btn">保存管理员配置</button>
+            <button id="mail-test-btn" type="button" class="green">发送测试邮件</button>
+            <span id="admin-status" class="fb-status"></span>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+
+// 非管理员禁用输入与按钮
+if (!IS_ADMIN) {
+    ['ai-base-url','ai-api-key','ai-model'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+    });
+    const saveBtn = document.getElementById('ai-save-btn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '需管理员登录'; }
+    const testBtn = document.getElementById('ai-test-btn');
+    if (testBtn) { testBtn.disabled = true; }
+    document.querySelectorAll('.ai-preset').forEach(b => { b.disabled = true; b.style.opacity = 0.5; });
+}
+
+// 加载当前配置
+function loadAiConfig() {
+    fetch('/api/ai/config').then(r => r.json()).then(data => {
+        document.getElementById('ai-base-url').value = data.base_url || '';
+        document.getElementById('ai-api-key').value = data.api_key || '';
+        document.getElementById('ai-model').value = data.model || '';
+        const status = document.getElementById('ai-status');
+        if (data.has_key) {
+            status.className = 'fb-status success';
+            status.textContent = '已配置密钥（如需修改请重新输入）';
+        }
+    }).catch(() => {
+        const status = document.getElementById('ai-status');
+        status.className = 'fb-status error';
+        status.textContent = '加载配置失败';
+    });
+}
+
+// 保存配置
+document.getElementById('ai-save-btn').addEventListener('click', () => {
+    if (!IS_ADMIN) return;
+    const base_url = document.getElementById('ai-base-url').value.trim();
+    const api_key = document.getElementById('ai-api-key').value.trim();
+    const model = document.getElementById('ai-model').value.trim();
+    const status = document.getElementById('ai-status');
+
+    if (!base_url || !model) {
+        status.className = 'fb-status error';
+        status.textContent = 'API 地址和模型名称不能为空';
+        return;
+    }
+
+    const btn = document.getElementById('ai-save-btn');
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+
+    fetch('/api/ai/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base_url, api_key, model })
+    }).then(r => r.json()).then(data => {
+        if (data.error) {
+            status.className = 'fb-status error';
+            status.textContent = data.error;
+        } else {
+            status.className = 'fb-status success';
+            status.textContent = data.message;
+            loadAiConfig();
+        }
+    }).catch(() => {
+        status.className = 'fb-status error';
+        status.textContent = '保存失败，请稍后重试';
+    }).finally(() => {
+        btn.disabled = false;
+        btn.textContent = '保存配置';
+    });
+});
+
+// 测试连接（发送一个简单问题验证）
+document.getElementById('ai-test-btn').addEventListener('click', () => {
+    const status = document.getElementById('ai-status');
+    const btn = document.getElementById('ai-test-btn');
+    btn.disabled = true;
+    btn.textContent = '测试中...';
+    status.className = 'fb-status';
+    status.textContent = '正在测试连接...';
+
+    fetch('/api/ai/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: '你好，请用一句话介绍你自己。' })
+    }).then(r => r.json()).then(data => {
+        if (data.error) {
+            status.className = 'fb-status error';
+            status.textContent = '测试失败：' + data.error;
+        } else {
+            status.className = 'fb-status success';
+            status.textContent = '测试成功：' + (data.answer || '').slice(0, 40);
+        }
+    }).catch(() => {
+        status.className = 'fb-status error';
+        status.textContent = '测试失败，请稍后重试';
+    }).finally(() => {
+        btn.disabled = false;
+        btn.textContent = '测试连接';
+    });
+});
+
+// 预设配置快速填入
+document.querySelectorAll('.ai-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.getElementById('ai-base-url').value = btn.dataset.base;
+        document.getElementById('ai-model').value = btn.dataset.model;
+        const status = document.getElementById('ai-status');
+        status.className = 'fb-status success';
+        status.textContent = '已填入预设，请输入 API 密钥后保存';
+    });
+});
+
+// 页面加载时读取配置
+loadAiConfig();
+
+// ============ 管理员配置 ============
+if (IS_ADMIN) {
+    const adminSaveBtn = document.getElementById('admin-save-btn');
+    const mailTestBtn = document.getElementById('mail-test-btn');
+    const adminStatus = document.getElementById('admin-status');
+
+    if (adminSaveBtn) {
+        adminSaveBtn.addEventListener('click', () => {
+            const admin_password = document.getElementById('admin-password').value.trim();
+            const mail_address = document.getElementById('mail-address').value.trim();
+            const mail_auth_code = document.getElementById('mail-auth-code').value.trim();
+            const payload = {};
+            if (admin_password) payload.admin_password = admin_password;
+            if (mail_address) payload.mail_address = mail_address;
+            if (mail_auth_code) payload.mail_auth_code = mail_auth_code;
+            if (Object.keys(payload).length === 0) {
+                adminStatus.className = 'fb-status error';
+                adminStatus.textContent = '请至少填写一项';
+                return;
+            }
+            adminSaveBtn.disabled = true;
+            adminSaveBtn.textContent = '保存中...';
+            fetch('/api/admin/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(data => {
+                if (data.error) {
+                    adminStatus.className = 'fb-status error';
+                    adminStatus.textContent = data.error;
+                } else {
+                    adminStatus.className = 'fb-status success';
+                    adminStatus.textContent = data.message + '（如修改了密码，页面将刷新）';
+                    document.getElementById('admin-password').value = '';
+                    document.getElementById('mail-auth-code').value = '';
+                    if (admin_password) setTimeout(() => location.reload(), 1500);
+                }
+            }).catch(() => {
+                adminStatus.className = 'fb-status error';
+                adminStatus.textContent = '保存失败';
+            }).finally(() => {
+                adminSaveBtn.disabled = false;
+                adminSaveBtn.textContent = '保存管理员配置';
+            });
+        });
+    }
+
+    if (mailTestBtn) {
+        mailTestBtn.addEventListener('click', () => {
+            mailTestBtn.disabled = true;
+            mailTestBtn.textContent = '发送中...';
+            adminStatus.className = 'fb-status';
+            adminStatus.textContent = '正在发送测试邮件...';
+            fetch('/api/admin/mail-test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(r => r.json()).then(data => {
+                if (data.error) {
+                    adminStatus.className = 'fb-status error';
+                    adminStatus.textContent = '测试失败：' + data.error;
+                } else {
+                    adminStatus.className = 'fb-status success';
+                    adminStatus.textContent = '测试邮件已发送，请检查邮箱';
+                }
+            }).catch(() => {
+                adminStatus.className = 'fb-status error';
+                adminStatus.textContent = '请求失败';
+            }).finally(() => {
+                mailTestBtn.disabled = false;
+                mailTestBtn.textContent = '发送测试邮件';
+            });
+        });
+    }
+}
+</script>
+{% endblock %}
