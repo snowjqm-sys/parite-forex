@@ -840,3 +840,212 @@ DATA_SOURCES_DETAIL = [
     {"name": "欧洲央行 Frankfurter API", "series": "ECB 参考汇率", "url": "https://frankfurter.app/", "desc": "EUR/GBP/AUD/CHF 实时与历史数据"},
     {"name": "中国人民银行", "series": "—", "url": "http://www.pbc.gov.cn/", "desc": "LPR、中间价、货币政策报告"},
 ]
+
+# ============================================================
+# 外汇期货板块
+# ============================================================
+
+FOREX_FUTURES_INTRO = {
+    "title": "外汇期货入门",
+    "subtitle": "从现货到期货：理解汇率衍生品的交易逻辑",
+    "what_is": (
+        "外汇期货（Foreign Exchange Futures）是一种标准化合约，"
+        "约定在未来某一特定日期以预先确定的汇率交换两种货币。"
+        "与现货外汇不同，期货合约在交易所（如 CME/ICE）集中交易，"
+        "具有标准化合约规模、固定到期日和每日盯市结算特征。"
+    ),
+    "why_trade": [
+        {"reason": "套期保值", "desc": "进出口企业锁定未来汇率，规避汇率波动风险"},
+        {"reason": "投机交易", "desc": "利用杠杆放大汇率波动收益，无需持有基础货币"},
+        {"reason": "套利机会", "desc": "利用期货与现货之间的基差进行无风险套利"},
+        {"reason": "价格发现", "desc": "期货市场反映市场对未来汇率的预期，是重要的前瞻指标"},
+    ],
+    "spot_vs_futures": [
+        {"aspect": "交易场所", "spot": "银行间 OTC 市场", "futures": "交易所（CME/ICE 等）"},
+        {"aspect": "合约规模", "spot": "可自定义", "futures": "标准化（如 12.5万 EUR/手）"},
+        {"aspect": "到期日", "spot": "T+2 交割", "futures": "固定到期日（3/6/9/12月）"},
+        {"aspect": "杠杆", "spot": "取决于信用额度", "futures": "保证金制度（通常 2%-5%）"},
+        {"aspect": "结算", "spot": "实物交割", "futures": "多数现金结算或提前平仓"},
+        {"aspect": "透明度", "spot": "场外不透明", "futures": "交易所公开报价和持仓"},
+    ],
+}
+
+FOREX_FUTURES_CONTRACTS = [
+    {
+        "code": "6J",
+        "name": "日元期货",
+        "exchange": "CME (IMM)",
+        "pair": "USD/JPY",
+        "contract_size": "12,500,000 JYN",
+        "tick_size": "0.000001 = $12.50/手",
+        "margin": "约 $2,500/手",
+        "settlement": "现金结算",
+        "months": "3/6/9/12月",
+        "last_settle": 159.16,
+        "change": -2.30,
+        "open_interest": "约 18万手",
+        "notes": "全球交易量最大的亚洲货币期货，反映市场对日元的预期"
+    },
+    {
+        "code": "6C",
+        "name": "加元期货",
+        "exchange": "CME (IMM)",
+        "pair": "USD/CAD",
+        "contract_size": "100,000 CAD",
+        "tick_size": "0.0001 = $10/手",
+        "margin": "约 $1,500/手",
+        "settlement": "实物交割",
+        "months": "3/6/9/12月",
+        "last_settle": 1.3780,
+        "change": 0.0025,
+        "open_interest": "约 14万手",
+        "notes": "与原油价格高度相关，加拿大是主要石油出口国"
+    },
+    {
+        "code": "6E",
+        "name": "欧元期货",
+        "exchange": "CME (IMM)",
+        "pair": "EUR/USD",
+        "contract_size": "125,000 EUR",
+        "tick_size": "0.00005 = $6.25/手",
+        "margin": "约 $2,750/手",
+        "settlement": "实物交割",
+        "months": "3/6/9/12月",
+        "last_settle": 1.0912,
+        "change": 0.0008,
+        "open_interest": "约 58万手",
+        "notes": "全球交易量第二大的外汇期货合约"
+    },
+    {
+        "code": "6B",
+        "name": "英镑期货",
+        "exchange": "CME (IMM)",
+        "pair": "GBP/USD",
+        "contract_size": "62,500 GBP",
+        "tick_size": "0.0001 = $6.25/手",
+        "margin": "约 $2,000/手",
+        "settlement": "实物交割",
+        "months": "3/6/9/12月",
+        "last_settle": 1.3008,
+        "change": -0.0015,
+        "open_interest": "约 30万手",
+        "notes": "受英国央行政策和脱欧后续影响显著"
+    },
+    {
+        "code": "6A",
+        "name": "澳元期货",
+        "exchange": "CME (IMM)",
+        "pair": "AUD/USD",
+        "contract_size": "100,000 AUD",
+        "tick_size": "0.0001 = $10/手",
+        "margin": "约 $1,800/手",
+        "settlement": "实物交割",
+        "months": "3/6/9/12月",
+        "last_settle": 0.6591,
+        "change": 0.0012,
+        "open_interest": "约 22万手",
+        "notes": "与铁矿石价格和中国经济数据高度相关"
+    },
+    {
+        "code": "DX",
+        "name": "美元指数期货",
+        "exchange": "ICE",
+        "pair": "DXY",
+        "contract_size": "$1,000 × 指数",
+        "tick_size": "0.005 = $5/手",
+        "margin": "约 $1,650/手",
+        "settlement": "现金结算",
+        "months": "3/6/9/12月",
+        "last_settle": 102.4,
+        "change": -0.18,
+        "open_interest": "约 5万手",
+        "notes": "衡量美元对一篮子货币的综合强弱，全球风险情绪风向标"
+    },
+]
+
+FOREX_FUTURES_STRATEGIES = [
+    {
+        "name": "套期保值（Hedging）",
+        "difficulty": "入门",
+        "scenario": "出口企业预计3个月后收到美元货款",
+        "action": "卖出等值 USD/JPY 期货合约，锁定当前汇率",
+        "risk": "若日元升值（汇率下降），期货盈利弥补现货损失；若日元贬值，期货亏损但现货收益增加",
+        "key_point": "目的是锁定成本/收益，不是投机盈利"
+    },
+    {
+        "name": "跨期套利（Calendar Spread）",
+        "difficulty": "进阶",
+        "scenario": "近月与远月合约价差异常扩大",
+        "action": "买入低估月份合约，同时卖出高估月份合约",
+        "risk": "价差可能继续扩大导致短期浮亏，需要保证金管理",
+        "key_point": "风险低于单边交易，但收益空间也较小"
+    },
+    {
+        "name": "跨币种套利",
+        "difficulty": "进阶",
+        "scenario": "澳元与加元同为商品货币，价差异常",
+        "action": "买入相对低估的货币期货，卖出相对高估的货币期货",
+        "risk": "两国经济基本面差异可能导致价差持续偏离",
+        "key_point": "需要对两国经济周期和商品价格有深入研究"
+    },
+    {
+        "name": "方向性交易",
+        "difficulty": "高风险",
+        "scenario": "基于宏观分析判断某货币将趋势性走强/走弱",
+        "action": "直接买入/卖出该货币期货合约",
+        "risk": "杠杆放大收益也放大亏损，需严格止损",
+        "key_point": "适合有经验的研究者，新手建议从模拟盘开始"
+    },
+]
+
+FOREX_FUTURES_GLOSSARY = [
+    {"term": "保证金", "en": "Margin", "def": "交易期货合约所需缴纳的押金，通常为合约价值的 2%-5%"},
+    {"term": "盯市", "en": "Mark to Market", "def": "交易所每日按结算价重新计算持仓盈亏，实时调整保证金"},
+    {"term": "基差", "en": "Basis", "def": "期货价格与现货价格之间的差额，反映持有成本和市场预期"},
+    {"term": "持仓量", "en": "Open Interest", "def": "尚未平仓的合约总数，反映市场参与度和流动性"},
+    {"term": "升水/贴水", "en": "Contango/Backwardation", "def": "远期价格高于/低于近期价格，反映市场对未来走势的预期"},
+    {"term": "初始保证金", "en": "Initial Margin", "def": "开仓时需要的最低保证金金额"},
+    {"term": "维持保证金", "en": "Maintenance Margin", "def": "持仓期间必须维持的最低保证金水平，低于此线需追加"},
+]
+
+
+# ============================================================
+# 货币研究通用术语词典（用于交互高亮）
+# ============================================================
+GLOSSARY = [
+    {"term": "套息交易", "en": "Carry Trade", "def": "借入低利率货币（如日元），投资于高利率货币（如美元），赚取利差收益的交易策略。建立仓位时卖出低息货币→贬值；平仓时买回→急升。"},
+    {"term": "利差", "en": "Interest Rate Differential", "def": "两国利率之差，是汇率走势最重要的驱动因素之一。利差扩大通常利好高息货币、利空低息货币。"},
+    {"term": "联邦基金利率", "en": "Federal Funds Rate", "def": "美国银行间隔夜拆借利率，由美联储设定，是全球最重要的基准利率，直接影响美元汇率和全球资本流动。"},
+    {"term": "隔夜拆借", "en": "Overnight Call Rate", "def": "银行间隔夜无担保借贷利率。日本央行通过调节该利率实施货币政策，是日元的基准利率。"},
+    {"term": "YCC", "en": "Yield Curve Control", "def": "收益率曲线控制。日本央行2016年引入的政策，通过将10年期国债收益率锚定在0%附近来压低长期利率，2024年正式退出。"},
+    {"term": "QQE", "en": "Quantitative and Qualitative Monetary Easing", "def": "量质宽松货币政策。日本央行2013年推出的超大规模资产购买计划，旨在实现2%通胀目标。"},
+    {"term": "负利率", "en": "Negative Interest Rate", "def": "央行对商业银行存放的超额准备金收取费用（利率为负），迫使银行放贷。日本2016-2024年实施，是全球首个实施负利率的主要经济体。"},
+    {"term": "经常账户", "en": "Current Account", "def": "一国对外经济往来的核心指标，包括贸易收支、服务收支、收益收支和经常转移。持续顺差支撑本币，逆差则压制本币。"},
+    {"term": "避险货币", "en": "Safe Haven Currency", "def": "在地缘政治冲突或金融市场动荡时，投资者倾向于买入以保值的货币。传统上日元、瑞郎和美元被视为避险货币。"},
+    {"term": "避险属性", "en": "Safe Haven Property", "def": "某货币在市场恐慌时升值的特性。2022-2026年日元避险属性明显减弱，即使地缘冲突频发仍持续贬值。"},
+    {"term": "贸易条件", "en": "Terms of Trade", "def": "出口价格指数与进口价格指数之比。贸易条件改善（出口涨/进口跌）利好本币，恶化则利空。"},
+    {"term": "美联储", "en": "Federal Reserve", "def": "美国的中央银行，通过设定利率和调控货币供应来实施货币政策。其决策对全球汇率市场影响最大。"},
+    {"term": "日本央行", "en": "Bank of Japan (BOJ)", "def": "日本的中央银行，以超宽松货币政策著称，长期维持低利率以对抗通缩。"},
+    {"term": "欧洲央行", "en": "European Central Bank (ECB)", "def": "欧元区的中央银行，负责制定欧元区货币政策，管理欧元。总部位于德国法兰克福。"},
+    {"term": "英国央行", "en": "Bank of England (BoE)", "def": "英国的中央银行，成立于1694年，是全球最古老的央行之一。通过设定基准利率来管理通胀和汇率。"},
+    {"term": "澳洲联储", "en": "Reserve Bank of Australia (RBA)", "def": "澳大利亚的中央银行，其利率决策对澳元汇率有直接影响。澳元被视为商品货币，与中国经济高度相关。"},
+    {"term": "瑞士央行", "en": "Swiss National Bank (SNB)", "def": "瑞士的中央银行，曾实施负利率和汇率干预。瑞郎是传统避险货币，SNB有时会主动干预汇率以压低瑞郎。"},
+    {"term": "美日联合干预", "en": "Joint Intervention", "def": "美国和日本央行协调行动，同时在市场买卖日元以影响汇率。极为罕见，上次是2011年福岛核事故后G7联合行动。"},
+    {"term": "财务省", "en": "Ministry of Finance", "def": "日本主管财政的政府部门，负责汇率政策。日本央行代为执行财务省的干预指令。"},
+    {"term": "美联储加息", "en": "Fed Rate Hike", "def": "美联储提高联邦基金利率目标区间。加息通常会吸引资金流入美元资产，推升美元汇率，同时压制黄金和新兴市场货币。"},
+    {"term": "美联储降息", "en": "Fed Rate Cut", "def": "美联储降低联邦基金利率。降息通常导致美元走弱，利好黄金、新兴市场货币和风险资产。"},
+    {"term": "CFTC持仓报告", "en": "CFTC Commitments of Traders", "def": "美国商品期货交易委员会每周公布的市场持仓数据，显示各类交易者的净多头/空头仓位，是判断市场情绪的重要指标。"},
+    {"term": "BIS", "en": "Bank for International Settlements", "def": "国际清算银行，全球央行的央行，提供外汇市场统计、支付清算服务，是国际金融监管的重要机构。"},
+    {"term": "IMF", "en": "International Monetary Fund", "def": "国际货币基金组织，1945年成立的国际金融机构，监控全球汇率体系，提供经济政策建议和紧急贷款。"},
+    {"term": "美元指数", "en": "Dollar Index (DXY)", "def": "衡量美元对一篮子主要货币（欧元57.6%、日元13.6%、英镑11.9%、加元9.1%、瑞典克朗4.2%、瑞士法郎3.6%）强弱的指数。"},
+    {"term": "QE2", "en": "Quantitative Easing 2", "def": "美联储2010年实施的第二轮量化宽松，购买6000亿美元长期国债，向市场注入流动性，导致美元走弱。"},
+    {"term": "安倍经济学", "en": "Abenomics", "def": "日本前首相安倍晋三2012年推出的经济政策，核心是'三支箭'：超宽松货币政策、灵活财政和结构性改革，旨在打破通缩。"},
+    {"term": "黑田量质宽松", "en": "Kuroda's QQE", "def": "日本央行前行长黑田东彦2013年推出的超大规模量质宽松政策，承诺在两年内实现2%通胀，导致日元大幅贬值。"},
+    {"term": "特拉斯减税危机", "en": "Truss Tax Cut Crisis", "def": "2022年英国首相特拉斯推出大规模减税计划，引发市场对财政可持续性的恐慌，英镑闪崩至1.03，特拉斯随后辞职。"},
+    {"term": "脱欧", "en": "Brexit", "def": "英国退出欧洲联盟。2016年公投决定脱欧，2020年正式完成。脱欧不确定性长期压制英镑，英镑从1.50跌至1.30区间。"},
+    {"term": "能源自给率", "en": "Energy Self-Sufficiency", "def": "一国能源需求中由本国生产的比例。日本能源自给率仅约12%，高度依赖进口，日元贬值会推高进口能源成本。"},
+    {"term": "通胀预期", "en": "Inflation Expectations", "def": "市场参与者对未来通胀水平的预期。央行密切关注该指标，若预期脱锚可能迫使政策转向。"},
+    {"term": "国债占GDP", "en": "Debt-to-GDP Ratio", "def": "政府债务总额与国内生产总值之比，衡量一国偿债能力。日本该比率约260%，是全球发达国家中最高的。"},
+    {"term": "量化宽松", "en": "Quantitative Easing (QE)", "def": "央行通过购买长期债券等非常规手段向市场注入流动性，压低长期利率。美联储、ECB、BOJ均实施过。"},
+    {"term": "汇率干预", "en": "Currency Intervention", "def": "央行或财政部门在市场买卖本币以影响汇率。直接干预通常效果短暂，需配合货币政策才能持久。"},
+]

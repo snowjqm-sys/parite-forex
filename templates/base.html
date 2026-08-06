@@ -25,11 +25,20 @@
             </ul>
         </li>
         <li><a href="{{ url_for('comparison') }}" class="{% if active == 'comparison' %}active{% endif %}">对比思考</a></li>
+        <li><a href="{{ url_for('futures') }}" class="{% if active == 'futures' %}active{% endif %}">期货</a></li>
         <li><a href="{{ url_for('explorer') }}" class="{% if active == 'explorer' %}active{% endif %}">数据</a></li>
         <li><a href="{{ url_for('feedback') }}" class="{% if active == 'feedback' %}active{% endif %}">反馈</a></li>
         <li><a href="{{ url_for('ai_config') }}" class="{% if active == 'ai_config' %}active{% endif %}">AI配置</a></li>
     </ul>
 </nav>
+
+<!-- ============ 全局滚动汇率横条 ============ -->
+<div id="rate-ticker" class="rate-ticker">
+    <div class="ticker-label">实时汇率</div>
+    <div class="ticker-track" id="ticker-track">
+        <span class="ticker-item ticker-loading">加载中...</span>
+    </div>
+</div>
 
 <div class="container">
     {% block content %}{% endblock %}
@@ -336,6 +345,50 @@
         askBtn.style.display = 'none';
         pendingContext = '';
     }, true);
+})();
+</script>
+
+<!-- ============ 全局滚动汇率横条 JS ============ -->
+<script>
+(function() {
+    var tickerTrack = document.getElementById('ticker-track');
+    if (!tickerTrack) return;
+    var tickerPrev = {};
+    var tickerTimer = null;
+
+    function loadTicker() {
+        fetch('/api/ticker', { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data || !data.pairs || !data.pairs.length) return;
+                var html = '';
+                data.pairs.forEach(function(p) {
+                    var prev = tickerPrev[p.code];
+                    var cls = 'ticker-flat';
+                    var arrow = '';
+                    if (prev !== undefined) {
+                        var diff = p.rate - prev;
+                        if (Math.abs(diff) < 0.00001) { cls = 'ticker-flat'; }
+                        else if (diff > 0) { cls = 'ticker-up'; arrow = ' ▲'; }
+                        else { cls = 'ticker-down'; arrow = ' ▼'; }
+                    }
+                    html += '<span class="ticker-item ' + cls + '">' +
+                        '<span class="ticker-pair">' + p.pair + '</span> ' +
+                        '<span class="ticker-rate">' + p.rate + '</span>' +
+                        '<span class="ticker-arrow">' + arrow + '</span>' +
+                        '</span>';
+                    tickerPrev[p.code] = p.rate;
+                });
+                // 复制一份用于无缝滚动
+                tickerTrack.innerHTML = html + html;
+            })
+            .catch(function() {
+                tickerTrack.innerHTML = '<span class="ticker-item ticker-loading">汇率加载中...</span>';
+            });
+    }
+
+    loadTicker();
+    tickerTimer = setInterval(loadTicker, 60000);
 })();
 </script>
 

@@ -435,6 +435,7 @@ def currency_page(code):
         rate_series=rate_series,
         currency_nav=DATA.CURRENCY_NAV,
         deep=DATA.CURRENCY_DEEP_ANALYSIS.get(code, {}),
+        glossary=DATA.GLOSSARY,
     )
 
 
@@ -445,6 +446,20 @@ def comparison():
         "comparison.html",
         active="comparison",
         questions=DATA.DISCUSSION_QUESTIONS,
+        currency_nav=DATA.CURRENCY_NAV,
+    )
+
+
+@app.route("/futures")
+def futures():
+    """外汇期货板块"""
+    return render_template(
+        "futures.html",
+        active="futures",
+        intro=DATA.FOREX_FUTURES_INTRO,
+        contracts=DATA.FOREX_FUTURES_CONTRACTS,
+        strategies=DATA.FOREX_FUTURES_STRATEGIES,
+        glossary=DATA.FOREX_FUTURES_GLOSSARY,
         currency_nav=DATA.CURRENCY_NAV,
     )
 
@@ -587,6 +602,42 @@ def api_regression():
 # ============================================================
 # 实时汇率代理 API（多源 fallback：Frankfurter → exchangerate.host → 静态兜底）
 # ============================================================
+@app.route("/api/ticker")
+def api_ticker():
+    """全局滚动横条数据：返回主要货币对的实时汇率（一次请求获取全部）。"""
+    from datetime import datetime
+
+    # 主要交易货币对（以 USD 为基准）
+    targets = ["EUR", "JPY", "GBP", "CNY", "CHF", "AUD", "CAD"]
+    data, _ = _fetch_latest_rates("USD", targets)
+
+    rates = data.get("rates", {})
+    # 构建紧凑的 ticker 数据
+    pairs = []
+    pair_labels = {
+        "EUR": ("EUR/USD", 4), "JPY": ("USD/JPY", 2), "GBP": ("GBP/USD", 4),
+        "CNY": ("USD/CNY", 4), "CHF": ("USD/CHF", 4), "AUD": ("AUD/USD", 4),
+        "CAD": ("USD/CAD", 4),
+    }
+    for code in targets:
+        if code in rates:
+            label, decimals = pair_labels.get(code, (f"USD/{code}", 4))
+            # EUR/GBP/AUD/CAD 是间接标价，需要取倒数
+            if code in ("EUR", "GBP", "AUD", "CAD"):
+                rate = round(1.0 / rates[code], decimals) if rates[code] else 0
+            else:
+                rate = round(rates[code], decimals)
+            pairs.append({"pair": label, "rate": rate, "code": code})
+
+    return jsonify({
+        "pairs": pairs,
+        "date": data.get("date", ""),
+        "source": data.get("_source", "Frankfurter API") if data.get("_source") else
+                  (data.get("_fallbackSource", "备用数据") if data.get("_fallback") else "Frankfurter API"),
+        "generatedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    })
+
+
 @app.route("/api/live/<base>")
 def api_live(base):
     """获取 base 货币对所有关联货币的实时汇率（多源降级 + 60s 缓存）。"""

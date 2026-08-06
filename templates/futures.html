@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+{% set active = 'futures' %}
+{% block title %}外汇期货{% endblock %}
+
+{% block head %}
+<style>
+/* ============ 期货页特有样式 ============ */
+/* Hero 渐变标题区 */
+.futures-hero {
+    position: relative;
+    margin-bottom: 32px;
+    padding: 48px 32px 44px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 15% 0%, rgba(88, 166, 255, 0.22), transparent 55%),
+        radial-gradient(ellipse at 90% 100%, rgba(188, 140, 255, 0.20), transparent 55%),
+        radial-gradient(ellipse at 70% 20%, rgba(240, 136, 62, 0.10), transparent 60%),
+        var(--bg-elevated);
+}
+.futures-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 40%, rgba(88, 166, 255, 0.06) 60%, transparent 80%);
+    pointer-events: none;
+}
+.futures-hero .hero-eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--primary);
+    background: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.35);
+    padding: 3px 12px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+}
+.futures-hero h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #e6edf3, #58a6ff 60%, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.futures-hero .hero-sub {
+    color: var(--text-light);
+    font-size: 15px;
+    max-width: 720px;
+    line-height: 1.7;
+}
+.futures-hero .hero-chips {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.futures-hero .hero-chip {
+    font-size: 12px;
+    color: var(--text-light);
+    background: rgba(28, 33, 40, 0.6);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+}
+.futures-hero .hero-chip strong { color: var(--primary); font-weight: 600; }
+
+/* 介绍卡 */
+.intro-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    line-height: 1.9;
+    color: var(--text-light);
+    font-size: 15px;
+}
+.intro-card strong { color: var(--text); }
+
+/* 为什么交易卡片 */
+.why-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    transition: border-color 0.2s, transform 0.2s;
+    border-top: 3px solid var(--primary);
+    height: 100%;
+}
+.why-card:hover { border-color: var(--border); transform: translateY(-2px); }
+.why-card:nth-child(1) { border-top-color: var(--accent-cny); }
+.why-card:nth-child(2) { border-top-color: var(--accent-jpy); }
+.why-card:nth-child(3) { border-top-color: var(--accent-purple); }
+.why-card:nth-child(4) { border-top-color: var(--accent-orange); }
+.why-card .why-num {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--bg-hover);
+    color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+    margin-bottom: 12px;
+}
+.why-card h3 {
+    color: var(--text);
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+.why-card .why-desc {
+    color: var(--text-light);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+/* 对比表格特化 */
+.compare-table th { font-size: 13px; }
+.compare-table .aspect-cell {
+    color: var(--text);
+    font-weight: 600;
+    background: rgba(88, 166, 255, 0.05);
+}
+.compare-table .spot-cell { color: var(--accent-orange); }
+.compare-table .futures-cell { color: var(--accent-cny); }
+.compare-table .col-head-spot { color: var(--accent-orange); }
+.compare-table .col-head-futures { color: var(--accent-cny); }
+
+/* 期货合约卡片 */
+.contract-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 0;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, transform 0.2s;
+    overflow: hidden;
+}
+.contract-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+.contract-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-elevated);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.contract-head .ch-left { display: flex; align-items: center; gap: 14px; }
+.contract-code {
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(88, 166, 255, 0.12);
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    padding: 4px 12px;
+    border-radius: 8px;
+    letter-spacing: 1px;
+}
+.contract-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.contract-pair {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--bg-hover);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.contract-exchange {
+    font-size: 12px;
+    color: var(--text-light);
+}
+.contract-body { padding: 18px 22px; }
+.contract-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.contract-settle-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.contract-settle {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+.contract-change {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+}
+.contract-change.up {
+    color: var(--accent-cny);
+    background: rgba(63, 185, 80, 0.12);
+}
+.contract-change.down {
+    color: var(--accent-jpy);
+    background: rgba(255, 107, 107, 0.12);
+}
+.contract-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 18px;
+    margin-bottom: 12px;
+}
+@media (max-width: 560px) { .contract-meta { grid-template-columns: 1fr; } }
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+}
+.meta-item .meta-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.3px;
+}
+.meta-item .meta-value {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+}
+.contract-notes {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.7;
+    padding: 10px 14px;
+    background: rgba(188, 140, 255, 0.06);
+    border-left: 3px solid var(--accent-purple);
+    border-radius: 4px;
+}
+
+/* 策略卡 */
+.strategy-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 0;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.strategy-card:hover { border-color: var(--border); }
+.strategy-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border-light);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.strategy-head h3 { color: var(--text); font-size: 16px; font-weight: 700; }
+.diff-tag {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+}
+.diff-tag.beginner { background: rgba(63, 185, 80, 0.15); color: var(--accent-cny); }
+.diff-tag.advanced { background: rgba(88, 166, 255, 0.15); color: var(--primary); }
+.diff-tag.risky { background: rgba(255, 107, 107, 0.15); color: var(--accent-jpy); }
+.strategy-body { padding: 18px 22px; }
+.strategy-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border-light);
+    font-size: 14px;
+}
+.strategy-row:last-child { border-bottom: none; }
+.strategy-row .sr-label {
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 600;
+    padding-top: 2px;
+}
+.strategy-row .sr-value { color: var(--text-light); line-height: 1.7; }
+.strategy-row.keypoint .sr-value {
+    color: var(--text);
+    background: rgba(88, 166, 255, 0.08);
+    border-left: 3px solid var(--primary);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* 术语表 */
+.glossary-table td.term-cell {
+    color: var(--text);
+    font-weight: 600;
+    width: 130px;
+}
+.glossary-table td.en-cell {
+    color: var(--accent-purple);
+    font-family: monospace;
+    font-size: 13px;
+    width: 200px;
+}
+.glossary-table td.def-cell { color: var(--text-light); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ============ Hero 标题区 ============ -->
+<section class="futures-hero">
+    <span class="hero-eyebrow">DERIVATIVES · 衍生品</span>
+    <h1>{{ intro.title }}</h1>
+    <p class="hero-sub">{{ intro.subtitle }}</p>
+    <div class="hero-chips">
+        <span class="hero-chip"><strong>交易所</strong> CME / ICE</span>
+        <span class="hero-chip"><strong>合约</strong> 6 类主力</span>
+        <span class="hero-chip"><strong>杠杆</strong> 保证金 2%-5%</span>
+        <span class="hero-chip"><strong>结算</strong> 现金 / 实物</span>
+    </div>
+</section>
+
+<!-- ============ 什么是外汇期货 ============ -->
+<h2 class="section-title">什么是外汇期货</h2>
+<div class="intro-card">
+    {{ intro.what_is }}
+</div>
+
+<!-- ============ 为什么交易外汇期货 ============ -->
+<h2 class="section-title">为什么要交易外汇期货</h2>
+<div class="grid-4">
+    {% for item in intro.why_trade %}
+    <div class="why-card">
+        <div class="why-num">0{{ loop.index }}</div>
+        <h3>{{ item.reason }}</h3>
+        <div class="why-desc">{{ item.desc }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ============ 现货 vs 期货 对比表 ============ -->
+<h2 class="section-title">现货 vs 期货</h2>
+<table class="data-table compare-table">
+    <thead>
+        <tr>
+            <th>对比维度</th>
+            <th class="col-head-spot">现货外汇（Spot）</th>
+            <th class="col-head-futures">外汇期货（Futures）</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in intro.spot_vs_futures %}
+        <tr>
+            <td class="aspect-cell">{{ row.aspect }}</td>
+            <td class="spot-cell">{{ row.spot }}</td>
+            <td class="futures-cell">{{ row.futures }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ============ 主要期货合约 ============ -->
+<h2 class="section-title">主要外汇期货合约</h2>
+<div class="callout info">
+    <div class="callout-title">数据说明</div>
+    下表列出 CME/ICE 主力外汇期货合约，结算价为参考快照，持仓量为约数。涨跌颜色：<span style="color:var(--accent-cny);font-weight:600">绿色=上涨</span>，<span style="color:var(--accent-jpy);font-weight:600">红色=下跌</span>。
+</div>
+{% for c in contracts %}
+<div class="contract-card">
+    <div class="contract-head">
+        <div class="ch-left">
+            <span class="contract-code">{{ c.code }}</span>
+            <div>
+                <div class="contract-name">{{ c.name }}</div>
+                <span class="contract-pair">{{ c.pair }}</span>
+            </div>
+        </div>
+        <span class="contract-exchange">{{ c.exchange }} · {{ c.months }}</span>
+    </div>
+    <div class="contract-body">
+        <div class="contract-price-row">
+            <span class="contract-settle-label">最新结算价</span>
+            <span class="contract-settle">{{ '%.4f' % c.last_settle if c.last_settle < 10 else '%.2f' % c.last_settle }}</span>
+            <span class="contract-change {{ 'up' if c.change >= 0 else 'down' }}">
+                {{ '+' if c.change >= 0 else '' }}{{ '%.4f' % c.change if c.change < 10 else '%.2f' % c.change }}
+                {{ '▲' if c.change >= 0 else '▼' }}
+            </span>
+        </div>
+        <div class="contract-meta">
+            <div class="meta-item">
+                <span class="meta-label">合约规模</span>
+                <span class="meta-value">{{ c.contract_size }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">最小变动价位</span>
+                <span class="meta-value">{{ c.tick_size }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">保证金</span>
+                <span class="meta-value">{{ c.margin }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">结算方式</span>
+                <span class="meta-value">{{ c.settlement }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">合约月份</span>
+                <span class="meta-value">{{ c.months }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">持仓量</span>
+                <span class="meta-value">{{ c.open_interest }}</span>
+            </div>
+        </div>
+        <div class="contract-notes">{{ c.notes }}</div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- ============ 交易策略 ============ -->
+<h2 class="section-title">交易策略</h2>
+<div class="callout warn">
+    <div class="callout-title">风险提示</div>
+    以下策略仅作教学与研究用途，不构成投资建议。期货交易具有高杠杆风险，新手请从模拟盘开始。
+</div>
+{% for s in strategies %}
+<div class="strategy-card">
+    <div class="strategy-head">
+        <h3>{{ s.name }}</h3>
+        {% set diff_class = 'beginner' if s.difficulty == '入门' else ('advanced' if s.difficulty == '进阶' else 'risky') %}
+        <span class="diff-tag {{ diff_class }}">{{ s.difficulty }}</span>
+    </div>
+    <div class="strategy-body">
+        <div class="strategy-row">
+            <span class="sr-label">场景</span>
+            <span class="sr-value">{{ s.scenario }}</span>
+        </div>
+        <div class="strategy-row">
+            <span class="sr-label">操作</span>
+            <span class="sr-value">{{ s.action }}</span>
+        </div>
+        <div class="strategy-row">
+            <span class="sr-label">风险</span>
+            <span class="sr-value">{{ s.risk }}</span>
+        </div>
+        <div class="strategy-row keypoint">
+            <span class="sr-label">要点</span>
+            <span class="sr-value">{{ s.key_point }}</span>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- ============ 术语表 ============ -->
+<h2 class="section-title">期货术语表</h2>
+<table class="data-table glossary-table">
+    <thead>
+        <tr>
+            <th>术语</th>
+            <th>English</th>
+            <th>释义</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for g in glossary %}
+        <tr>
+            <td class="term-cell">{{ g.term }}</td>
+            <td class="en-cell">{{ g.en }}</td>
+            <td class="def-cell">{{ g.def }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

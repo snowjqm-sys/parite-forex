@@ -162,10 +162,12 @@
 
 <!-- 实时汇率小窗（底部，自动刷新） -->
 <div class="live-section">
-    <h2 class="section-title">实时汇率 · {{ cur.code }}</h2>
+    <h2 class="section-title">实时汇率 · {{ cur.code }}
+        <button id="live-refresh-btn" class="refresh-btn" title="手动刷新" onclick="manualRefresh()">↻ 刷新</button>
+    </h2>
     <div class="callout warn">
-        <div class="callout-title">实时数据 · 每 60 秒自动刷新</div>
-        以下为欧洲央行参考汇率（通过 Frankfurter API 获取），工作日更新。关联货币按相关性排序。页面保持打开时数据会自动刷新。
+        <div class="callout-title">实时数据 · 每 60 秒自动刷新 · 多源容灾</div>
+        数据来源：Frankfurter API（主） → exchangerate.host（备） → 静态缓存（兜底）。工作日更新，关联货币按相关性排序。点击右上方按钮可手动刷新。
     </div>
     <div id="live-rates" class="live-grid">
         <div class="live-loading">加载中...</div>
@@ -397,7 +399,7 @@ function startLiveRefresh() {
     liveRefreshTimer = setInterval(() => {
         countdown -= 1;
         if (countdown <= 0) {
-            countdown = fallbackNextRetryAt ? 60 : 60; // 无论哪种模式，正常间隔都是 60s
+            countdown = 60; // 正常刷新间隔 60s
             loadLiveRates();
         } else {
             const meta = document.getElementById('live-meta');
@@ -411,6 +413,133 @@ function startLiveRefresh() {
     }, 1000);
 }
 
+// 手动刷新
+function manualRefresh() {
+    const btn = document.getElementById('live-refresh-btn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = '⟳ 刷新中...'; }
+    retryAttempt = 0;
+    fallbackNextRetryAt = 0;
+    countdown = 60;
+    loadLiveRates();
+    setTimeout(function() {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '↻ 刷新'; }
+    }, 2000);
+}
+
 startLiveRefresh();
+
+// ============================================================
+// 专业术语交互高亮
+// ============================================================
+(function() {
+    var GLOSSARY = {{ glossary | tojson }};
+    // 按词长降序排列，避免短词先匹配导致长词被截断
+    GLOSSARY.sort(function(a, b) { return b.term.length - a.term.length; });
+
+    // 在指定元素内扫描文本节点，将术语包裹为可点击的 span
+    function highlightTerms(root) {
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function(node) {
+                if (!node.nodeValue || node.nodeValue.trim().length < 2) return NodeFilter.FILTER_REJECT;
+                var p = node.parentElement;
+                if (!p) return NodeFilter.FILTER_REJECT;
+                var tag = p.tagName.toLowerCase();
+                if (tag === 'script' || tag === 'style' || p.classList.contains('glossary-term')) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        var nodes = [];
+        var n;
+        while ((n = walker.nextNode())) nodes.push(n);
+
+        nodes.forEach(function(textNode) {
+            var text = textNode.nodeValue;
+            var html = text;
+            var replaced = false;
+            GLOSSARY.forEach(function(g) {
+                var term = g.term;
+                if (html.indexOf(term) === -1) return;
+                var escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                var re = new RegExp(escaped, 'g');
+                html = html.replace(re, '<span class="glossary-term" data-term="' + encodeURIComponent(term) + '">' + term + '</span>');
+                replaced = true;
+            });
+            if (replaced) {
+                var span = document.createElement('span');
+                span.innerHTML = html;
+                textNode.parentElement.replaceChild(span, textNode);
+            }
+        });
+    }
+
+    // 扫描驱动因素和深度分析区域
+    document.querySelectorAll('.driver-card, .deep-driver-card, .mechanism, .dd-mechanism, .dd-detail, .key-point').forEach(function(el) {
+        highlightTerms(el);
+    });
+
+    // 弹窗逻辑
+    var popup = null;
+    var overlay = null;
+    var glossaryMap = {};
+    GLOSSARY.forEach(function(g) { glossaryMap[g.term] = g; });
+
+    function showPopup(term, x, y) {
+        var g = glossaryMap[term];
+        if (!g) return;
+        if (popup) { popup.remove(); popup = null; }
+        if (overlay) { overlay.remove(); overlay = null; }
+
+        overlay = document.createElement('div');
+        overlay.className = 'glossary-overlay';
+        overlay.addEventListener('click', closePopup);
+        document.body.appendChild(overlay);
+
+        popup = document.createElement('div');
+        popup.className = 'glossary-popup';
+        popup.innerHTML =
+            '<span class="glossary-popup-close">&times;</span>' +
+            '<div class="glossary-popup-title">' + g.term + '</div>' +
+            '<div class="glossary-popup-en">' + g.en + '</div>' +
+            '<div class="glossary-popup-def">' + g.def + '</div>';
+        document.body.appendChild(popup);
+
+        // 定位弹窗
+        var rect = popup.getBoundingClientRect();
+        var px = x, py = y;
+        if (px + rect.width > window.innerWidth - 16) px = window.innerWidth - rect.width - 16;
+        if (py + rect.height > window.innerHeight - 16) py = window.innerHeight - rect.height - 16;
+        if (py < 16) py = 16;
+        popup.style.left = px + 'px';
+        popup.style.top = py + 'px';
+
+        requestAnimationFrame(function() { popup.classList.add('show'); });
+        popup.querySelector('.glossary-popup-close').addEventListener('click', closePopup);
+    }
+
+    function closePopup() {
+        if (popup) { popup.classList.remove('show'); setTimeout(function() { if (popup) { popup.remove(); popup = null; } }, 200); }
+        if (overlay) { overlay.remove(); overlay = null; }
+        document.querySelectorAll('.glossary-term.active').forEach(function(el) { el.classList.remove('active'); });
+    }
+
+    // 事件委托：点击高亮术语
+    document.addEventListener('click', function(e) {
+        var target = e.target.closest('.glossary-term');
+        if (target) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelectorAll('.glossary-term.active').forEach(function(el) { el.classList.remove('active'); });
+            target.classList.add('active');
+            var term = decodeURIComponent(target.getAttribute('data-term'));
+            var rect = target.getBoundingClientRect();
+            showPopup(term, rect.left, rect.bottom + 8);
+        }
+    });
+
+    // ESC 关闭
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePopup();
+    });
+})();
 </script>
 {% endblock %}

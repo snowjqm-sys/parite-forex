@@ -585,6 +585,29 @@ pre code {
     border: 1px solid var(--border);
     border-radius: var(--radius);
 }
+.live-section .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.refresh-btn {
+    font-size: 13px;
+    padding: 4px 12px;
+    background: rgba(88, 166, 255, 0.12);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    font-family: inherit;
+}
+.refresh-btn:hover {
+    background: rgba(88, 166, 255, 0.25);
+    transform: scale(1.05);
+}
+.refresh-btn:active {
+    transform: scale(0.95);
+}
 .live-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -649,6 +672,155 @@ pre code {
     font-size: 14px;
 }
 .live-error { color: var(--accent-jpy); }
+
+/* ---------- 全局滚动汇率横条 ---------- */
+.rate-ticker {
+    display: flex;
+    align-items: center;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    height: 36px;
+    position: relative;
+}
+.ticker-label {
+    flex-shrink: 0;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(88, 166, 255, 0.08);
+    border-right: 1px solid var(--border);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    letter-spacing: 1px;
+}
+.ticker-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    white-space: nowrap;
+    animation: tickerScroll 40s linear infinite;
+    will-change: transform;
+}
+.ticker-track:hover {
+    animation-play-state: paused;
+}
+@keyframes tickerScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 20px;
+    font-size: 13px;
+    font-family: monospace;
+    border-right: 1px solid var(--border-light);
+}
+.ticker-item:last-child { border-right: none; }
+.ticker-pair {
+    color: var(--text-light);
+    font-weight: 600;
+}
+.ticker-rate {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.ticker-up .ticker-rate { color: var(--accent-cny); }
+.ticker-up .ticker-arrow { color: var(--accent-cny); }
+.ticker-down .ticker-rate { color: var(--accent-jpy); }
+.ticker-down .ticker-arrow { color: var(--accent-jpy); }
+.ticker-flat .ticker-rate { color: var(--text); }
+.ticker-flat .ticker-arrow { color: var(--text-dim); }
+.ticker-loading {
+    color: var(--text-dim);
+    font-style: italic;
+}
+@media (max-width: 768px) {
+    .ticker-label { padding: 0 10px; font-size: 11px; }
+    .ticker-item { padding: 0 12px; font-size: 12px; }
+    .rate-ticker { height: 32px; }
+}
+
+/* ---------- 专业术语交互高亮 ---------- */
+.glossary-term {
+    display: inline;
+    background: rgba(188, 140, 255, 0.12);
+    border-bottom: 1.5px dashed var(--accent-purple);
+    color: var(--accent-purple);
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 3px;
+    transition: background 0.2s, color 0.2s;
+    font-weight: 500;
+}
+.glossary-term:hover {
+    background: rgba(188, 140, 255, 0.25);
+    color: #d4b0ff;
+}
+.glossary-term.active {
+    background: rgba(188, 140, 255, 0.3);
+}
+.glossary-popup {
+    position: fixed;
+    z-index: 9999;
+    max-width: 360px;
+    min-width: 240px;
+    background: var(--bg-card);
+    border: 1px solid var(--accent-purple);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(188, 140, 255, 0.1);
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+}
+.glossary-popup.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.glossary-popup-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-purple);
+    margin-bottom: 4px;
+}
+.glossary-popup-en {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-family: monospace;
+}
+.glossary-popup-def {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.7;
+}
+.glossary-popup-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 18px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.glossary-popup-close:hover { color: var(--text); }
+.glossary-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: transparent;
+}
 
 /* ---------- 货币卡片（首页） ---------- */
 .currency-card {
