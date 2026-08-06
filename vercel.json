@@ -1,21 +1,14 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": "**/*.{py,html,css,json}"
-      }
-    }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/api/index.py" }
-  ],
   "functions": {
     "api/index.py": {
+      "runtime": "@vercel/python",
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "**/*.{py,html,css,json}"
     }
-  }
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "/api/index.py" }
+  ]
 }
