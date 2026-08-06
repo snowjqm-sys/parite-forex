@@ -394,6 +394,10 @@ def index():
         snapshot=DATA.MARKET_SNAPSHOT,
         currencies=DATA.CURRENCIES,
         currency_nav=DATA.CURRENCY_NAV,
+        home_hero=DATA.HOME_HERO,
+        rate_radar=DATA.RATE_RADAR,
+        recent_updates=DATA.RECENT_UPDATES,
+        interest_rates=DATA.INTEREST_RATES,
     )
 
 

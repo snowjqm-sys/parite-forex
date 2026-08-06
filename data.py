@@ -32,6 +32,39 @@ MARKET_SNAPSHOT = {
 }
 
 # ============================================================
+# 首页 Hero 精选指标（4 个）
+# ============================================================
+HOME_HERO = {
+    "strongest": {"label": "最强货币", "value": "人民币", "sub": "USD/CNY 6.75", "detail": "2023年2月以来最强", "color": "cny"},
+    "weakest": {"label": "最弱货币", "value": "日元", "sub": "USD/JPY 159.16", "detail": "40年低点后干预回落", "color": "jpy"},
+    "spread": {"label": "最大利差", "value": "美日 280bp", "sub": "3.63% vs 0.84%", "detail": "套息交易核心驱动", "color": "orange"},
+    "fed": {"label": "美联储利率", "value": "3.63%", "sub": "降息周期中", "detail": "2026-07 H.15", "color": "usd"},
+}
+
+# ============================================================
+# 首页利差雷达表（各货币 vs 美元）
+# ============================================================
+RATE_RADAR = [
+    {"currency": "日元 JPY", "rate": "0.84%", "spread": "280 bp", "trend": "利差收窄中", "signal": "negative"},
+    {"currency": "人民币 CNY", "rate": "2.85%", "spread": "78 bp", "trend": "利差倒挂缓解", "signal": "positive"},
+    {"currency": "欧元 EUR", "rate": "2.15%", "spread": "148 bp", "trend": "ECB 持续降息", "signal": "neutral"},
+    {"currency": "英镑 GBP", "rate": "3.75%", "spread": "-12 bp", "trend": "高于美国", "signal": "positive"},
+    {"currency": "澳元 AUD", "rate": "3.10%", "spread": "53 bp", "trend": "RBA 偏鹰", "signal": "neutral"},
+    {"currency": "瑞郎 CHF", "rate": "0.25%", "spread": "338 bp", "trend": "SNB 大幅降息", "signal": "negative"},
+]
+
+# ============================================================
+# 首页最近更新记录
+# ============================================================
+RECENT_UPDATES = [
+    {"date": "2026-08-06", "title": "总览页改版为内容门户布局", "tag": "UI", "tag_color": "purple"},
+    {"date": "2026-08-05", "title": "7 种货币新增较大波动时期分析（25 个转折期）", "tag": "内容", "tag_color": "blue"},
+    {"date": "2026-08-05", "title": "期货术语库扩充至 15 个词条", "tag": "内容", "tag_color": "blue"},
+    {"date": "2026-08-05", "title": "三大交易所介绍页上线（CME / HKEX / SGX）", "tag": "新页面", "tag_color": "green"},
+    {"date": "2026-08-05", "title": "图表横坐标完整标注 + 框选反馈功能", "tag": "优化", "tag_color": "orange"},
+]
+
+# ============================================================
 # 利率数据（年度均值）
 # 美国：联邦基金有效利率（美联储 H.15）
 # 日本：BOJ 政策利率（OECD）
@@ -72,6 +105,7 @@ CURRENCIES = {
         "region": "亚洲", "category": "融资货币",
         "current": {"rate": 159.16, "date": "2026-07-31", "source": "美联储 H.10"},
         "trend": "长期贬值", "trend_dir": "up",
+        "core_insight": "干预后风险缓解，但 280bp 利差仍是核心压力",
         "rate_context": "美日利差", "rate_pair": ("us", "jp"),
         "correlations": ["USD", "EUR", "CHF", "KRW"],
         "intro": (
@@ -171,6 +205,7 @@ CURRENCIES = {
         "region": "亚洲", "category": "管理浮动",
         "current": {"rate": 6.7509, "date": "2026-07-31", "source": "美联储 H.10"},
         "trend": "升值", "trend_dir": "down",
+        "core_insight": "中美利差倒挂缓解，人民币触及 2023 年以来最强",
         "rate_context": "中美利差", "rate_pair": ("us", "cn"),
         "correlations": ["USD", "EUR", "JPY", "KRW", "AUD"],
         "intro": (
@@ -286,6 +321,7 @@ CURRENCIES = {
         "region": "欧洲", "category": "自由浮动",
         "current": {"rate": 1.0912, "date": "2026-08-04", "source": "欧洲央行"},
         "trend": "震荡偏强", "trend_dir": "up",
+        "core_insight": "ECB 持续降息，欧元在 1.09 附近寻找方向",
         "rate_context": "欧美利差", "rate_pair": ("eu", "us"),
         "correlations": ["USD", "GBP", "CHF", "JPY"],
         "intro": (
@@ -400,6 +436,7 @@ CURRENCIES = {
         "region": "欧洲", "category": "自由浮动",
         "current": {"rate": 1.3008, "date": "2026-08-04", "source": "欧洲央行"},
         "trend": "走强", "trend_dir": "up",
+        "core_insight": "英镑利率高于美国，套息资金流入支撑汇率",
         "rate_context": "英美利差", "rate_pair": ("gb", "us"),
         "correlations": ["USD", "EUR", "AUD", "CAD"],
         "intro": (
@@ -498,6 +535,7 @@ CURRENCIES = {
         "region": "大洋洲", "category": "商品货币",
         "current": {"rate": 0.6591, "date": "2026-08-04", "source": "欧洲央行"},
         "trend": "震荡", "trend_dir": "flat",
+        "core_insight": "大宗商品价格企稳，澳元在 0.66 附近盘整",
         "rate_context": "美澳利差", "rate_pair": ("au", "us"),
         "correlations": ["USD", "NZD", "CNY", "CAD", "JPY"],
         "intro": (
@@ -612,6 +650,7 @@ CURRENCIES = {
         "region": "欧洲", "category": "避险货币",
         "current": {"rate": 0.8703, "date": "2026-08-04", "source": "欧洲央行"},
         "trend": "瑞郎强势", "trend_dir": "down",
+        "core_insight": "SNB 大幅降息至 0.25%，但避险需求仍支撑瑞郎",
         "rate_context": "美瑞利差", "rate_pair": ("us", "ch"),
         "correlations": ["EUR", "USD", "JPY", "GBP"],
         "intro": (
@@ -710,6 +749,7 @@ CURRENCIES = {
         "region": "全球", "category": "储备货币",
         "current": {"rate": 102.4, "date": "2026-08-01", "source": "ICE"},
         "trend": "降息周期走弱", "trend_dir": "down",
+        "core_insight": "美联储降息周期中，DXY 从 114 高点回落至 102",
         "rate_context": "美国利率与利差", "rate_pair": ("us", "us"),
         "correlations": ["EUR", "JPY", "GBP", "CNY", "CHF"],
         "intro": (
