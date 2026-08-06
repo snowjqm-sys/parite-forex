@@ -3,215 +3,53 @@
 {% block title %}总览{% endblock %}
 
 {% block content %}
-{# ========== 1. Hero 区域 ========== #}
-<div class="hero-section">
-    <div class="hero-left">
-        <h1 class="hero-title">Parité <span class="hero-sub">FOREX</span></h1>
-        <p class="hero-desc">
-            多货币研究平台 · 汇率驱动因素、历史走势、利差分析与实时数据<br>
-            数据来源：美联储 · ECB · OECD · PBOC
-        </p>
-        <div class="hero-meta">
-            <span class="hero-date">更新于 {{ snapshot.as_of }}</span>
-        </div>
-    </div>
-    <div class="hero-right">
-        <div class="hero-metric {{ home_hero.strongest.color }}">
-            <div class="hm-label">{{ home_hero.strongest.label }}</div>
-            <div class="hm-value">{{ home_hero.strongest.value }}</div>
-            <div class="hm-sub">{{ home_hero.strongest.sub }}</div>
-            <div class="hm-detail">{{ home_hero.strongest.detail }}</div>
-        </div>
-        <div class="hero-metric {{ home_hero.weakest.color }}">
-            <div class="hm-label">{{ home_hero.weakest.label }}</div>
-            <div class="hm-value">{{ home_hero.weakest.value }}</div>
-            <div class="hm-sub">{{ home_hero.weakest.sub }}</div>
-            <div class="hm-detail">{{ home_hero.weakest.detail }}</div>
-        </div>
-        <div class="hero-metric {{ home_hero.spread.color }}">
-            <div class="hm-label">{{ home_hero.spread.label }}</div>
-            <div class="hm-value">{{ home_hero.spread.value }}</div>
-            <div class="hm-sub">{{ home_hero.spread.sub }}</div>
-            <div class="hm-detail">{{ home_hero.spread.detail }}</div>
-        </div>
-        <div class="hero-metric {{ home_hero.fed.color }}">
-            <div class="hm-label">{{ home_hero.fed.label }}</div>
-            <div class="hm-value">{{ home_hero.fed.value }}</div>
-            <div class="hm-sub">{{ home_hero.fed.sub }}</div>
-            <div class="hm-detail">{{ home_hero.fed.detail }}</div>
-        </div>
-    </div>
+<div class="page-header">
+    <h1>市场总览</h1>
+    <p class="subtitle">主要货币汇率与利率快照 · 数据更新于 {{ snapshot.as_of }}</p>
 </div>
 
-{# ========== 2. 双栏：走势图 + 利差雷达表 ========== #}
-<div class="dual-column">
-    <div class="dual-main">
-        <h2 class="section-title">7 种货币近 5 年走势（归一化）</h2>
-        <div id="overview-chart" style="height:380px"></div>
-    </div>
-    <div class="dual-aside">
-        <h2 class="section-title">利差雷达</h2>
-        <table class="radar-table">
-            <thead>
-                <tr><th>货币</th><th>利率</th><th>vs 美国</th><th>趋势</th></tr>
-            </thead>
-            <tbody>
-                {% for row in rate_radar %}
-                <tr>
-                    <td class="rt-currency">{{ row.currency }}</td>
-                    <td class="rt-rate">{{ row.rate }}</td>
-                    <td class="rt-spread {{ row.signal }}">{{ row.spread }}</td>
-                    <td class="rt-trend">{{ row.trend }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="radar-legend">
-            <span class="legend-item"><span class="dot positive"></span>利差有利</span>
-            <span class="legend-item"><span class="dot negative"></span>利差不利</span>
-            <span class="legend-item"><span class="dot neutral"></span>中性</span>
-        </div>
-    </div>
+<div class="callout info">
+    <div class="callout-title">关于 Parité</div>
+    Parité 是一个多货币研究平台，研究主要货币的汇率驱动因素、历史走势、利差分析与实时数据。数据来自美联储、ECB、OECD、PBOC 等官方权威源。
 </div>
 
-{# ========== 3. 货币研究（2 列大卡 + 核心观点） ========== #}
-<h2 class="section-title">货币研究</h2>
-<p style="color:var(--text-light);margin-bottom:16px">点击进入深度研究：历史走势、驱动因素、利差分析、波动时期、实时汇率</p>
-<div class="currency-grid-2">
+<h2 class="section-title">市场快照</h2>
+<div class="grid-3">
+    {% for item in snapshot.data_items %}
+    <div class="metric-card">
+        <div class="label">{{ item.pair }}</div>
+        <div class="value">{{ item.value }}</div>
+        <div class="trend {% if '升' in item.trend or '强' in item.trend %}up{% elif '贬' in item.trend or '回落' in item.trend %}down{% endif %}">{{ item.trend }}</div>
+        <div class="note">{{ item.note }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<h2 class="section-title">货币研究栏目</h2>
+<p style="color:var(--text-light);margin-bottom:16px">点击进入各货币的深度研究页面，含历史走势、驱动因素、利差分析与实时汇率。</p>
+<div class="grid-3">
     {% for code, cur in currencies.items() %}
-    <a href="{{ url_for('currency_page', code=code) }}" class="currency-card-v2 {{ cur.trend_dir }}">
-        <div class="cc2-header">
-            <span class="cc2-name">{{ cur.name }} <span class="cc2-code">{{ cur.code }}</span></span>
-            <span class="cc2-pair">{{ cur.pair }}</span>
+    <a href="{{ url_for('currency_page', code=code) }}" class="currency-card">
+        <div class="cc-header">
+            <span class="cc-name">{{ cur.name }} <span style="color:var(--text-dim);font-size:13px">{{ cur.code }}</span></span>
+            <span class="cc-pair">{{ cur.pair }}</span>
         </div>
-        <div class="cc2-body">
-            <div class="cc2-rate">{{ cur.current.rate }}</div>
-            <div class="cc2-trend {% if cur.trend_dir == 'up' %}trend-down{% elif cur.trend_dir == 'down' %}trend-up{% endif %}">{{ cur.trend }}</div>
-        </div>
-        <div class="cc2-insight">{{ cur.core_insight }}</div>
-        <div class="cc2-footer">
-            <span class="cc2-category">{{ cur.category }}</span>
-            <span class="cc2-region">{{ cur.region }}</span>
-        </div>
+        <div class="cc-rate">{{ cur.current.rate }}</div>
+        <div class="cc-trend {% if cur.trend_dir == 'up' %}down{% elif cur.trend_dir == 'down' %}up{% endif %}">{{ cur.trend }}</div>
+        <div class="cc-category">{{ cur.category }}</div>
     </a>
     {% endfor %}
 </div>
 
-{# ========== 4. 内容入口矩阵（2×3 = 6 张大卡） ========== #}
-<h2 class="section-title">研究入口</h2>
-<div class="entry-matrix">
-    <a href="{{ url_for('basics') }}" class="entry-card">
-        <div class="ec-icon">📚</div>
+<h2 class="section-title">快速入口</h2>
+<div class="grid-2">
+    <a href="{{ url_for('basics') }}" class="card" style="text-decoration:none;color:inherit">
         <h3>外汇基础概念</h3>
-        <p>利率平价、套息交易、购买力平价、不可能三角等核心理论，含公式与实例</p>
+        <p style="color:var(--text-light);font-size:14px">利率平价、套息交易、购买力平价、不可能三角等核心理论，含公式与实例。</p>
     </a>
-    <a href="{{ url_for('comparison') }}" class="entry-card">
-        <div class="ec-icon">🔬</div>
+    <a href="{{ url_for('comparison') }}" class="card" style="text-decoration:none;color:inherit">
         <h3>对比与自由思考</h3>
-        <p>多货币归一化对比、利差-汇率回归分析、深度问题与参考分析</p>
-    </a>
-    <a href="{{ url_for('futures') }}" class="entry-card">
-        <div class="ec-icon">📈</div>
-        <h3>期货合约</h3>
-        <p>15 个专业术语解读、CME/HKEX/SGX 三大交易所介绍与合约规格</p>
-    </a>
-    <a href="{{ url_for('futures_exchanges') }}" class="entry-card">
-        <div class="ec-icon">🏛️</div>
-        <h3>三大交易所</h3>
-        <p>芝加哥商品交易所、香港交易所、新加坡交易所详解与对比</p>
-    </a>
-    <a href="{{ url_for('explorer') }}" class="entry-card">
-        <div class="ec-icon">📊</div>
-        <h3>数据探索</h3>
-        <p>实时汇率查询、历史数据下载、多货币对比可视化</p>
-    </a>
-    <a href="{{ url_for('feedback') }}" class="entry-card">
-        <div class="ec-icon">💬</div>
-        <h3>反馈</h3>
-        <p>内容纠错、功能建议、数据问题反馈，帮助我们持续改进</p>
+        <p style="color:var(--text-light);font-size:14px">多货币归一化对比、利差-汇率回归分析、17 个深度问题与参考分析。</p>
     </a>
 </div>
-
-{# ========== 5. 最近更新 ========== #}
-<h2 class="section-title">最近更新</h2>
-<div class="update-timeline">
-    {% for item in recent_updates %}
-    <div class="update-item">
-        <span class="update-date">{{ item.date }}</span>
-        <span class="update-tag tag-{{ item.tag_color }}">{{ item.tag }}</span>
-        <span class="update-title">{{ item.title }}</span>
-    </div>
-    {% endfor %}
-</div>
-
-{# ========== Plotly 归一化走势图 ========== #}
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<script>
-(function() {
-    // 从后端数据构建归一化走势图
-    var rateData = {{ interest_rates | tojson }};
-    var years = rateData.map(function(d) { return d.date; });
-
-    // 归一化：以 2021 年为基准 = 100
-    var baseYear = '2021';
-    var baseIdx = rateData.findIndex(function(d) { return d.date === baseYear; });
-
-    var series = [
-        {key: 'jp', label: '日元 JP', color: '#ff6b6b'},
-        {key: 'cn', label: '人民币 CN', color: '#3fb950'},
-        {key: 'eu', label: '欧元 EU', color: '#58a6ff'},
-        {key: 'gb', label: '英镑 GB', color: '#bc8cff'},
-        {key: 'au', label: '澳元 AU', color: '#f0883e'},
-        {key: 'ch', label: '瑞郎 CH', color: '#79c0ff'},
-    ];
-
-    // 美元用 DXY 反向（利率越高美元越强，这里用 us 利率代表美元强弱方向）
-    var traces = series.map(function(s) {
-        var vals = rateData.map(function(d, i) {
-            var base = rateData[baseIdx][s.key];
-            var cur = d[s.key];
-            // 利率归一化：以基准年=100，高于基准>100（货币走强），低于<100
-            return base !== 0 ? Math.round((cur / base) * 1000) / 10 : 100;
-        });
-        return {
-            x: years,
-            y: vals,
-            mode: 'lines+markers',
-            name: s.label,
-            line: { color: s.color, width: 2 },
-            marker: { size: 5 },
-        };
-    });
-
-    var layout = {
-        paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-        font: { color: '#8b949e', family: '-apple-system, "PingFang SC", sans-serif', size: 12 },
-        margin: { l: 50, r: 20, t: 10, b: 60 },
-        xaxis: {
-            gridcolor: '#30363d',
-            tickmode: 'linear',
-            dtick: 1,
-            tickangle: -30,
-        },
-        yaxis: {
-            gridcolor: '#30363d',
-            title: '归一化（2021=100）',
-            zeroline: false,
-        },
-        legend: {
-            orientation: 'h',
-            y: -0.25,
-            x: 0,
-            font: { size: 11 },
-        },
-        hovermode: 'x unified',
-    };
-
-    Plotly.newPlot('overview-chart', traces, layout, {
-        responsive: true,
-        displayModeBar: false,
-    });
-})();
-</script>
 {% endblock %}
