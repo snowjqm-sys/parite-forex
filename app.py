@@ -785,26 +785,39 @@ def _ai_config_path():
 
 
 def _load_ai_config():
-    """读取 ai_config.json，文件不存在时返回默认配置"""
+    """读取 AI 配置。
+
+    优先级：环境变量 > ai_config.json > 默认值。
+    Vercel serverless 上文件系统不持久化，通过环境变量注入密钥。
+    """
     import json as _json
-    import os
     default = {
         "base_url": "https://api.deepseek.com/v1",
         "api_key": "",
         "model": "deepseek-chat",
     }
+    # 1. 先读本地文件（开发环境）
     path = _ai_config_path()
-    if not os.path.exists(path):
-        return default
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = _json.load(f)
-        # 合并默认值，保证字段齐全
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = _json.load(f)
+            merged = dict(default)
+            merged.update(data or {})
+        except Exception:
+            merged = dict(default)
+    else:
         merged = dict(default)
-        merged.update(data or {})
-        return merged
-    except Exception:
-        return default
+    # 2. 环境变量覆盖（Vercel 生产环境）
+    if os.environ.get("DEEPSEEK_API_KEY"):
+        merged["api_key"] = os.environ["DEEPSEEK_API_KEY"]
+    if os.environ.get("AI_API_KEY"):
+        merged["api_key"] = os.environ["AI_API_KEY"]
+    if os.environ.get("AI_BASE_URL"):
+        merged["base_url"] = os.environ["AI_BASE_URL"]
+    if os.environ.get("AI_MODEL"):
+        merged["model"] = os.environ["AI_MODEL"]
+    return merged
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
