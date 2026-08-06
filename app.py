@@ -461,6 +461,19 @@ def futures():
         strategies=DATA.FOREX_FUTURES_STRATEGIES,
         glossary=DATA.FOREX_FUTURES_GLOSSARY,
         currency_nav=DATA.CURRENCY_NAV,
+        exchanges_summary=DATA.FX_EXCHANGES_SUMMARY,
+    )
+
+
+@app.route("/futures/exchanges")
+def futures_exchanges():
+    """三大外汇期货交易所详细介绍"""
+    return render_template(
+        "exchanges.html",
+        active="futures",
+        exchanges=DATA.FX_EXCHANGES,
+        summary=DATA.FX_EXCHANGES_SUMMARY,
+        currency_nav=DATA.CURRENCY_NAV,
     )
 
 

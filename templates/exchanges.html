@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% set active = 'futures' %}
+{% block title %}三大外汇期货交易所{% endblock %}
+
+{% block head %}
+<style>
+/* ============ 交易所页特有样式 ============ */
+.ex-hero {
+    position: relative;
+    margin-bottom: 32px;
+    padding: 44px 32px 40px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 10% 0%, rgba(88, 166, 255, 0.20), transparent 55%),
+        radial-gradient(ellipse at 95% 100%, rgba(63, 185, 80, 0.18), transparent 55%),
+        radial-gradient(ellipse at 60% 30%, rgba(255, 107, 107, 0.12), transparent 60%),
+        var(--bg-elevated);
+}
+.ex-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(120deg, transparent 40%, rgba(88, 166, 255, 0.05) 60%, transparent 80%);
+    pointer-events: none;
+}
+.ex-hero .hero-eyebrow {
+    display: inline-block;
+    font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    color: var(--accent-purple);
+    background: rgba(188, 140, 255, 0.15);
+    border: 1px solid rgba(188, 140, 255, 0.35);
+    padding: 3px 12px; border-radius: 12px; margin-bottom: 14px;
+}
+.ex-hero h1 {
+    font-size: 28px; font-weight: 700; margin-bottom: 8px;
+    background: linear-gradient(135deg, #e6edf3, #58a6ff 50%, #3fb950);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.ex-hero .hero-sub { color: var(--text-light); font-size: 15px; max-width: 760px; line-height: 1.7; }
+.ex-hero .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 18px; font-size: 13px; color: var(--text-light);
+    text-decoration: none; padding: 6px 14px; border-radius: 6px;
+    background: rgba(28, 33, 40, 0.6); border: 1px solid var(--border);
+    transition: color 0.2s, border-color 0.2s;
+}
+.ex-hero .back-link:hover { color: var(--primary); border-color: var(--primary); }
+
+/* 三大交易所导航 chip */
+.ex-nav {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px;
+}
+.ex-nav a {
+    text-decoration: none; flex: 1; min-width: 200px;
+    padding: 14px 18px; border-radius: var(--radius);
+    background: var(--bg-card); border: 1px solid var(--border-light);
+    transition: border-color 0.2s, transform 0.2s;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.ex-nav a:hover { border-color: var(--primary); transform: translateY(-2px); }
+.ex-nav .nav-code {
+    font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
+}
+.ex-nav .nav-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.ex-nav .nav-label { font-size: 12px; color: var(--text-light); }
+
+/* 交易所详情卡 */
+.ex-detail {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    margin-bottom: 28px;
+    overflow: hidden;
+    scroll-margin-top: 80px;
+}
+.ex-detail-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-elevated);
+    position: relative;
+}
+.ex-detail-header::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; background: var(--ex-color, var(--primary));
+}
+.ex-detail-header h2 {
+    font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+}
+.ex-detail-header .ex-sub {
+    font-size: 13px; color: var(--text-light);
+}
+.ex-detail-header .ex-role {
+    display: inline-block; margin-top: 8px;
+    font-size: 12px; color: var(--ex-color, var(--primary));
+    background: rgba(88, 166, 255, 0.10);
+    border: 1px solid rgba(88, 166, 255, 0.25);
+    padding: 3px 12px; border-radius: 12px;
+}
+.ex-detail-body { padding: 24px 28px; }
+
+/* 关键数据网格 */
+.ex-keydata {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+}
+.ex-keydata .kd-item {
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+}
+.ex-keydata .kd-label {
+    font-size: 11px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px;
+}
+.ex-keydata .kd-value { font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.5; }
+
+/* 时间线 */
+.ex-timeline {
+    margin-bottom: 24px;
+}
+.ex-timeline h3 {
+    font-size: 15px; color: var(--text); margin-bottom: 14px;
+    padding-left: 12px; border-left: 3px solid var(--ex-color, var(--primary));
+}
+.ex-timeline-list {
+    list-style: none; padding-left: 0;
+    border-left: 2px solid var(--border-light);
+    margin-left: 8px;
+}
+.ex-timeline-list li {
+    position: relative;
+    padding: 8px 0 8px 24px;
+    font-size: 13px; color: var(--text-light); line-height: 1.7;
+}
+.ex-timeline-list li::before {
+    content: '';
+    position: absolute; left: -7px; top: 14px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--bg-card);
+    border: 2px solid var(--ex-color, var(--primary));
+}
+.ex-timeline-list .tl-year {
+    font-weight: 700; color: var(--ex-color, var(--primary));
+    font-family: "JetBrains Mono", monospace; margin-right: 8px;
+}
+
+/* 特色列表 */
+.ex-features {
+    margin-bottom: 24px;
+}
+.ex-features h3 {
+    font-size: 15px; color: var(--text); margin-bottom: 12px;
+    padding-left: 12px; border-left: 3px solid var(--ex-color, var(--primary));
+}
+.ex-features ul {
+    list-style: none; padding-left: 0;
+}
+.ex-features li {
+    padding: 8px 0 8px 22px;
+    font-size: 13px; color: var(--text-light); line-height: 1.7;
+    position: relative;
+}
+.ex-features li::before {
+    content: '▸';
+    position: absolute; left: 6px; top: 8px;
+    color: var(--ex-color, var(--primary));
+}
+
+/* 产品概述 */
+.ex-products {
+    padding: 14px 16px;
+    background: rgba(188, 140, 255, 0.06);
+    border-left: 3px solid var(--accent-purple);
+    border-radius: 4px;
+    margin-bottom: 24px;
+    font-size: 13px; color: var(--text-light); line-height: 1.8;
+}
+
+/* CNH 特色块 */
+.ex-cnh {
+    padding: 16px 18px;
+    background: rgba(255, 193, 7, 0.08);
+    border: 1px solid rgba(255, 193, 7, 0.25);
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+.ex-cnh .cnh-title {
+    font-size: 14px; font-weight: 700; color: var(--accent-orange);
+    margin-bottom: 8px;
+}
+.ex-cnh .cnh-text { font-size: 13px; color: var(--text-light); line-height: 1.8; }
+
+/* 主力合约表 */
+.ex-contracts-table {
+    width: 100%; border-collapse: collapse;
+    margin-bottom: 24px;
+    font-size: 13px;
+}
+.ex-contracts-table th {
+    background: var(--bg-elevated);
+    color: var(--text-light); font-weight: 600;
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+.ex-contracts-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text);
+}
+.ex-contracts-table .code-cell {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700; color: var(--ex-color, var(--primary));
+}
+.ex-contracts-table .settle-cell { color: var(--text-light); font-size: 12px; }
+
+/* 参考链接 */
+.ex-refs {
+    display: flex; flex-wrap: wrap; gap: 8px;
+}
+.ex-refs a {
+    font-size: 12px; text-decoration: none;
+    padding: 5px 12px; border-radius: 6px;
+    color: var(--text-light); background: var(--bg-hover);
+    border: 1px solid var(--border-light);
+    transition: color 0.2s, border-color 0.2s;
+}
+.ex-refs a:hover { color: var(--primary); border-color: var(--primary); }
+.ex-refs a.official { color: var(--accent-cny); border-color: rgba(63, 185, 80, 0.3); }
+
+/* 三所对比表 */
+.compare-ex-table th { font-size: 13px; }
+.compare-ex-table .aspect-cell {
+    color: var(--text); font-weight: 600;
+    background: rgba(88, 166, 255, 0.05);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ============ Hero ============ -->
+<section class="ex-hero">
+    <span class="hero-eyebrow">EXCHANGES · 三大交易所</span>
+    <h1>全球三大外汇期货交易所</h1>
+    <p class="hero-sub">
+        美国 CME、香港 HKEX、新加坡 SGX 代表了全球外汇期货市场的三种不同发展模式。
+        CME 是现代外汇期货发源地，以 G10 货币定价基准和全球深度流动性为核心；
+        HKEX 依托全球唯一人民币实物交割期货和最大离岸人民币资金池，占据离岸人民币风险管理赛道；
+        SGX 作为亚洲第一金融期货交易所，以亚洲新兴市场货币覆盖和场内外一体化服务见长。
+    </p>
+    <a href="{{ url_for('futures') }}" class="back-link">← 返回外汇期货</a>
+</section>
+
+<!-- ============ 三大交易所快速导航 ============ -->
+<div class="ex-nav">
+    {% for s in summary %}
+    <a href="#{{ s.code }}" style="text-decoration:none;">
+        <span class="nav-code" style="color: {{ '#58a6ff' if s.code == 'CME' else ('#ff6b6b' if s.code == 'HKEX' else '#3fb950') }};">{{ s.code }}</span>
+        <span class="nav-name">{{ s.name }}</span>
+        <span class="nav-label">{{ s.label }}</span>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- ============ 三所对比表 ============ -->
+<h2 class="section-title">三大交易所对比</h2>
+<table class="data-table compare-ex-table">
+    <thead>
+        <tr>
+            <th>对比维度</th>
+            <th style="color:#58a6ff;">CME Group</th>
+            <th style="color:#ff6b6b;">HKEX</th>
+            <th style="color:#3fb950;">SGX</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="aspect-cell">国家/地区</td>
+            <td>美国</td>
+            <td>中国香港</td>
+            <td>新加坡</td>
+        </tr>
+        <tr>
+            <td class="aspect-cell">外汇期货推出</td>
+            <td>1972 年（全球首个）</td>
+            <td>2012 年（首个可交割 CNH）</td>
+            <td>1984 年（亚洲首个）</td>
+        </tr>
+        <tr>
+            <td class="aspect-cell">全球外汇排名</td>
+            <td>第 2（份额 18.6%）</td>
+            <td>第 4（份额 7.0%）</td>
+            <td>第 3（份额 11.8%）</td>
+        </tr>
+        <tr>
+            <td class="aspect-cell">核心定位</td>
+            <td>G10 货币基准定价</td>
+            <td>离岸人民币实物交割</td>
+            <td>亚洲新兴市场货币</td>
+        </tr>
+        <tr>
+            <td class="aspect-cell">2025 成交增速</td>
+            <td>+6%</td>
+            <td>-6%</td>
+            <td>+49.7%</td>
+        </tr>
+        <tr>
+            <td class="aspect-cell">CNH 期货结算</td>
+            <td>实物交割（2026 新版）</td>
+            <td>人民币实物交割（唯一）</td>
+            <td>CNH 现金结算</td>
+        </tr>
+        <tr>
+            <td class="aspect-cell">OTC 能力</td>
+            <td>EBS + FX Spot+</td>
+            <td>互换通互联互通</td>
+            <td>BidFX + MaxxTrader</td>
+        </tr>
+        <tr>
+            <td class="aspect-cell">交易时段</td>
+            <td>几乎 24 小时（Globex）</td>
+            <td>日盘+夜盘</td>
+            <td>日盘+夜盘（覆盖亚欧美）</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============ 各交易所详情 ============ -->
+{% for ex in exchanges %}
+<div class="ex-detail" id="{{ ex.code }}" style="--ex-color: {{ ex.color }};">
+    <div class="ex-detail-header">
+        <h2>{{ ex.name }}</h2>
+        <div class="ex-sub">{{ ex.name_en }} · {{ ex.country }} · 成立于 {{ ex.founded }}</div>
+        <span class="ex-role">{{ ex.role }}</span>
+    </div>
+    <div class="ex-detail-body">
+
+        <!-- 关键数据 -->
+        <div class="ex-keydata">
+            {% for kd in ex.key_data %}
+            <div class="kd-item">
+                <div class="kd-label">{{ kd.label }}</div>
+                <div class="kd-value">{{ kd.value }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 产品概述 -->
+        <div class="ex-products">
+            <strong style="color: var(--text);">产品体系：</strong>{{ ex.products }}
+        </div>
+
+        <!-- CNH 特色 -->
+        {% if ex.cnh_feature %}
+        <div class="ex-cnh">
+            <div class="cnh-title">人民币（CNH/CNY）产品特色</div>
+            <div class="cnh-text">{{ ex.cnh_feature }}</div>
+        </div>
+        {% endif %}
+
+        <!-- 历史沿革 -->
+        <div class="ex-timeline">
+            <h3>发展历程</h3>
+            <ul class="ex-timeline-list">
+                {% for h in ex.history %}
+                <li><span class="tl-year">{{ h.year }}</span>{{ h.event }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- 核心特色 -->
+        <div class="ex-features">
+            <h3>核心特色与优势</h3>
+            <ul>
+                {% for f in ex.features %}
+                <li>{{ f }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- 主力合约 -->
+        <h3 style="font-size:15px;color:var(--text);margin-bottom:12px;padding-left:12px;border-left:3px solid {{ ex.color }};">主力外汇期货合约</h3>
+        <table class="ex-contracts-table">
+            <thead>
+                <tr>
+                    <th>代码</th>
+                    <th>货币对</th>
+                    <th>合约规模</th>
+                    <th>结算方式</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in ex.main_contracts %}
+                <tr>
+                    <td class="code-cell">{{ c.code }}</td>
+                    <td>{{ c.pair }}</td>
+                    <td>{{ c.size }}</td>
+                    <td class="settle-cell">{{ c.settle }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- 参考链接 -->
+        <div class="ex-refs">
+            {% for r in ex.refs %}
+            <a href="{{ r.url }}" target="_blank" class="{{ 'official' if r.type == 'official' else '' }}">{{ r.text }} ↗</a>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endfor %}
+
+<div class="callout info" style="margin-top:24px;">
+    <div class="callout-title">数据来源</div>
+    BIS 2025 Triennial Central Bank Survey · CME / HKEX / SGX 官方资料与年度报告 · 数据更新于 2026-08-05。
+    详细的全球外汇市场背景、演变历程、现存挑战与中国内地市场分析，请参考完整研究文档。
+</div>
+
+{% endblock %}

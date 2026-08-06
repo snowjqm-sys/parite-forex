@@ -69,6 +69,15 @@
     backdrop-filter: blur(4px);
 }
 .futures-hero .hero-chip strong { color: var(--primary); font-weight: 600; }
+.futures-hero .hero-chip-link {
+    text-decoration: none; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+.futures-hero .hero-chip-link:hover {
+    border-color: var(--primary);
+    background: rgba(88, 166, 255, 0.12);
+    transform: translateY(-1px);
+}
 
 /* 介绍卡 */
 .intro-card {
@@ -327,7 +336,15 @@
     <h1>{{ intro.title }}</h1>
     <p class="hero-sub">{{ intro.subtitle }}</p>
     <div class="hero-chips">
-        <span class="hero-chip"><strong>交易所</strong> CME / ICE</span>
+        <a href="{{ url_for('futures_exchanges') }}" class="hero-chip hero-chip-link">
+            <strong style="color: #58a6ff;">CME</strong> 美国 · 全球基准
+        </a>
+        <a href="{{ url_for('futures_exchanges') }}#HKEX" class="hero-chip hero-chip-link">
+            <strong style="color: #ff6b6b;">HKEX</strong> 香港 · 离岸人民币
+        </a>
+        <a href="{{ url_for('futures_exchanges') }}#SGX" class="hero-chip hero-chip-link">
+            <strong style="color: #3fb950;">SGX</strong> 新加坡 · 亚洲新兴
+        </a>
         <span class="hero-chip"><strong>合约</strong> 6 类主力</span>
         <span class="hero-chip"><strong>杠杆</strong> 保证金 2%-5%</span>
         <span class="hero-chip"><strong>结算</strong> 现金 / 实物</span>

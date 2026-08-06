@@ -54,53 +54,124 @@
 {% block scripts %}{% endblock %}
 
 <!-- ============ 全局 AI 研究助手 ============ -->
-<!-- 右下角浮动按钮 -->
+<!-- 右下角浮动按钮（支持蓝莓 / 自嘲熊 切换） -->
 <button id="ai-fab" class="ai-fab" title="蓝莓 AI 研究助手" aria-label="蓝莓 AI 研究助手">
-    <svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-        <!-- 蓝莓果实主体 -->
-        <defs>
-            <radialGradient id="blueberryBody" cx="35%" cy="35%" r="75%" fx="35%" fy="35%">
-                <stop offset="0%" stop-color="#7a6ff0"/>
-                <stop offset="50%" stop-color="#4e46c7"/>
-                <stop offset="100%" stop-color="#2d278c"/>
-            </radialGradient>
-            <radialGradient id="blueberryShine" cx="30%" cy="25%" r="30%" fx="30%" fy="25%">
-                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
-                <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="calyxGrad" cx="50%" cy="50%" r="60%">
-                <stop offset="0%" stop-color="#65b05e"/>
-                <stop offset="100%" stop-color="#2f6d34"/>
-            </radialGradient>
-        </defs>
-        <!-- 果实 -->
-        <circle cx="16" cy="18" r="11" fill="url(#blueberryBody)"/>
-        <!-- 果粉小斑点 -->
-        <circle cx="10.5" cy="16" r="0.95" fill="#ffffff" fill-opacity="0.52"/>
-        <circle cx="13" cy="21.5" r="0.8" fill="#ffffff" fill-opacity="0.48"/>
-        <circle cx="18.5" cy="15" r="0.75" fill="#ffffff" fill-opacity="0.45"/>
-        <circle cx="20.5" cy="20.5" r="0.9" fill="#ffffff" fill-opacity="0.5"/>
-        <circle cx="16" cy="24.5" r="0.7" fill="#ffffff" fill-opacity="0.42"/>
-        <circle cx="8.5" cy="19.5" r="0.65" fill="#ffffff" fill-opacity="0.4"/>
-        <!-- 高光 -->
-        <ellipse cx="12.5" cy="14.5" rx="3.5" ry="3" fill="url(#blueberryShine)"/>
-        <!-- 花萼（顶部五角星小叶） -->
-        <g transform="translate(16, 8.2)">
-            <path d="M0,-4 L1.6,-1 L4.8,-0.2 L2.5,2.1 L3.2,5.4 L0,3.6 L-3.2,5.4 L-2.5,2.1 L-4.8,-0.2 L-1.6,-1 Z"
-                  fill="url(#calyxGrad)" stroke="#244a27" stroke-width="0.5" stroke-linejoin="round"/>
-            <!-- 花萼中心凹陷小点 -->
-            <circle cx="0" cy="0.8" r="1" fill="#1f3f22" opacity="0.55"/>
-        </g>
-        <!-- 小果柄 -->
-        <rect x="15.3" y="3.2" width="1.4" height="2.6" rx="0.7" fill="#8b5a2b" stroke="#5a3b1c" stroke-width="0.3"/>
-    </svg>
+    <!-- 蓝莓图标（仿 Apple 🫐 表情：一簇深紫蓝色浆果 + 星形花萼 + 果粉） -->
+    <span class="fab-icon fab-icon-blueberry">
+        <svg width="30" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="bbBody" cx="35%" cy="30%" r="80%" fx="35%" fy="30%">
+                    <stop offset="0%" stop-color="#6b5ce7"/>
+                    <stop offset="55%" stop-color="#3b2f9e"/>
+                    <stop offset="100%" stop-color="#1c155a"/>
+                </radialGradient>
+                <radialGradient id="bbShine" cx="30%" cy="25%" r="35%" fx="30%" fy="25%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.62"/>
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="bbCalyx" cx="50%" cy="50%" r="60%">
+                    <stop offset="0%" stop-color="#5a9e54"/>
+                    <stop offset="100%" stop-color="#2a5e2a"/>
+                </radialGradient>
+            </defs>
+            <!-- 后排两颗小浆果 -->
+            <circle cx="9.2" cy="13" r="6" fill="url(#bbBody)"/>
+            <circle cx="22.8" cy="13" r="6" fill="url(#bbBody)"/>
+            <!-- 前排大浆果 -->
+            <circle cx="16" cy="20.5" r="8.6" fill="url(#bbBody)"/>
+            <!-- 果粉斑点 -->
+            <circle cx="7" cy="11" r="0.7" fill="#fff" fill-opacity="0.55"/>
+            <circle cx="11" cy="15" r="0.6" fill="#fff" fill-opacity="0.5"/>
+            <circle cx="24.5" cy="11" r="0.7" fill="#fff" fill-opacity="0.55"/>
+            <circle cx="20.5" cy="15" r="0.6" fill="#fff" fill-opacity="0.5"/>
+            <circle cx="13" cy="22.5" r="0.85" fill="#fff" fill-opacity="0.52"/>
+            <circle cx="19.5" cy="19" r="0.65" fill="#fff" fill-opacity="0.48"/>
+            <circle cx="18.5" cy="25" r="0.7" fill="#fff" fill-opacity="0.45"/>
+            <circle cx="11.5" cy="19.5" r="0.55" fill="#fff" fill-opacity="0.42"/>
+            <!-- 高光 -->
+            <ellipse cx="7" cy="11" rx="1.9" ry="1.4" fill="url(#bbShine)"/>
+            <ellipse cx="20.8" cy="11" rx="1.9" ry="1.4" fill="url(#bbShine)"/>
+            <ellipse cx="12.5" cy="17.5" rx="3.1" ry="2.3" fill="url(#bbShine)"/>
+            <!-- 星形花萼（每颗顶部） -->
+            <g transform="translate(9.2,7)">
+                <path d="M0,-2.3 L0.95,-0.65 L2.7,-0.1 L1.45,1.15 L1.78,3 L0,2 L-1.78,3 L-1.45,1.15 L-2.7,-0.1 L-0.95,-0.65 Z" fill="url(#bbCalyx)" stroke="#1f3f22" stroke-width="0.3" stroke-linejoin="round"/>
+            </g>
+            <g transform="translate(22.8,7)">
+                <path d="M0,-2.3 L0.95,-0.65 L2.7,-0.1 L1.45,1.15 L1.78,3 L0,2 L-1.78,3 L-1.45,1.15 L-2.7,-0.1 L-0.95,-0.65 Z" fill="url(#bbCalyx)" stroke="#1f3f22" stroke-width="0.3" stroke-linejoin="round"/>
+            </g>
+            <g transform="translate(16,12)">
+                <path d="M0,-3.1 L1.25,-0.85 L3.6,-0.1 L1.95,1.55 L2.35,4 L0,2.7 L-2.35,4 L-1.95,1.55 L-3.6,-0.1 L-1.25,-0.85 Z" fill="url(#bbCalyx)" stroke="#1f3f22" stroke-width="0.35" stroke-linejoin="round"/>
+                <circle cx="0" cy="0.6" r="0.8" fill="#1f3f22" opacity="0.5"/>
+            </g>
+        </svg>
+    </span>
+    <!-- 自嘲熊图标（Nagano Jokebear：极简白底黑线 + 波浪底边 + 举双手 + 3字嘴） -->
+    <span class="fab-icon fab-icon-bear" style="display:none;">
+        <svg width="30" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <!-- 身体主体：圆角方头 + 波浪下摆（像幽灵/团子） -->
+            <path d="
+                M 6,12
+                Q 6,5.2 12,5.2
+                L 20,5.2
+                Q 26,5.2 26,12
+                L 26,25.2
+                Q 26,26.6 24.8,26.2
+                Q 24,25.8 23.2,26.4
+                Q 22.4,27 21.6,26.6
+                Q 20.8,26.2 20,26.8
+                Q 19.2,27.4 18.4,27
+                Q 17.6,26.6 16.8,27
+                Q 16,27.4 15.2,27
+                Q 14.4,26.6 13.6,27
+                Q 12.8,27.4 12,27
+                Q 11.2,26.6 10.4,26.8
+                Q 9.6,27 8.8,26.6
+                Q 8,26.2 7.2,26.2
+                Q 6,26.6 6,25.2
+                Z"
+                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- 左耳 -->
+            <path d="M 11.6,6.8 Q 10.6,5.2 11.6,4.4 Q 12.8,3.8 13.4,5.4 Q 13.4,6.5 12.6,7 Z"
+                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round"/>
+            <!-- 右耳 -->
+            <path d="M 20.4,6.8 Q 21.4,5.2 20.4,4.4 Q 19.2,3.8 18.6,5.4 Q 18.6,6.5 19.4,7 Z"
+                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round"/>
+            <!-- 左爪（举起来） -->
+            <path d="M 6.2,17.2 Q 4,15.4 4.6,13 Q 5.2,10.6 8,11.4 Q 10,12.2 9.6,14.4 Q 9.2,16 7.4,16.8"
+                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- 左爪小肉垫凹痕 -->
+            <path d="M 6.6,13.2 Q 6.2,12.6 6.8,12.2" fill="none" stroke="#1a1a1a" stroke-width="0.9" stroke-linecap="round"/>
+            <!-- 右爪（举起来） -->
+            <path d="M 25.8,17.2 Q 28,15.4 27.4,13 Q 26.8,10.6 24,11.4 Q 22,12.2 22.4,14.4 Q 22.8,16 24.6,16.8"
+                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <!-- 右爪小肉垫凹痕 -->
+            <path d="M 25.4,13.2 Q 25.8,12.6 25.2,12.2" fill="none" stroke="#1a1a1a" stroke-width="0.9" stroke-linecap="round"/>
+            <!-- 左眼：小黑圆点 -->
+            <circle cx="13" cy="13.6" r="1.05" fill="#1a1a1a"/>
+            <!-- 右眼：小黑圆点 -->
+            <circle cx="19" cy="13.6" r="1.05" fill="#1a1a1a"/>
+            <!-- 鼻子：小黑圆点 -->
+            <circle cx="16" cy="16.3" r="1.05" fill="#1a1a1a"/>
+            <!-- 嘴：标志性 3 字曲线（空心描边） -->
+            <path d="M 16,17.4 C 14.4,18.0 13.6,18.6 13.6,19.4 C 13.6,19.8 14.0,20.2 14.6,20.0
+                     C 15.2,19.7 15.4,19.1 16,18.9 C 16.6,19.1 16.8,19.7 17.4,20.0
+                     C 18.0,20.2 18.4,19.8 18.4,19.4 C 18.4,18.6 17.6,18.0 16,17.4 Z"
+                fill="none" stroke="#1a1a1a" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+    </span>
 </button>
 
 <!-- 聊天面板 -->
 <div id="ai-panel" class="ai-panel" style="display:none;">
     <div class="ai-panel-header">
-        <span class="ai-panel-title">AI 研究助手</span>
+        <span class="ai-panel-title" id="ai-panel-title">AI 研究助手</span>
         <div class="ai-panel-actions">
+            <button id="ai-panel-swapicon" class="ai-panel-expand" title="切换助手图标（蓝莓 / 自嘲熊）" aria-label="切换助手图标">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-3-6.7"/>
+                    <polyline points="21 4 21 10 15 10"/>
+                </svg>
+            </button>
             <button id="ai-panel-expand" class="ai-panel-expand" title="分屏模式（左看网站右提问）" aria-label="分屏模式" aria-pressed="false">
                 <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="2" y="3" width="13" height="18" rx="1"/>
@@ -135,6 +206,50 @@
 <!-- 框选文字时的"询问AI"浮动按钮 -->
 <button id="ai-ask-btn" class="ai-ask-btn" style="display:none;">询问AI</button>
 
+<!-- 框选文字时的"反馈建议"浮动按钮 -->
+<button id="feedback-suggest-btn" class="ai-ask-btn feedback-suggest-btn" style="display:none;">反馈建议</button>
+
+<!-- 反馈建议行内浮动卡片（出现在选中文字下方） -->
+<div id="feedback-popover" class="feedback-popover" style="display:none;">
+    <div class="feedback-popover-arrow"></div>
+    <div class="feedback-popover-inner">
+        <div class="feedback-popover-header">
+            <span class="feedback-popover-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                </svg>
+                反馈建议
+            </span>
+            <button id="feedback-popover-close" class="feedback-popover-close" title="关闭" aria-label="关闭">&times;</button>
+        </div>
+        <div class="feedback-popover-body">
+            <div id="feedback-context-preview" class="feedback-context-preview"></div>
+            <div class="feedback-field">
+                <label class="feedback-label">分类</label>
+                <select id="feedback-category" class="feedback-select">
+                    <option value="内容建议">内容建议</option>
+                    <option value="数据纠错">数据纠错</option>
+                    <option value="功能需求">功能需求</option>
+                    <option value="体验问题">体验问题</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="feedback-field">
+                <label class="feedback-label">建议内容 <span class="feedback-required">*</span></label>
+                <textarea id="feedback-content" class="feedback-textarea" placeholder="请输入您对这段内容的建议或发现的错误..." rows="3"></textarea>
+            </div>
+            <div class="feedback-field">
+                <label class="feedback-label">联系方式（选填）</label>
+                <input id="feedback-contact" class="feedback-input" type="text" placeholder="邮箱或微信，方便我们回复您">
+            </div>
+        </div>
+        <div class="feedback-popover-footer">
+            <span id="feedback-hint" class="feedback-hint"></span>
+            <button id="feedback-submit" class="feedback-submit-btn">提交反馈</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ============ AI 研究助手逻辑（原生 JS，无依赖） ============
 (function () {
@@ -142,6 +257,8 @@
     var panel = document.getElementById('ai-panel');
     var panelClose = document.getElementById('ai-panel-close');
     var panelExpand = document.getElementById('ai-panel-expand');
+    var panelSwapIcon = document.getElementById('ai-panel-swapicon');
+    var panelTitle = document.getElementById('ai-panel-title');
     var messages = document.getElementById('ai-messages');
     var input = document.getElementById('ai-input');
     var sendBtn = document.getElementById('ai-send');
@@ -151,6 +268,45 @@
     var configChecked = false;
     var hasConfigured = false;
     var isSplitMode = false;
+
+    // ---------- 助手图标切换（蓝莓 / 自嘲熊） ----------
+    var fabIconBB = fab.querySelector('.fab-icon-blueberry');
+    var fabIconBear = fab.querySelector('.fab-icon-bear');
+    var ICON_KEY = 'parite_ai_icon';
+
+    function applyAssistantIcon(name) {
+        if (name === 'bear') {
+            fabIconBB.style.display = 'none';
+            fabIconBear.style.display = '';
+            fab.title = '自嘲熊 AI 研究助手';
+            fab.setAttribute('aria-label', '自嘲熊 AI 研究助手');
+            if (panelTitle) panelTitle.textContent = '自嘲熊 AI 研究助手';
+        } else {
+            fabIconBB.style.display = '';
+            fabIconBear.style.display = 'none';
+            fab.title = '蓝莓 AI 研究助手';
+            fab.setAttribute('aria-label', '蓝莓 AI 研究助手');
+            if (panelTitle) panelTitle.textContent = '蓝莓 AI 研究助手';
+        }
+    }
+
+    // 初始化：读取 localStorage 中保存的偏好
+    try {
+        var savedIcon = localStorage.getItem(ICON_KEY);
+        if (savedIcon === 'bear' || savedIcon === 'blueberry') {
+            applyAssistantIcon(savedIcon);
+        }
+    } catch (e) { /* localStorage 不可用时静默 */ }
+
+    if (panelSwapIcon) {
+        panelSwapIcon.addEventListener('click', function () {
+            var cur;
+            try { cur = localStorage.getItem(ICON_KEY) || 'blueberry'; } catch (e) { cur = 'blueberry'; }
+            var next = cur === 'blueberry' ? 'bear' : 'blueberry';
+            try { localStorage.setItem(ICON_KEY, next); } catch (e) {}
+            applyAssistantIcon(next);
+        });
+    }
 
     // ---------- 面板展开/收起 ----------
     function togglePanel() {
@@ -340,26 +496,41 @@
     }
     input.addEventListener('input', autoResize);
 
-    // ---------- 框选文字询问 ----------
+    // ---------- 框选文字询问 + 反馈建议 ----------
     var pendingContext = '';
+    var feedbackSuggestBtn = document.getElementById('feedback-suggest-btn');
 
     document.addEventListener('mouseup', function (e) {
         // 忽略面板和按钮内的选择
-        if (panel.contains(e.target) || fab.contains(e.target) || askBtn.contains(e.target)) {
+        if (panel.contains(e.target) || fab.contains(e.target) || askBtn.contains(e.target) || feedbackSuggestBtn.contains(e.target)) {
             return;
         }
         var sel = window.getSelection();
         var text = sel ? sel.toString().trim() : '';
         if (text.length > 2) {
             pendingContext = text;
-            // 计算选区位置，显示"询问AI"按钮
+            // 计算选区位置，同时显示"询问AI"和"反馈建议"两个按钮
             var range = sel.getRangeAt(0);
             var rect = range.getBoundingClientRect();
+            // 保存选区位置，供反馈 popover 定位使用
+            lastSelectionRect = {
+                left: rect.left,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.width,
+                height: rect.height
+            };
+            var centerX = rect.left + window.pageXOffset + (rect.width / 2);
+            var topY = rect.top + window.pageYOffset - 38;
             askBtn.style.display = 'block';
-            askBtn.style.left = (rect.left + window.pageXOffset + (rect.width / 2) - 30) + 'px';
-            askBtn.style.top = (rect.top + window.pageYOffset - 36) + 'px';
+            askBtn.style.left = (centerX - 66) + 'px';
+            askBtn.style.top = topY + 'px';
+            feedbackSuggestBtn.style.display = 'block';
+            feedbackSuggestBtn.style.left = (centerX + 4) + 'px';
+            feedbackSuggestBtn.style.top = topY + 'px';
         } else {
             askBtn.style.display = 'none';
+            feedbackSuggestBtn.style.display = 'none';
             pendingContext = '';
         }
     });
@@ -376,26 +547,190 @@
         // 清除选区与按钮
         window.getSelection().removeAllRanges();
         askBtn.style.display = 'none';
+        feedbackSuggestBtn.style.display = 'none';
         var ctx = pendingContext;
         pendingContext = '';
         var q = (extra || '').trim();
         sendQuestion(q, ctx);
     });
 
-    // 点击页面其他地方隐藏"询问AI"按钮
+    // ---------- 反馈建议行内浮动卡片 ----------
+    var feedbackPopover = document.getElementById('feedback-popover');
+    var feedbackPopoverClose = document.getElementById('feedback-popover-close');
+    var feedbackPopoverArrow = feedbackPopover.querySelector('.feedback-popover-arrow');
+    var feedbackContextPreview = document.getElementById('feedback-context-preview');
+    var feedbackContent = document.getElementById('feedback-content');
+    var feedbackContact = document.getElementById('feedback-contact');
+    var feedbackCategory = document.getElementById('feedback-category');
+    var feedbackSubmit = document.getElementById('feedback-submit');
+    var feedbackHint = document.getElementById('feedback-hint');
+    var feedbackContextText = '';
+    // 保存最近一次选区的位置，用于定位 popover
+    var lastSelectionRect = null;
+
+    function positionFeedbackPopover(rect) {
+        // rect 为选区的 getBoundingClientRect（视口坐标）
+        if (!rect) return;
+        var pw = feedbackPopover.offsetWidth || 360;
+        var gap = 10;
+        // 默认放在选区正下方
+        var left = rect.left + window.pageXOffset + (rect.width / 2) - (pw / 2);
+        var top = rect.bottom + window.pageYOffset + gap;
+        var arrowLeft = null;
+
+        // 视窗边界检查
+        var viewportW = document.documentElement.clientWidth;
+        var margin = 12;
+        if (left < margin + window.pageXOffset) {
+            // 左溢出：贴左对齐，箭头指向选区中心
+            arrowLeft = rect.left + window.pageXOffset + (rect.width / 2) - (margin + 14);
+            left = margin + window.pageXOffset;
+        } else if (left + pw > viewportW - margin + window.pageXOffset) {
+            // 右溢出：贴右对齐
+            arrowLeft = rect.left + window.pageXOffset + (rect.width / 2) - (viewportW - margin - pw - 14);
+            left = viewportW - margin - pw + window.pageXOffset;
+        }
+        // 如果下方放不下且上方有空间，翻到上方
+        var viewportH = document.documentElement.clientHeight;
+        if (rect.bottom + gap + 320 > viewportH && rect.top - gap - 320 > 0) {
+            top = rect.top + window.pageYOffset - 320 - gap;
+            feedbackPopover.classList.add('feedback-popover-above');
+        } else {
+            feedbackPopover.classList.remove('feedback-popover-above');
+        }
+
+        feedbackPopover.style.left = left + 'px';
+        feedbackPopover.style.top = top + 'px';
+        // 箭头位置：相对 popover 左上角
+        if (arrowLeft !== null) {
+            feedbackPopoverArrow.style.left = Math.max(14, Math.min(pw - 14, arrowLeft - left)) + 'px';
+        } else {
+            feedbackPopoverArrow.style.left = (pw / 2 - 7) + 'px';
+        }
+    }
+
+    function openFeedbackPopover(contextText, rect) {
+        feedbackContextText = contextText;
+        var preview = contextText.length > 120 ? contextText.slice(0, 120) + '...' : contextText;
+        feedbackContextPreview.innerHTML = '<span class="preview-label">针对选中内容：</span><span class="preview-text">' + escapeHtml(preview) + '</span>';
+        feedbackContent.value = '';
+        feedbackContact.value = '';
+        feedbackCategory.value = '内容建议';
+        feedbackHint.textContent = '';
+        feedbackContent.style.borderColor = '';
+        feedbackPopover.style.display = 'block';
+        // 先显示再定位（offsetWidth 需要元素已渲染）
+        positionFeedbackPopover(rect);
+        setTimeout(function () { feedbackContent.focus(); }, 80);
+    }
+
+    function closeFeedbackPopover() {
+        feedbackPopover.style.display = 'none';
+        feedbackPopover.classList.remove('feedback-popover-above');
+    }
+
+    feedbackSuggestBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!pendingContext) return;
+        var ctx = pendingContext;
+        var rect = lastSelectionRect;
+        // 清除选区与按钮
+        window.getSelection().removeAllRanges();
+        askBtn.style.display = 'none';
+        feedbackSuggestBtn.style.display = 'none';
+        pendingContext = '';
+        openFeedbackPopover(ctx, rect);
+    });
+
+    feedbackPopoverClose.addEventListener('click', closeFeedbackPopover);
+
+    feedbackSubmit.addEventListener('click', function () {
+        var content = feedbackContent.value.trim();
+        if (!content) {
+            feedbackContent.focus();
+            feedbackContent.style.borderColor = 'var(--accent-jpy)';
+            feedbackHint.textContent = '请填写建议内容';
+            feedbackHint.style.color = 'var(--accent-jpy)';
+            return;
+        }
+        var fullContent = content;
+        if (feedbackContextText) {
+            fullContent = content + '\n\n【针对选中内容】' + feedbackContextText;
+        }
+        feedbackSubmit.disabled = true;
+        feedbackSubmit.textContent = '提交中...';
+        feedbackHint.textContent = '';
+        fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                category: feedbackCategory.value,
+                content: fullContent,
+                contact: feedbackContact.value.trim()
+            })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.success) {
+                closeFeedbackPopover();
+                if (typeof appendBotMsg === 'function') {
+                    panel.style.display = 'flex';
+                    appendBotMsg('✅ 反馈已提交，感谢您的建议！我们会尽快处理。');
+                } else {
+                    // 右下角短暂提示
+                    var tip = document.createElement('div');
+                    tip.textContent = '✅ 反馈已提交，感谢您的建议！';
+                    tip.style.cssText = 'position:fixed;right:24px;bottom:24px;background:var(--accent-cny);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,0.4);';
+                    document.body.appendChild(tip);
+                    setTimeout(function () { tip.style.opacity = '0'; tip.style.transition = 'opacity 0.4s'; }, 2000);
+                    setTimeout(function () { tip.remove(); }, 2500);
+                }
+            } else {
+                feedbackHint.textContent = '提交失败：' + (data.error || '未知错误');
+                feedbackHint.style.color = 'var(--accent-jpy)';
+            }
+        }).catch(function () {
+            feedbackHint.textContent = '网络错误，请稍后重试';
+            feedbackHint.style.color = 'var(--accent-jpy)';
+        }).finally(function () {
+            feedbackSubmit.disabled = false;
+            feedbackSubmit.textContent = '提交反馈';
+        });
+    });
+
+    // 点击页面其他地方隐藏按钮和 popover
     document.addEventListener('mousedown', function (e) {
-        if (askBtn.contains(e.target)) return;
+        if (askBtn.contains(e.target) || feedbackSuggestBtn.contains(e.target)) return;
+        if (feedbackPopover.contains(e.target)) return;
         if (window.getSelection().toString().trim().length <= 2) {
             askBtn.style.display = 'none';
+            feedbackSuggestBtn.style.display = 'none';
             pendingContext = '';
+        }
+        // 点击 popover 外部时关闭 popover
+        if (feedbackPopover.style.display !== 'none' && !feedbackPopover.contains(e.target)) {
+            closeFeedbackPopover();
         }
     });
 
-    // 滚动时隐藏"询问AI"按钮
+    // 滚动时隐藏按钮（popover 保持，因为用户可能在边滚边写）
     window.addEventListener('scroll', function () {
         askBtn.style.display = 'none';
+        feedbackSuggestBtn.style.display = 'none';
         pendingContext = '';
     }, true);
+
+    // ESC 关闭 popover
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && feedbackPopover.style.display !== 'none') {
+            closeFeedbackPopover();
+        }
+    });
+
+    // 窗口缩放时重新定位 popover
+    window.addEventListener('resize', function () {
+        if (feedbackPopover.style.display !== 'none' && lastSelectionRect) {
+            positionFeedbackPopover(lastSelectionRect);
+        }
+    });
 })();
 </script>
 

@@ -17,7 +17,7 @@
     <div class="metric-card">
         <div class="label">当前汇率</div>
         <div class="value">{{ cur.current.rate }}</div>
-        <div class="trend {% if cur.trend_dir == 'up' %}down{% elif cur.trend_dir == 'down' %}up{% endif %}">{{ cur.trend }}</div>
+        <div class="trend {% if cur.trend_dir == 'up' %}up{% elif cur.trend_dir == 'down' %}down{% endif %}">{{ cur.trend }}</div>
         <div class="note">{{ cur.current.date }} · {{ cur.current.source }}</div>
     </div>
     <div class="metric-card">
@@ -75,6 +75,50 @@
 <div class="chart-box">
     <div id="spread-chart" style="width:100%;height:380px;"></div>
 </div>
+
+{% if cur.turning_points %}
+<!-- 较大波动时期分析 -->
+<h2 class="section-title">{{ cur.name }}较大波动时期分析</h2>
+<div class="callout tip">
+    <div class="callout-title">阶段解读</div>
+    以下梳理 {{ cur.name }} 历史上的关键转折期，标注每个阶段的主要与次要驱动因素，帮助理解汇率大幅波动的成因与传导链路。
+</div>
+{% for tp in cur.turning_points %}
+<div class="turning-point-card {{ tp.direction }}">
+    <div class="tp-header">
+        <span class="tp-period">{{ tp.period }}</span>
+        <span class="tp-title">{{ tp.title }}</span>
+        <span class="tp-direction-tag">{{ tp.direction_label }}</span>
+    </div>
+    <div class="tp-magnitude">{{ tp.magnitude }}</div>
+    {% if tp.narrative %}
+    <div class="tp-narrative">{{ tp.narrative }}</div>
+    {% endif %}
+    <div class="tp-factors">
+        <div class="tp-factors-group primary">
+            <div class="tp-factors-label">主要因素</div>
+            {% for f in tp.primary_factors %}
+            <div class="tp-factor-item">
+                <div class="tp-factor-name">{{ f.factor }}</div>
+                <div class="tp-factor-detail">{{ f.detail }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if tp.secondary_factors %}
+        <div class="tp-factors-group secondary">
+            <div class="tp-factors-label">次要因素</div>
+            {% for f in tp.secondary_factors %}
+            <div class="tp-factor-item">
+                <div class="tp-factor-name">{{ f.factor }}</div>
+                <div class="tp-factor-detail">{{ f.detail }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% endif %}
 
 {% if deep.recent_events %}
 <!-- 近期大事件深度分析 -->
@@ -196,9 +240,9 @@ fetch('/api/currency/' + CODE + '/history').then(r => r.json()).then(data => {
         paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
         font: { color: '#e6edf3', size: 12 },
         title: { text: PAIR + ' 历史走势（年度·官方数据）', font: { color: '#e6edf3' } },
-        xaxis: { gridcolor: '#30363d', title: '年份' },
+        xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'linear', dtick: 1, tickangle: -45 },
         yaxis: { gridcolor: '#30363d', title: PAIR },
-        margin: { t: 50, b: 50 }
+        margin: { t: 50, b: 70 }
     }, { responsive: true });
 });
 
@@ -222,9 +266,9 @@ fetch('/api/currency/' + CODE + '/monthly').then(r => r.json()).then(data => {
         paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
         font: { color: '#e6edf3', size: 12 },
         title: { text: data.pair + ' 近一年月度走势（ECB）', font: { color: '#e6edf3' } },
-        xaxis: { gridcolor: '#30363d', title: '月份' },
+        xaxis: { gridcolor: '#30363d', title: '月份', tickmode: 'array', tickvals: items.map(d => d.date), ticktext: items.map(d => d.date), tickangle: -45, automargin: true },
         yaxis: { gridcolor: '#30363d', title: data.pair },
-        margin: { t: 50, b: 50 }
+        margin: { t: 50, b: 90 }
     }, { responsive: true });
 }).catch(err => {
     document.getElementById('monthly-chart').innerHTML = '<div class="live-error">月度数据加载失败</div>';
@@ -250,9 +294,9 @@ fetch('/api/currency/' + CODE + '/daily').then(r => r.json()).then(data => {
         paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
         font: { color: '#e6edf3', size: 12 },
         title: { text: data.pair + ' 近一月日度走势（ECB）', font: { color: '#e6edf3' } },
-        xaxis: { gridcolor: '#30363d', title: '日期' },
+        xaxis: { gridcolor: '#30363d', title: '日期', tickmode: 'array', tickvals: items.map(d => d.date), ticktext: items.map(d => d.date), tickangle: -60, automargin: true },
         yaxis: { gridcolor: '#30363d', title: data.pair },
-        margin: { t: 50, b: 50 }
+        margin: { t: 50, b: 110 }
     }, { responsive: true });
 }).catch(err => {
     document.getElementById('daily-chart').innerHTML = '<div class="live-error">日度数据加载失败</div>';
