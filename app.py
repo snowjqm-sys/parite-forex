@@ -35,31 +35,75 @@ app.secret_key = "parite-admin-secret-2026"  # 用于 session 加密
 
 
 # ============================================================
-# 缓存控制：让 Cloudflare / Vercel 边缘节点缓存 HTML 和 API 响应
+# 缓存控制：让 Cloudflare / Vercel 边缘节点缓存 HTML + 静态数据
+# 同时保证：实时汇率 API / 所有 POST / 管理后台 永不被缓存
+#
+# 未来新增路由默认规则：
+#   · 纯只读展示页面 → @cache_html() 装饰器 或 走 after_request 默认策略
+#   · 实时数据 API   → @cache_api_static() / @cache_api_live() / @no_cache()
+#   · 任何 POST/PUT  → 统一走 after_request，强制 no-store
 # ============================================================
+
+# ---- 明确「实时 / 永不缓存」的 API 前缀清单（以后新增实时路由加这里）----
+_NO_CACHE_API_PREFIXES = (
+    "/api/ticker",          # 滚动横条实时汇率
+    "/api/live",            # 实时汇率详情
+    "/api/feedback",        # 反馈（含 POST 提交 + GET 查看，都不想缓存）
+    "/api/ai",              # AI 问答 / AI 配置
+    "/api/admin",           # 管理员配置 / 发信测试
+)
+
+# 静态数据 API（允许缓存 10 分钟，数据一天顶多变几次）
+_STATIC_API_PREFIXES = (
+    "/api/snapshot",            # 市场总览快照（和 data.py 同步更新）
+    "/api/currency/",           # 货币历史 / 月度 / 日度（历史数据，不会变）
+    "/api/rates",               # 利率序列（data.py 静态）
+    "/api/currencies",          # 货币元信息
+    "/api/regression",          # OLS 回归结果（同上）
+)
+
 @app.after_request
 def _set_cache_headers(resp):
-    # 只对成功的 GET 请求设置缓存
-    if request.method != "GET" or resp.status_code not in (200, 301, 302):
+    # 1) 非 GET 的请求（POST/PUT/PATCH/DELETE）一律不缓存
+    if request.method != "GET":
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        return resp
+
+    # 2) 非 2xx/3xx 的响应一律不缓存
+    if resp.status_code >= 400:
+        resp.headers["Cache-Control"] = "no-store, no-cache"
         return resp
 
     path = request.path
 
-    # 页面 HTML：边缘缓存 5 分钟，浏览器缓存 2 分钟，后台异步刷新 1 天
-    if not path.startswith("/api/") and not path.startswith("/admin") and not path.startswith("/ai-config"):
-        resp.headers["Cache-Control"] = "public, max-age=120, s-maxage=300, stale-while-revalidate=86400"
+    # 3) 管理员 / 配置相关：永不缓存
+    if path.startswith("/admin") or path.startswith("/ai-config"):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         return resp
 
-    # 实时汇率 API：边缘缓存 60 秒
-    if path.startswith("/api/ticker") or path.startswith("/api/live"):
-        resp.headers["Cache-Control"] = "public, max-age=30, s-maxage=60, stale-while-revalidate=300"
-        return resp
+    # 4) 实时 / 写入类 API：明确 no-cache（浏览器不存，Cloudflare 不存）
+    for prefix in _NO_CACHE_API_PREFIXES:
+        if path.startswith(prefix):
+            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            resp.headers["Pragma"] = "no-cache"
+            return resp
 
-    # 静态数据 API（历史数据、利率等）：边缘缓存 10 分钟
+    # 5) 静态数据 API（历史 / 利率 / 回归等）：边缘 10 分钟 + stale-while
+    for prefix in _STATIC_API_PREFIXES:
+        if path.startswith(prefix):
+            resp.headers["Cache-Control"] = "public, max-age=300, s-maxage=600, stale-while-revalidate=3600"
+            return resp
+
+    # 6) 剩下的 /api/* 路径（以后新增的 API，默认保守 no-cache，避免误缓存实时数据）
     if path.startswith("/api/"):
-        resp.headers["Cache-Control"] = "public, max-age=300, s-maxage=600, stale-while-revalidate=3600"
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
         return resp
 
+    # 7) 其他所有路径（HTML 页面）：边缘 5 分钟 + stale-while 1 天
+    #    注：static/ 下的 CSS/JS/图片 由 Flask 默认带缓存头，Cloudflare 自己的默认规则也会缓存静态资源
+    resp.headers["Cache-Control"] = "public, max-age=120, s-maxage=300, stale-while-revalidate=86400"
     return resp
 
 
