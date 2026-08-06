@@ -100,7 +100,21 @@
 <div id="ai-panel" class="ai-panel" style="display:none;">
     <div class="ai-panel-header">
         <span class="ai-panel-title">AI 研究助手</span>
-        <button id="ai-panel-close" class="ai-panel-close" title="关闭" aria-label="关闭">&times;</button>
+        <div class="ai-panel-actions">
+            <button id="ai-panel-expand" class="ai-panel-expand" title="分屏模式（左看网站右提问）" aria-label="分屏模式" aria-pressed="false">
+                <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="13" height="18" rx="1"/>
+                    <line x1="20" y1="3" x2="20" y2="21"/>
+                </svg>
+                <svg class="icon-collapse" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                    <polyline points="4 14 4 20 10 20"/>
+                    <polyline points="20 10 20 4 14 4"/>
+                    <line x1="14" y1="10" x2="21" y2="3"/>
+                    <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+            </button>
+            <button id="ai-panel-close" class="ai-panel-close" title="关闭" aria-label="关闭">&times;</button>
+        </div>
     </div>
     <div id="ai-messages" class="ai-messages">
         <div class="ai-msg bot">
@@ -127,6 +141,7 @@
     var fab = document.getElementById('ai-fab');
     var panel = document.getElementById('ai-panel');
     var panelClose = document.getElementById('ai-panel-close');
+    var panelExpand = document.getElementById('ai-panel-expand');
     var messages = document.getElementById('ai-messages');
     var input = document.getElementById('ai-input');
     var sendBtn = document.getElementById('ai-send');
@@ -135,6 +150,7 @@
     // 标记是否已检查过配置状态
     var configChecked = false;
     var hasConfigured = false;
+    var isSplitMode = false;
 
     // ---------- 面板展开/收起 ----------
     function togglePanel() {
@@ -150,6 +166,41 @@
     fab.addEventListener('click', togglePanel);
     panelClose.addEventListener('click', function () {
         panel.style.display = 'none';
+        // 关闭时同步退出分屏，避免下次打开仍是分屏遮挡
+        setSplitMode(false);
+    });
+
+    // ---------- 分屏模式：左看网站右提问 ----------
+    function setSplitMode(on) {
+        isSplitMode = on;
+        var iconExpand = panelExpand.querySelector('.icon-expand');
+        var iconCollapse = panelExpand.querySelector('.icon-collapse');
+        if (on) {
+            panel.classList.add('split-mode');
+            document.body.classList.add('ai-split-open');
+            panelExpand.setAttribute('aria-pressed', 'true');
+            panelExpand.title = '退出分屏';
+            iconExpand.style.display = 'none';
+            iconCollapse.style.display = '';
+            // 确保面板处于打开状态
+            if (panel.style.display === 'none') {
+                panel.style.display = 'flex';
+                checkConfig();
+            }
+            // 重新计算输入框高度 & 滚到底
+            setTimeout(function () { input.focus(); scrollToBottom(); }, 50);
+        } else {
+            panel.classList.remove('split-mode');
+            document.body.classList.remove('ai-split-open');
+            panelExpand.setAttribute('aria-pressed', 'false');
+            panelExpand.title = '分屏模式（左看网站右提问）';
+            iconExpand.style.display = '';
+            iconCollapse.style.display = 'none';
+        }
+    }
+
+    panelExpand.addEventListener('click', function () {
+        setSplitMode(!isSplitMode);
     });
 
     // ---------- 配置状态检查 ----------

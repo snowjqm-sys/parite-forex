@@ -1101,6 +1101,94 @@ pre code {
     background: var(--bg-hover);
 }
 
+/* 操作按钮组（放大 + 关闭） */
+.ai-panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.ai-panel-expand {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 5px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background 0.2s;
+    line-height: 0;
+}
+.ai-panel-expand:hover {
+    color: var(--text);
+    background: var(--bg-hover);
+}
+.ai-panel-expand[aria-pressed="true"] {
+    color: var(--primary);
+}
+
+/* ---------- 分屏模式：右侧长条面板 ---------- */
+.ai-panel.split-mode {
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 420px;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    border-left: 1px solid var(--border);
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.5);
+    animation: split-slide-in 0.25s ease-out;
+}
+@keyframes split-slide-in {
+    from { transform: translateX(40px); opacity: 0.6; }
+    to   { transform: translateX(0); opacity: 1; }
+}
+.ai-panel.split-mode .ai-panel-header {
+    padding: 14px 18px;
+}
+.ai-panel.split-mode .ai-panel-title {
+    font-size: 16px;
+}
+.ai-panel.split-mode .ai-messages {
+    padding: 20px 18px;
+}
+.ai-panel.split-mode .ai-msg-content {
+    max-width: 92%;
+    font-size: 14px;
+    line-height: 1.7;
+}
+.ai-panel.split-mode .ai-input-area {
+    padding: 14px 18px;
+}
+.ai-panel.split-mode .ai-input {
+    font-size: 14px;
+    max-height: 160px;
+}
+
+/* 分屏时主内容区向左让出空间（nav / ticker / container / footer 同步缩窄） */
+body.ai-split-open {
+    padding-right: 420px;
+}
+/* 背景光效不随分屏缩窄，保持氛围 */
+body.ai-split-open::before {
+    right: 420px;
+}
+
+/* 移动端：分屏时面板占满视口，主内容不偏移 */
+@media (max-width: 768px) {
+    .ai-panel.split-mode {
+        width: 100vw;
+    }
+    body.ai-split-open {
+        padding-right: 0;
+    }
+    body.ai-split-open::before {
+        right: 0;
+    }
+}
+
 /* 消息区域 */
 .ai-messages {
     flex: 1;
