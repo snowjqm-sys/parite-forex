@@ -1216,13 +1216,99 @@ FOREX_CONCEPTS = [
 ]
 
 LEARNING_PATH = [
-    {"step": 1, "title": "建立方向感", "task": "彻底弄懂'数值变大=谁升谁贬'，区分直接/间接标价。"},
-    {"step": 2, "title": "理解利率平价", "task": "掌握利差与汇率的理论关系，这是分析框架的基石。"},
-    {"step": 3, "title": "拆解套息交易", "task": "理解carry trade的建立、收益、风险与平仓机制。"},
-    {"step": 4, "title": "区分主动与被动", "task": "学会用美元指数拆分'美元因素'与'本国因素'。"},
-    {"step": 5, "title": "看懂央行操作", "task": "理解中间价、逆周期因子、干预的工具与意图。"},
-    {"step": 6, "title": "掌握不可能三角", "task": "理解汇率制度选择的根本约束，看懂各国政策差异。"},
-    {"step": 7, "title": "形成独立判断", "task": "基于数据与机制，对货币走势给出有依据的观点。"},
+    {
+        "step": 1, "stage": "入门筑基", "title": "建立方向感",
+        "duration": "30 分钟", "difficulty": 1,
+        "task": "彻底弄懂'数值变大=谁升谁贬'，区分直接/间接标价法，这是一切分析的起点。",
+        "keypoints": ["直接标价法（如 USD/CNY：数值变大 = 人民币贬 / 美元升", "间接标价法（如 EUR/USD：数值变大 = 欧元升 / 美元贬", "货币对报价中，前者是'基准货币'，后者是'标价货币'"],
+        "must_read": [1],  # 对应 concepts 的 index（从 1 开始：汇率标价与升贬值）
+        "practice": "打开 USD/JPY 与 EUR/USD 的走势图，分别找出 2022-2024 年三段明显趋势，口头说出每段中谁在升值、谁在贬值。",
+        "resources": [
+            {"text": "BIS 汇率标价惯例说明", "url": "https://www.bis.org/publ/rpp09.htm", "type": "official"},
+        ],
+    },
+    {
+        "step": 2, "stage": "入门筑基", "title": "理解利率平价",
+        "duration": "1 小时", "difficulty": 2,
+        "task": "掌握无抛补利率平价（UIP）的理论关系，利差是分析框架的基石。",
+        "keypoints": ["抛补利率平价（CIP）：远期升贴水 = 利差（无套利条件）", "无抛补利率平价（UIP）：高利率货币远期应贬值", "风险溢价：现实中 UIP 常不成立，核心在于风险与套息"],
+        "must_read": [2, 3],  # 利率平价理论 + 实际利率
+        "practice": "取当前美日 10 年期国债利差，按 UIP 推算 USD/JPY 远期一年后理论值，对比实际远期报价差异多少基点。",
+        "resources": [
+            {"text": "IMF 工作论文：UIP 再检验", "url": "https://www.imf.org/en/Publications/WP/Issues/2023/01/27/Uncovered-Interest-Parity-and-the-Term-Structure-526916", "type": "official"},
+            {"text": "FRED 利率数据", "url": "https://fred.stlouisfed.org/categories/22", "type": "official"},
+        ],
+    },
+    {
+        "step": 3, "stage": "进阶拆解", "title": "拆解套息交易",
+        "duration": "1.5 小时", "difficulty": 2,
+        "task": "理解套息交易（Carry Trade）的建立、收益来源、风险触发与踩踏平仓机制。",
+        "keypoints": ["套息 = 借入低息货币 + 买入高息货币，赚取利差 + 汇兑", "典型：日元长期为经典融资货币", "平仓触发：融资货币加息、风险事件、利差收窄", "特征：'缓贬急升'——套息平仓引发踩踏式反转"],
+        "must_read": [5],  # 套息交易
+        "practice": "查看 2024 年 8 月与 2026 年 7 月 USD/JPY 单日急涨行情，对照当时 VIX、美日利差、CFTC 持仓数据，识别平仓信号。",
+        "resources": [
+            {"text": "BIS：套息交易与全球金融周期", "url": "https://www.bis.org/publ/work872.pdf", "type": "official"},
+            {"text": "CFTC 持仓报告", "url": "https://www.cftc.gov/dea/futures/deacmesf.htm", "type": "official"},
+        ],
+        "related_currency": ["jpy"],
+    },
+    {
+        "step": 4, "stage": "进阶拆解", "title": "区分主动与被动",
+        "duration": "45 分钟", "difficulty": 2,
+        "task": "学会用美元指数（DXY）拆分汇率变动，区分'美元因素'与'本国因素'。",
+        "keypoints": ["美元指数 = 美元对一篮子货币（欧元57.6%、日元13.6%、英镑11.9%...）", "分解方法：USD/XXX 变动 ≈ DXY 变动 + XXX 特异性变动", "若 DXY 涨而 USD/CNY 不动 → 人民币被动贬值（篮子强）", "若 DXY 平而 USD/CNY 贬 → 人民币主动走弱"],
+        "must_read": [8, 7],  # 美元指数 + 有效汇率
+        "practice": "取最近一个季度 USD/CNY 与 DXY 的日度数据，做散点图，观察两者相关性，找出偏离较大的日期并分析原因。",
+        "resources": [
+            {"text": "ICE 美元指数构成", "url": "https://www.theice.com/publicdocs/futures_us/USDI_Index_Methodology.pdf", "type": "official"},
+        ],
+        "related_currency": ["cny", "eur"],
+    },
+    {
+        "step": 5, "stage": "进阶拆解", "title": "看懂央行操作",
+        "duration": "1.5 小时", "difficulty": 3,
+        "task": "理解中间价形成机制、逆周期因子、直接干预的工具与政策意图。",
+        "keypoints": ["中间价 = 前收盘价 + 篮子货币变动 + 逆周期因子", "干预手段：即期市场买卖、外汇掉期、离岸流动性收紧", "干预信号：中间价显著偏离市场预期、官员发声、掉期点异动", "有效性：短期有效、中期难敌基本面趋势"],
+        "must_read": [9, 10],  # 央行干预 + 中间价制度
+        "practice": "收集近一年 USD/CNY 中间价与市场价数据，计算日偏离度，识别逆周期因子激活时段，对照当时政策事件分析。",
+        "resources": [
+            {"text": "中国人民银行货币政策司", "url": "http://www.pbc.gov.cn/zhengcehuobisi/125207/125213/index.html", "type": "official"},
+            {"text": "日本央行外汇政策说明", "url": "https://www.boj.or.jp/en/about/outline/fmo.htm", "type": "official"},
+        ],
+        "related_currency": ["jpy", "cny"],
+    },
+    {
+        "step": 6, "stage": "高阶形成", "title": "掌握不可能三角",
+        "duration": "1 小时", "difficulty": 3,
+        "task": "理解'独立货币政策 + 固定汇率 + 资本自由流动'三者不可兼得的根本约束。",
+        "keypoints": ["中国选策：独立货币 + 管理浮动 + 部分资本管制", "日本选策：独立货币 + 浮动汇率 + 资本自由流动 → 受 UIP 约束", "欧元区选策：放弃独立货币（欧元化 → 无本国汇率 → 结构性分化", "政策不可能三角决定了各国汇率制度选择的天花板"],
+        "must_read": [11],  # 不可能三角
+        "practice": "用不可能三角框架，分析 2015 年'8·11'汇改、2022 年日元大幅贬值、2023 年瑞郎脱钩欧元，三件事中政策选择的约束与代价。",
+        "resources": [
+            {"text": "Mundell-Fleming 模型经典文献", "url": "https://www.imf.org/external/np/res/seminars/2000/mundell.pdf", "type": "official"},
+            {"text": "BIS 汇率制度分类报告", "url": "https://www.bis.org/statistics/er.htm", "type": "official"},
+        ],
+        "related_currency": ["eur", "chf"],
+    },
+    {
+        "step": 7, "stage": "高阶形成", "title": "形成独立判断",
+        "duration": "持续练习", "difficulty": 3,
+        "task": "综合运用前六步，基于数据与机制而非情绪，对货币走势给出有依据的观点。",
+        "keypoints": ["分析流程：利差趋势 → 美元周期 → 本国基本面 → 央行态度 → 套息/仓位", "区分'观点'与'噪音'：必须有数据支撑，避免线性外推", "记录判断与验证：建立自己的研究笔记，事后复盘校准", "永远留安全边际：黑天鹅随时发生，概率思维而非确定性思维"],
+        "must_read": [12, 6],  # 央行政策立场 + 购买力平价（长期锚）
+        "practice": "选取任一货币（日元/人民币/欧元），写一份 2 页纸的分析报告：基本面、利差、政策、仓位、风险点、未来 3 个月判断。3 个月后复盘。",
+        "resources": [
+            {"text": "对比与自由思考页（本站）", "url": "/comparison", "type": "internal"},
+            {"text": "FRED 数据主页（一站式数据）", "url": "https://fred.stlouisfed.org/", "type": "official"},
+        ],
+        "related_currency": ["jpy", "cny", "eur", "gbp", "aud", "chf", "usd"],
+    },
+]
+
+LEARNING_STAGES = [
+    {"key": "入门筑基", "color": "blue", "steps": [1, 2], "desc": "建立语言与坐标系，搞懂'谁升谁贬'与最核心的理论锚点"},
+    {"key": "进阶拆解", "color": "purple", "steps": [3, 4, 5], "desc": "拆解交易机制、汇率分解方法与央行工具箱，学会从数据中识别信号"},
+    {"key": "高阶形成", "color": "gold", "steps": [6, 7], "desc": "站在制度约束顶层建立分析框架，最终形成独立判断与复盘习惯"},
 ]
 
 # ============================================================

@@ -409,6 +409,7 @@ def basics():
         active="basics",
         concepts=DATA.FOREX_CONCEPTS,
         learning_path=DATA.LEARNING_PATH,
+        learning_stages=DATA.LEARNING_STAGES,
         currency_nav=DATA.CURRENCY_NAV,
     )
 
