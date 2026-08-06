@@ -464,6 +464,7 @@ def futures():
         contracts=DATA.FOREX_FUTURES_CONTRACTS,
         strategies=DATA.FOREX_FUTURES_STRATEGIES,
         glossary=DATA.FOREX_FUTURES_GLOSSARY,
+        margin_contracts=DATA.MARGIN_CALCULATOR_CONTRACTS,
         currency_nav=DATA.CURRENCY_NAV,
         exchanges_summary=DATA.FX_EXCHANGES_SUMMARY,
     )

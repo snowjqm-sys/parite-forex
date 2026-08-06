@@ -1417,6 +1417,78 @@ FOREX_FUTURES_CONTRACTS = [
     },
 ]
 
+# ============================================================
+# 保证金计算器 — 合约规格（结构化数值，供前端 JS 计算）
+# ============================================================
+MARGIN_CALCULATOR_CONTRACTS = [
+    {
+        "code": "6J", "name": "日元期货", "pair": "USD/JPY",
+        "exchange": "CME",
+        "contract_unit": 12500000,       # 合约面值（日元）
+        "contract_unit_label": "12,500,000 JPY",
+        "tick_size": 0.000001,           # 最小变动价位（USD/JPY 报价单位）
+        "tick_value": 12.50,             # 每个跳动点价值（美元）
+        "margin_rate": 0.02,             # 保证金比例（2%）
+        "margin_per_lot": 2500,          # 每手保证金（美元）
+        "reference_price": 159.16,       # 参考汇率
+    },
+    {
+        "code": "6E", "name": "欧元期货", "pair": "EUR/USD",
+        "exchange": "CME",
+        "contract_unit": 125000,
+        "contract_unit_label": "125,000 EUR",
+        "tick_size": 0.00005,
+        "tick_value": 6.25,
+        "margin_rate": 0.022,
+        "margin_per_lot": 2750,
+        "reference_price": 1.0912,
+    },
+    {
+        "code": "6B", "name": "英镑期货", "pair": "GBP/USD",
+        "exchange": "CME",
+        "contract_unit": 62500,
+        "contract_unit_label": "62,500 GBP",
+        "tick_size": 0.0001,
+        "tick_value": 6.25,
+        "margin_rate": 0.025,
+        "margin_per_lot": 2000,
+        "reference_price": 1.3008,
+    },
+    {
+        "code": "6A", "name": "澳元期货", "pair": "AUD/USD",
+        "exchange": "CME",
+        "contract_unit": 100000,
+        "contract_unit_label": "100,000 AUD",
+        "tick_size": 0.0001,
+        "tick_value": 10.00,
+        "margin_rate": 0.018,
+        "margin_per_lot": 1800,
+        "reference_price": 0.6591,
+    },
+    {
+        "code": "6C", "name": "加元期货", "pair": "USD/CAD",
+        "exchange": "CME",
+        "contract_unit": 100000,
+        "contract_unit_label": "100,000 CAD",
+        "tick_size": 0.0001,
+        "tick_value": 10.00,
+        "margin_rate": 0.015,
+        "margin_per_lot": 1500,
+        "reference_price": 1.3780,
+    },
+    {
+        "code": "DX", "name": "美元指数期货", "pair": "DXY",
+        "exchange": "ICE",
+        "contract_unit": 1000,
+        "contract_unit_label": "$1,000 × 指数",
+        "tick_size": 0.005,
+        "tick_value": 5.00,
+        "margin_rate": 0.016,
+        "margin_per_lot": 1650,
+        "reference_price": 102.4,
+    },
+]
+
 FOREX_FUTURES_STRATEGIES = [
     {
         "name": "套期保值（Hedging）",

@@ -326,6 +326,155 @@
     width: 200px;
 }
 .glossary-table td.def-cell { color: var(--text-light); }
+
+/* ============ 保证金计算器 ============ */
+.margin-calc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.margin-calc-header {
+    padding: 18px 22px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.margin-calc-header .mc-icon {
+    font-size: 24px;
+}
+.margin-calc-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+}
+.margin-calc-header .mc-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: auto;
+}
+.margin-calc-body {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+@media (max-width: 700px) { .margin-calc-body { grid-template-columns: 1fr; } }
+.mc-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.mc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.mc-field label {
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+.mc-field .mc-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+.mc-field select, .mc-field input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.mc-field select:focus, .mc-field input:focus {
+    border-color: var(--primary);
+}
+.mc-contract-info {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+}
+.mc-contract-info .mci-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.mc-contract-info .mci-label {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+.mc-contract-info .mci-value {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    font-family: 'SF Mono', monospace;
+}
+.mc-results {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.mc-result-card {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 16px 20px;
+    border-left: 4px solid var(--border);
+}
+.mc-result-card.primary {
+    border-left-color: var(--primary);
+    background: rgba(88, 166, 255, 0.06);
+}
+.mc-result-card.leverage {
+    border-left-color: var(--accent-orange);
+}
+.mc-result-card.risk {
+    border-left-color: var(--accent-jpy);
+}
+.mc-result-card.profit {
+    border-left-color: var(--accent-cny);
+}
+.mc-result-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+.mc-result-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Consolas', monospace;
+}
+.mc-result-value.green { color: var(--accent-cny); }
+.mc-result-value.red { color: var(--accent-jpy); }
+.mc-result-value.blue { color: var(--primary); }
+.mc-result-value.orange { color: var(--accent-orange); }
+.mc-result-detail {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+.mc-warning {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 10px 14px;
+    background: rgba(255, 107, 107, 0.06);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-jpy);
+    line-height: 1.6;
+}
 </style>
 {% endblock %}
 
@@ -447,6 +596,195 @@
     </div>
 </div>
 {% endfor %}
+
+<!-- ============ 保证金计算器 ============ -->
+<h2 class="section-title">保证金计算器</h2>
+<div class="margin-calc">
+    <div class="margin-calc-header">
+        <span class="mc-icon">🧮</span>
+        <h3>期货保证金与盈亏计算器</h3>
+        <span class="mc-sub">实时计算 · 仅供参考</span>
+    </div>
+    <div class="margin-calc-body">
+        <!-- 左侧：输入区 -->
+        <div class="mc-inputs">
+            <div class="mc-field">
+                <label>选择合约</label>
+                <select id="mc-contract">
+                    {% for c in margin_contracts %}
+                    <option value="{{ c.code }}"
+                        data-unit="{{ c.contract_unit }}"
+                        data-unit-label="{{ c.contract_unit_label }}"
+                        data-tick-size="{{ c.tick_size }}"
+                        data-tick-value="{{ c.tick_value }}"
+                        data-margin-rate="{{ c.margin_rate }}"
+                        data-margin-per-lot="{{ c.margin_per_lot }}"
+                        data-ref-price="{{ c.reference_price }}"
+                    >{{ c.code }} {{ c.name }} ({{ c.pair }}) — {{ c.exchange }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mc-contract-info" id="mc-contract-info">
+                <!-- JS 动态填充 -->
+            </div>
+
+            <div class="mc-field">
+                <label>交易手数</label>
+                <input type="number" id="mc-lots" value="1" min="1" step="1" />
+                <span class="mc-hint">1 手 = 1 个标准合约</span>
+            </div>
+
+            <div class="mc-field">
+                <label>开仓价格</label>
+                <input type="number" id="mc-entry-price" value="" step="0.0001" />
+                <span class="mc-hint">默认填入参考汇率，可自行修改</span>
+            </div>
+
+            <div class="mc-field">
+                <label>平仓价格（可选，计算盈亏用）</label>
+                <input type="number" id="mc-exit-price" value="" step="0.0001" />
+                <span class="mc-hint">留空则只计算保证金和杠杆</span>
+            </div>
+
+            <div class="mc-field">
+                <label>方向</label>
+                <select id="mc-direction">
+                    <option value="long">做多（Long）</option>
+                    <option value="short">做空（Short）</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 右侧：结果区 -->
+        <div class="mc-results">
+            <div class="mc-result-card primary">
+                <div class="mc-result-label">所需保证金（总）</div>
+                <div class="mc-result-value blue" id="mc-total-margin">$0.00</div>
+                <div class="mc-result-detail" id="mc-margin-detail"></div>
+            </div>
+
+            <div class="mc-result-card leverage">
+                <div class="mc-result-label">实际杠杆倍数</div>
+                <div class="mc-result-value orange" id="mc-leverage">0x</div>
+                <div class="mc-result-detail" id="mc-leverage-detail"></div>
+            </div>
+
+            <div class="mc-result-card profit" id="mc-pnl-card" style="display:none;">
+                <div class="mc-result-label">盈亏金额</div>
+                <div class="mc-result-value" id="mc-pnl">$0.00</div>
+                <div class="mc-result-detail" id="mc-pnl-detail"></div>
+            </div>
+
+            <div class="mc-result-card risk" id="mc-liquidation-card" style="display:none;">
+                <div class="mc-result-label">预估强平价格（保证金归零）</div>
+                <div class="mc-result-value red" id="mc-liquidation">—</div>
+                <div class="mc-result-detail" id="mc-liquidation-detail"></div>
+            </div>
+
+            <div class="mc-warning">
+                ⚠️ 以上计算基于参考保证金比例，实际保证金要求以交易所和经纪商公告为准。期货交易具有高杠杆风险，可能导致超出本金的损失。
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var select = document.getElementById('mc-contract');
+    var lotsInput = document.getElementById('mc-lots');
+    var entryInput = document.getElementById('mc-entry-price');
+    var exitInput = document.getElementById('mc-exit-price');
+    var dirSelect = document.getElementById('mc-direction');
+    var infoBox = document.getElementById('mc-contract-info');
+
+    function getContract() {
+        var opt = select.options[select.selectedIndex];
+        return {
+            code: opt.value,
+            unit: parseFloat(opt.dataset.unit),
+            unitLabel: opt.dataset.unitLabel,
+            tickSize: parseFloat(opt.dataset.tickSize),
+            tickValue: parseFloat(opt.dataset.tickValue),
+            marginRate: parseFloat(opt.dataset.marginRate),
+            marginPerLot: parseFloat(opt.dataset.marginPerLot),
+            refPrice: parseFloat(opt.dataset.refPrice),
+        };
+    }
+
+    function updateContractInfo() {
+        var c = getContract();
+        infoBox.innerHTML =
+            '<div class="mci-item"><span class="mci-label">合约面值</span><span class="mci-value">' + c.unitLabel + '</span></div>' +
+            '<div class="mci-item"><span class="mci-label">最小跳动</span><span class="mci-value">' + c.tickSize + ' = $' + c.tickValue.toFixed(2) + '</span></div>' +
+            '<div class="mci-item"><span class="mci-label">保证金比例</span><span class="mci-value">' + (c.marginRate * 100).toFixed(1) + '%</span></div>' +
+            '<div class="mci-item"><span class="mci-label">每手保证金</span><span class="mci-value">$' + c.marginPerLot.toLocaleString() + '</span></div>';
+        if (!entryInput.value) entryInput.value = c.refPrice;
+    }
+
+    function calc() {
+        var c = getContract();
+        var lots = parseFloat(lotsInput.value) || 0;
+        var entry = parseFloat(entryInput.value) || 0;
+        var exit = parseFloat(exitInput.value);
+        var dir = dirSelect.value;
+
+        // 保证金
+        var totalMargin = c.marginPerLot * lots;
+        document.getElementById('mc-total-margin').textContent = '$' + totalMargin.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('mc-margin-detail').textContent =
+            lots + ' 手 × $' + c.marginPerLot.toLocaleString() + '/手 · 保证金率 ' + (c.marginRate * 100).toFixed(1) + '%';
+
+        // 合约名义价值
+        var notional = c.unit * entry * lots;
+        // 杠杆
+        var leverage = totalMargin > 0 ? notional / totalMargin : 0;
+        document.getElementById('mc-leverage').textContent = leverage.toFixed(1) + 'x';
+        document.getElementById('mc-leverage-detail').textContent =
+            '名义价值 $' + notional.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' ÷ 保证金 $' + totalMargin.toLocaleString();
+
+        // 盈亏
+        var pnlCard = document.getElementById('mc-pnl-card');
+        var liqCard = document.getElementById('mc-liquidation-card');
+        if (exit && entry) {
+            pnlCard.style.display = 'block';
+            var priceDiff = dir === 'long' ? (exit - entry) : (entry - exit);
+            // 对 USD/XXX 报价（如 USD/JPY），1 个价格点 = 合约面值 × priceDiff
+            // 对 XXX/USD 报价（如 EUR/USD），1 个价格点 = 合约面值 × priceDiff
+            var pnl = c.unit * priceDiff * lots;
+            var pnlEl = document.getElementById('mc-pnl');
+            pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            pnlEl.className = 'mc-result-value ' + (pnl >= 0 ? 'green' : 'red');
+            var ticks = Math.abs(priceDiff / c.tickSize);
+            document.getElementById('mc-pnl-detail').textContent =
+                ticks.toFixed(0) + ' 个跳动点 × $' + c.tickValue.toFixed(2) + '/点 × ' + lots + ' 手';
+
+            // 强平价格（保证金归零 = 价格变动 = 保证金/合约面值）
+            liqCard.style.display = 'block';
+            var liqMove = totalMargin / (c.unit * lots);
+            var liqPrice = dir === 'long' ? entry - liqMove : entry + liqMove;
+            document.getElementById('mc-liquidation').textContent = liqPrice.toFixed(4);
+            document.getElementById('mc-liquidation-detail').textContent =
+                '价格' + (dir === 'long' ? '下跌' : '上涨') + ' ' + liqMove.toFixed(4) + ' 即触及强平线';
+        } else {
+            pnlCard.style.display = 'none';
+            liqCard.style.display = 'none';
+        }
+    }
+
+    select.addEventListener('change', function() {
+        updateContractInfo();
+        calc();
+    });
+    lotsInput.addEventListener('input', calc);
+    entryInput.addEventListener('input', calc);
+    exitInput.addEventListener('input', calc);
+    dirSelect.addEventListener('change', calc);
+
+    updateContractInfo();
+    calc();
+})();
+</script>
 
 <!-- ============ 交易策略 ============ -->
 <h2 class="section-title">交易策略</h2>
