@@ -35,6 +35,35 @@ app.secret_key = "parite-admin-secret-2026"  # 用于 session 加密
 
 
 # ============================================================
+# 缓存控制：让 Cloudflare / Vercel 边缘节点缓存 HTML 和 API 响应
+# ============================================================
+@app.after_request
+def _set_cache_headers(resp):
+    # 只对成功的 GET 请求设置缓存
+    if request.method != "GET" or resp.status_code not in (200, 301, 302):
+        return resp
+
+    path = request.path
+
+    # 页面 HTML：边缘缓存 5 分钟，浏览器缓存 2 分钟，后台异步刷新 1 天
+    if not path.startswith("/api/") and not path.startswith("/admin") and not path.startswith("/ai-config"):
+        resp.headers["Cache-Control"] = "public, max-age=120, s-maxage=300, stale-while-revalidate=86400"
+        return resp
+
+    # 实时汇率 API：边缘缓存 60 秒
+    if path.startswith("/api/ticker") or path.startswith("/api/live"):
+        resp.headers["Cache-Control"] = "public, max-age=30, s-maxage=60, stale-while-revalidate=300"
+        return resp
+
+    # 静态数据 API（历史数据、利率等）：边缘缓存 10 分钟
+    if path.startswith("/api/"):
+        resp.headers["Cache-Control"] = "public, max-age=300, s-maxage=600, stale-while-revalidate=3600"
+        return resp
+
+    return resp
+
+
+# ============================================================
 # 实时汇率多源 fallback + 重试 + 缓存 工具层
 # 优先级：Frankfurter (主) → exchangerate.host (备) → data.py 静态数据 (兜底)
 # ============================================================
