@@ -94,6 +94,7 @@
 </div>
 
 <!-- 利差对比 -->
+{% if code != 'usd' %}
 <h2 class="section-title">{{ cur.rate_context }} vs {{ cur.pair }}
     <button class="chart-toggle-btn" data-target="spread-chart" onclick="toggleChartMode(this)">🔬 专业模式</button>
 </h2>
@@ -208,6 +209,71 @@
         </tbody>
     </table>
 </div>
+{% endif %}
+
+{% else %}
+<!-- ============ 美元专属：美联储利率 + 美债收益率 ============ -->
+<h2 class="section-title">美联储利率周期</h2>
+<div class="callout info">
+    <div class="callout-title">联邦基金利率是美元的第一性驱动</div>
+    美联储联邦基金利率决定美元的融资成本和利差优势。加息周期推升美元，降息周期压制美元。当前利率 3.50-3.75%，处于 2024 年开始的降息周期中。
+</div>
+
+<!-- 美联储政策周期表 -->
+<h3 class="subsection-title">美联储政策周期一览</h3>
+<table class="data-table" id="fed-cycle-table">
+    <thead><tr><th>时期</th><th>阶段</th><th>利率区间</th><th>DXY 走势</th><th>特征</th></tr></thead>
+    <tbody></tbody>
+</table>
+
+<!-- 美联储利率走势图 -->
+<h3 class="subsection-title">联邦基金利率历史走势</h3>
+<div class="chart-box">
+    <div id="fed-rate-chart" style="width:100%;height:380px;"></div>
+</div>
+
+<!-- 美债收益率 -->
+<h2 class="section-title">美债收益率走势</h2>
+<div class="callout tip">
+    <div class="callout-title">美债收益率 = 全球资产定价之锚</div>
+    10 年期美债收益率是全球风险资产的定价基准。收益率上升→美元走强（利差扩大），收益率下降→美元走弱。2Y-10Y 利差倒挂是经济衰退的经典预警信号。
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><div class="metric-label">2Y 收益率</div><div class="metric-value" id="t-y2">—</div><div class="metric-sub">短期政策预期</div></div>
+    <div class="metric-card"><div class="metric-label">10Y 收益率</div><div class="metric-value" id="t-y10">—</div><div class="metric-sub">长期增长预期</div></div>
+    <div class="metric-card"><div class="metric-label">30Y 收益率</div><div class="metric-value" id="t-y30">—</div><div class="metric-sub">超长期通胀预期</div></div>
+    <div class="metric-card"><div class="metric-label">10Y-2Y 利差</div><div class="metric-value" id="t-spread">—</div><div class="metric-sub" id="t-spread-sub">曲线形态</div></div>
+    <div class="metric-card"><div class="metric-label">联邦基金利率</div><div class="metric-value" id="t-fed">—</div><div class="metric-sub">政策利率</div></div>
+    <div class="metric-card"><div class="metric-label">10Y vs 联邦基金</div><div class="metric-value" id="t-fed-spread">—</div><div class="metric-sub" id="t-fed-spread-sub">政策约束程度</div></div>
+</div>
+
+<h3 class="subsection-title">美债收益率历史走势图
+    <button class="chart-toggle-btn" data-target="treasury-chart" onclick="toggleChartMode(this)">🔬 专业模式</button>
+</h3>
+<div class="chart-box">
+    <div id="treasury-chart" style="width:100%;height:420px;"></div>
+</div>
+
+<!-- 美债收益率历史数据表 -->
+<h3 class="subsection-title">美债收益率年度数据</h3>
+<table class="data-table" id="treasury-table">
+    <thead><tr><th>年份</th><th>2Y</th><th>10Y</th><th>30Y</th><th>联邦基金利率</th><th>10Y-2Y 利差</th><th>备注</th></tr></thead>
+    <tbody></tbody>
+</table>
+
+<!-- 美元指数构成 -->
+<h2 class="section-title">美元指数（DXY）构成</h2>
+<div class="callout info">
+    <div class="callout-title">DXY 不是全部货币的平均</div>
+    美元指数仅由 6 种货币加权构成，欧元占比 57.6%，几乎决定了一半走势。DXY 不含人民币，不能完全反映美元对亚洲货币的强弱。
+</div>
+<div id="dxy-pie-chart" style="width:100%;height:350px;"></div>
+
+<table class="data-table" id="dxy-table">
+    <thead><tr><th>货币</th><th>国家/地区</th><th>权重</th><th>说明</th></tr></thead>
+    <tbody></tbody>
+</table>
 {% endif %}
 
 {% if cur.turning_points %}
@@ -986,7 +1052,8 @@ fetch('/api/currency/' + CODE + '/daily').then(r => r.json()).then(data => {
     renderFreqChart('daily-chart', 'simple');
 }).catch(err => { document.getElementById('daily-chart').innerHTML = '<div class="live-error">日度数据加载失败</div>'; });
 
-// 利差图 + 利差深度研究
+// 利差图 + 利差深度研究（非美元页面）
+if (CODE !== 'USD') {
 fetch('/api/rates').then(r => r.json()).then(data => {
     const yrs = data.filter(d => !d.date.includes('-')).map(d => d.date);
     const rateA = data.filter(d => !d.date.includes('-')).map(d => d[RATE_A]);
@@ -1051,6 +1118,183 @@ fetch('/api/rates').then(r => r.json()).then(data => {
         }
     });
 });
+} // end if CODE !== 'USD'
+
+// ============================================================
+// 美元专属：美联储利率 + 美债收益率 + DXY 构成
+// ============================================================
+if (CODE === 'USD') {
+var TREASURY_MODE = 'simple';
+var TREASURY_DATA = null;
+
+// 加载美联储政策周期
+fetch('/api/fed-cycles').then(r => r.json()).then(data => {
+    var tbody = document.querySelector('#fed-cycle-table tbody');
+    if (!tbody) return;
+    tbody.innerHTML = data.map(function(c) {
+        return '<tr><td><strong>' + c.period + '</strong></td><td>' + c.phase +
+            '</td><td>' + c.rate_range + '</td><td>DXY ' + c.dxy + '</td><td>' + c.note + '</td></tr>';
+    }).join('');
+});
+
+// 加载美联储利率走势
+fetch('/api/fed-rate').then(r => r.json()).then(data => {
+    var dates = data.map(function(d){return d.date;});
+    var rates = data.map(function(d){return d.rate;});
+    var actions = data.map(function(d){return d.action + '：' + d.note;});
+    var colors = data.map(function(d) {
+        if (d.action.includes('降息')) return '#3fb950';
+        if (d.action.includes('加息')) return '#ff6b6b';
+        return '#8b949e';
+    });
+    Plotly.react('fed-rate-chart', [{
+        x: dates, y: rates, type: 'scatter', mode: 'lines+markers',
+        line: { color: '#58a6ff', width: 2.5, shape: 'hv' },
+        marker: { size: 10, color: colors, line: { color: '#fff', width: 1 } },
+        text: actions, hoverinfo: 'x+y+text'
+    }], {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: '美联储联邦基金利率（2008-2026）', font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d', tickangle: -45, automargin: true },
+        yaxis: { gridcolor: '#30363d', title: '利率 (%)', ticksuffix: '%', range: [-0.5, 6] },
+        margin: { t: 50, b: 70 },
+        annotations: [{
+            x: dates[dates.length - 1], y: rates[rates.length - 1],
+            text: '当前 ' + rates[rates.length - 1] + '%', showarrow: true,
+            arrowcolor: '#f0883e', font: { color: '#f0883e', size: 11 }, ax: -40, ay: -30
+        }]
+    }, { responsive: true });
+});
+
+// 加载美债收益率
+fetch('/api/treasury').then(r => r.json()).then(data => {
+    TREASURY_DATA = data;
+    var years = data.map(function(d){return d.year;});
+    var y2 = data.map(function(d){return d.y2;});
+    var y10 = data.map(function(d){return d.y10;});
+    var y30 = data.map(function(d){return d.y30;});
+    var fedRate = data.map(function(d){return d.fed_rate;});
+
+    // 指标卡片
+    var last = data[data.length - 1];
+    document.getElementById('t-y2').textContent = last.y2.toFixed(2) + '%';
+    document.getElementById('t-y10').textContent = last.y10.toFixed(2) + '%';
+    document.getElementById('t-y30').textContent = last.y30.toFixed(2) + '%';
+    var spread10y2y = last.y10 - last.y2;
+    document.getElementById('t-spread').textContent = (spread10y2y >= 0 ? '+' : '') + spread10y2y.toFixed(2) + '%';
+    document.getElementById('t-spread-sub').textContent = spread10y2y > 0 ? '正常曲线' : spread10y2y < -0.1 ? '倒挂（衰退预警）' : '接近平坦';
+    document.getElementById('t-fed').textContent = last.fed_rate.toFixed(2) + '%';
+    var fedSpread = last.y10 - last.fed_rate;
+    document.getElementById('t-fed-spread').textContent = (fedSpread >= 0 ? '+' : '') + fedSpread.toFixed(2) + '%';
+    document.getElementById('t-fed-spread-sub').textContent = fedSpread > 0 ? '利率低于中性' : '利率高于中性（紧缩）';
+
+    // 数据表
+    var tbody = document.querySelector('#treasury-table tbody');
+    if (tbody) {
+        tbody.innerHTML = data.slice().reverse().map(function(d) {
+            var s = d.y10 - d.y2;
+            var sClass = s < -0.1 ? 'dir-narrowing' : 'dir-flat';
+            return '<tr><td>' + d.year + '</td><td>' + d.y2.toFixed(2) + '%</td><td>' + d.y10.toFixed(2) +
+                '%</td><td>' + d.y30.toFixed(2) + '%</td><td>' + d.fed_rate.toFixed(2) + '%</td><td class="' + sClass +
+                '">' + (s >= 0 ? '+' : '') + s.toFixed(2) + '%</td><td>' + d.note + '</td></tr>';
+        }).join('');
+    }
+
+    renderTreasuryChart('simple');
+});
+
+function renderTreasuryChart(mode) {
+    if (!TREASURY_DATA) return;
+    var data = TREASURY_DATA;
+    var years = data.map(function(d){return d.year;});
+    var y2 = data.map(function(d){return d.y2;});
+    var y10 = data.map(function(d){return d.y10;});
+    var y30 = data.map(function(d){return d.y30;});
+    var fedRate = data.map(function(d){return d.fed_rate;});
+
+    var traces = [
+        { x: years, y: y2, name: '2Y', type: 'scatter', mode: 'lines+markers', line: { color: '#58a6ff', width: 2 }, marker: { size: 6 } },
+        { x: years, y: y10, name: '10Y', type: 'scatter', mode: 'lines+markers', line: { color: '#f0883e', width: 2.5 }, marker: { size: 7 } },
+        { x: years, y: y30, name: '30Y', type: 'scatter', mode: 'lines+markers', line: { color: '#bc8cff', width: 2 }, marker: { size: 6 } },
+        { x: years, y: fedRate, name: '联邦基金利率', type: 'scatter', mode: 'lines', line: { color: '#3fb950', width: 2, dash: 'dash' } }
+    ];
+
+    var layout = {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: '美债收益率与联邦基金利率', font: { color: '#e6edf3' } },
+        xaxis: { gridcolor: '#30363d', tickmode: 'array', tickvals: years, ticktext: years, tickangle: -45, automargin: true },
+        yaxis: { gridcolor: '#30363d', title: '收益率 (%)', ticksuffix: '%' },
+        legend: { orientation: 'h', y: 1.12 },
+        margin: { t: 60, b: 70 }
+    };
+
+    if (mode === 'pro') {
+        layout = _proLayout({
+            title: { text: '美债收益率与联邦基金利率 · 专业版', font: { color: '#e6edf3' } },
+            xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'array', tickvals: years, ticktext: years,
+                     tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(88,166,255,0.6)', spikemode: 'across' },
+            yaxis: _proYaxis('收益率 (%)'),
+            legend: { orientation: 'h', y: 1.12 },
+            annotations: [{
+                x: 0.02, y: 0.98, xref: 'paper', yref: 'paper', xanchor: 'left', yanchor: 'top',
+                text: '2Y-10Y 利差反映曲线形态<br>10Y-联邦基金利率反映政策约束程度<br>利差倒挂（2Y>10Y）是衰退预警信号',
+                font: { color: '#c9d1d9', size: 11 }, showarrow: false,
+                bgcolor: 'rgba(28,33,40,0.85)', bordercolor: '#30363d', borderwidth: 1
+            }],
+            shapes: [{ type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 0, y1: 0,
+                       line: { color: '#555', width: 1 } }],
+            margin: { t: 80, b: 80, l: 70, r: 40 }
+        });
+    }
+
+    Plotly.react('treasury-chart', traces, layout, { responsive: true, displayModeBar: mode === 'pro' });
+}
+
+// 覆盖 toggleChartMode 以支持 treasury-chart
+var _origToggle = toggleChartMode;
+toggleChartMode = function(btn) {
+    var id = btn.getAttribute('data-target');
+    if (id === 'treasury-chart') {
+        var isPro = btn.classList.toggle('active');
+        btn.innerHTML = isPro ? '📊 简化模式' : '🔬 专业模式';
+        renderTreasuryChart(isPro ? 'pro' : 'simple');
+    } else {
+        _origToggle(btn);
+    }
+};
+
+// DXY 构成饼图 + 表格
+fetch('/api/dxy-components').then(r => r.json()).then(data => {
+    var labels = data.map(function(d){return d.currency + ' (' + d.country + ')';});
+    var values = data.map(function(d){return d.weight;});
+    var colors = ['#58a6ff', '#ff6b6b', '#bc8cff', '#f0883e', '#3fb950', '#a5d6ff'];
+
+    Plotly.react('dxy-pie-chart', [{
+        labels: labels, values: values, type: 'pie',
+        marker: { colors: colors, line: { color: '#1c2128', width: 2 } },
+        textinfo: 'label+percent', textfont: { color: '#e6edf3', size: 11 },
+        hoverinfo: 'label+value+percent',
+        hole: 0.4
+    }], {
+        paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
+        font: { color: '#e6edf3', size: 12 },
+        title: { text: '美元指数货币权重', font: { color: '#e6edf3' } },
+        margin: { t: 50, b: 30, l: 20, r: 20 },
+        showlegend: true,
+        legend: { orientation: 'h', y: -0.1, font: { size: 10 } }
+    }, { responsive: true });
+
+    var tbody = document.querySelector('#dxy-table tbody');
+    if (tbody) {
+        tbody.innerHTML = data.map(function(d) {
+            return '<tr><td><strong>' + d.currency + '</strong></td><td>' + d.country +
+                '</td><td>' + d.weight + '%</td><td>' + d.note + '</td></tr>';
+        }).join('');
+    }
+});
+} // end if CODE === 'USD'
 
 // ============================================================
 // 多货币对比（归一化）+ 导出 PNG

@@ -738,6 +738,30 @@ def api_regression():
     return jsonify(result)
 
 
+@app.route("/api/fed-rate")
+def api_fed_rate():
+    """美联储利率历史"""
+    return jsonify(DATA.FED_RATE_HISTORY)
+
+
+@app.route("/api/treasury")
+def api_treasury():
+    """美债收益率历史"""
+    return jsonify(DATA.US_TREASURY_HISTORY)
+
+
+@app.route("/api/dxy-components")
+def api_dxy_components():
+    """美元指数构成"""
+    return jsonify(DATA.DXY_COMPONENTS)
+
+
+@app.route("/api/fed-cycles")
+def api_fed_cycles():
+    """美联储政策周期"""
+    return jsonify(DATA.FED_POLICY_CYCLES)
+
+
 # ============================================================
 # 实时汇率代理 API（多源 fallback：Frankfurter → exchangerate.host → 静态兜底）
 # ============================================================
