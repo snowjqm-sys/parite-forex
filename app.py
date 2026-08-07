@@ -38,9 +38,14 @@ app.secret_key = "parite-admin-secret-2026"  # 用于 session 加密
 # 缓存控制：让 Cloudflare / Vercel 边缘节点缓存 HTML + 静态数据
 # 同时保证：实时汇率 API / 所有 POST / 管理后台 永不被缓存
 #
+# Vercel 缓存头优先级（官方文档）：
+#   Vercel-CDN-Cache-Control > CDN-Cache-Control > Cache-Control
+# Function 返回的头 > vercel.json 配置的头（同名时）
+#
 # 未来新增路由默认规则：
-#   · 纯只读展示页面 → @cache_html() 装饰器 或 走 after_request 默认策略
-#   · 实时数据 API   → @cache_api_static() / @cache_api_live() / @no_cache()
+#   · 纯只读展示页面 → 走 after_request 默认策略（自动缓存 5min）
+#   · 实时数据 API   → 默认 no-cache（不在白名单里就自动不缓存）
+#   · 静态数据 API   → 加到 _STATIC_API_PREFIXES 白名单
 #   · 任何 POST/PUT  → 统一走 after_request，强制 no-store
 # ============================================================
 
@@ -62,49 +67,62 @@ _STATIC_API_PREFIXES = (
     "/api/regression",          # OLS 回归结果（同上）
 )
 
+
+def _apply_cache(resp, vercel_cdn, cdn_cache, client_cache):
+    """统一设置三层缓存头。
+
+    vercel_cdn: Vercel-CDN-Cache-Control 值（Vercel 边缘缓存，最高优先级，不透传给客户端）
+    cdn_cache:  CDN-Cache-Control 值（Cloudflare 等中间 CDN 缓存）
+    client_cache: Cache-Control 值（浏览器缓存，透传给客户端）
+    """
+    resp.headers["Vercel-CDN-Cache-Control"] = vercel_cdn
+    resp.headers["CDN-Cache-Control"] = cdn_cache
+    resp.headers["Cache-Control"] = client_cache
+    return resp
+
+
 @app.after_request
 def _set_cache_headers(resp):
     # 1) 非 GET 的请求（POST/PUT/PATCH/DELETE）一律不缓存
     if request.method != "GET":
-        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        resp.headers["Pragma"] = "no-cache"
-        return resp
+        return _apply_cache(resp, "no-store", "no-store",
+                            "no-store, no-cache, must-revalidate, max-age=0")
 
     # 2) 非 2xx/3xx 的响应一律不缓存
     if resp.status_code >= 400:
-        resp.headers["Cache-Control"] = "no-store, no-cache"
-        return resp
+        return _apply_cache(resp, "no-store", "no-store", "no-store, no-cache")
 
     path = request.path
 
     # 3) 管理员 / 配置相关：永不缓存
     if path.startswith("/admin") or path.startswith("/ai-config"):
-        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        return resp
+        return _apply_cache(resp, "no-store", "no-store",
+                            "no-store, no-cache, must-revalidate, max-age=0")
 
-    # 4) 实时 / 写入类 API：明确 no-cache（浏览器不存，Cloudflare 不存）
+    # 4) 实时 / 写入类 API：明确 no-cache（浏览器不存，Vercel 不存，Cloudflare 不存）
     for prefix in _NO_CACHE_API_PREFIXES:
         if path.startswith(prefix):
-            resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-            resp.headers["Pragma"] = "no-cache"
-            return resp
+            return _apply_cache(resp, "no-store", "no-store",
+                                "no-store, no-cache, must-revalidate, max-age=0")
 
     # 5) 静态数据 API（历史 / 利率 / 回归等）：边缘 10 分钟 + stale-while
     for prefix in _STATIC_API_PREFIXES:
         if path.startswith(prefix):
-            resp.headers["Cache-Control"] = "public, max-age=300, s-maxage=600, stale-while-revalidate=3600"
-            return resp
+            return _apply_cache(resp,
+                                "s-maxage=600, stale-while-revalidate=3600",
+                                "s-maxage=600, stale-while-revalidate=3600",
+                                "public, max-age=300, s-maxage=600, stale-while-revalidate=3600")
 
     # 6) 剩下的 /api/* 路径（以后新增的 API，默认保守 no-cache，避免误缓存实时数据）
     if path.startswith("/api/"):
-        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        resp.headers["Pragma"] = "no-cache"
-        return resp
+        return _apply_cache(resp, "no-store", "no-store",
+                            "no-store, no-cache, must-revalidate, max-age=0")
 
     # 7) 其他所有路径（HTML 页面）：边缘 5 分钟 + stale-while 1 天
-    #    注：static/ 下的 CSS/JS/图片 由 Flask 默认带缓存头，Cloudflare 自己的默认规则也会缓存静态资源
-    resp.headers["Cache-Control"] = "public, max-age=120, s-maxage=300, stale-while-revalidate=86400"
-    return resp
+    return _apply_cache(resp,
+                        "s-maxage=300, stale-while-revalidate=86400",
+                        "s-maxage=300, stale-while-revalidate=86400",
+                        "public, max-age=120, s-maxage=300, stale-while-revalidate=86400")
 
 
 # ============================================================
