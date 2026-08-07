@@ -110,8 +110,8 @@ document.getElementById('load-btn').addEventListener('click', () => {
             paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
             font: { color: '#e6edf3', size: 12 },
             title: { text: '历史走势', font: {color:'#e6edf3'} },
-            xaxis: { gridcolor: '#30363d' }, yaxis: { gridcolor: '#30363d' },
-            margin: { t: 50, b: 50 }
+            xaxis: { gridcolor: '#30363d', tickmode: 'array', tickvals: data.map(d=>d.date), ticktext: data.map(d=>d.date), tickangle: -45, automargin: true }, yaxis: { gridcolor: '#30363d' },
+            margin: { t: 50, b: 70 }
         }, { responsive: true });
     });
 });

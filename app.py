@@ -83,8 +83,8 @@ def _apply_cache(resp, vercel_cdn, cdn_cache, client_cache):
 
 @app.after_request
 def _set_cache_headers(resp):
-    # 1) 非 GET 的请求（POST/PUT/PATCH/DELETE）一律不缓存
-    if request.method != "GET":
+    # 1) 非 GET/HEAD 的请求（POST/PUT/PATCH/DELETE）一律不缓存
+    if request.method not in ("GET", "HEAD"):
         return _apply_cache(resp, "no-store", "no-store",
                             "no-store, no-cache, must-revalidate, max-age=0")
 
@@ -559,6 +559,35 @@ def futures():
         margin_contracts=DATA.MARGIN_CALCULATOR_CONTRACTS,
         currency_nav=DATA.CURRENCY_NAV,
         exchanges_summary=DATA.FX_EXCHANGES_SUMMARY,
+    )
+
+
+@app.route("/bond")
+def bond():
+    """债券板块：收益率曲线、利差、市场总览"""
+    return render_template(
+        "bond.html",
+        active="bond",
+        yield_curve=DATA.BOND_YIELD_CURVE,
+        yield_history=DATA.BOND_YIELD_HISTORY_10Y,
+        spreads=DATA.BOND_SPREADS,
+        market_overview=DATA.BOND_MARKET_OVERVIEW,
+        concepts=DATA.BOND_CONCEPTS,
+        currency_nav=DATA.CURRENCY_NAV,
+    )
+
+
+@app.route("/credit")
+def credit():
+    """信贷板块：无风险利率、信用利差、中国信用债"""
+    return render_template(
+        "credit.html",
+        active="credit",
+        risk_free_rates=DATA.RISK_FREE_RATES,
+        credit_spreads=DATA.CREDIT_SPREADS,
+        china_credit=DATA.CHINA_CREDIT_BONDS,
+        concepts=DATA.CREDIT_CONCEPTS,
+        currency_nav=DATA.CURRENCY_NAV,
     )
 
 

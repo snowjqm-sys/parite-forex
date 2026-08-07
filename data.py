@@ -138,7 +138,7 @@ CURRENCIES = {
             {"title": "日本央行政策与全球背离", "weight": "结构性因素", "mechanism": "2016-2023年BOJ坚持负利率与YCC，而全球央行2022-2023年激进加息。即使2024年结束负利率，加息也极缓慢（0→0.75%）。背后顾虑：日本国债占GDP约260%，加息大幅推升偿债成本；担心抑制脆弱复苏；通胀预期未稳固。", "key_point": "'不敢加息'是日元软弱的深层结构性原因，也是判断反转时点的关键。", "links": [{"text": "BOJ 货币政策声明", "url": "https://www.boj.or.jp/en/mopo/mpmsche_ol/index.htm", "type": "official"}, {"text": "日本内阁府财政", "url": "https://www.cao.go.jp/about/content/000589044.pdf", "type": "article"}]},
             {"title": "套息交易规模庞大", "weight": "放大器", "mechanism": "全球大量资金借入低息日元投资美元资产。据BIS和IMF估算，日元套息仓位达万亿美元级别。建立仓位时卖出日元→贬值；平仓时买入日元→急升，常形成踩踏。这解释了日元'缓贬急升'的不对称特征。", "key_point": "套息交易让贬值自我强化，但埋下急速反转隐患。", "links": [{"text": "BIS 季度回顾", "url": "https://www.bis.org/publ/qtrpdf/r_qt2403z.htm", "type": "article"}, {"text": "CFTC 持仓报告", "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm", "type": "official"}]},
             {"title": "贸易条件恶化", "weight": "次要因素", "mechanism": "日本能源自给率仅约12%，高度依赖进口。日元贬值推高进口成本，导致持续贸易逆差（2022-2024年多个月份逆差），形成'贬值→逆差→再贬值'循环。与传统'贬值促出口'认知相反。", "key_point": "贸易逆差削弱日元基本面支撑，需结合能源价格综合判断。", "links": [{"text": "日本财务省贸易统计", "url": "https://www.mof.go.jp/english/policy/reference/trade_statistics/index.htm", "type": "official"}]},
-            {"title": "美日联合干预的新变量", "weight": "近期事件", "mechanism": "2026年7月30-31日美日联合干预，USD/JPY从163.86回落至159.16，两天升值约4.7%。美国参与的政治信号表明'无序贬值'触及美方容忍底线。历史上美国直接参与干预极为罕见（上次是2011年福岛后G7行动）。", "key_point": "干预改变短期节奏但不改变利差这一根本驱动。", "links": [{"text": "美国财政部外汇报告", "url": "https://home.treasury.gov/policy-issues/international/exchange-rate-policies", "type": "official"}, {"text": "日本财务省干预", "url": "https://www.mof.go.jp/english/policy/international_policy/reference/fe_intervention/", "type": "official"}]},
+            {"title": "美日联合干预的新变量", "weight": "近期事件", "mechanism": "2026年7月30-31日美日联合干预，USD/JPY从163.86回落至159.16，两天升值约4.7%。美国参与的政治信号表明'无序贬值'触及美方容忍底线。历史上美国直接参与干预极为罕见（上次是2011年福岛后G7行动）。\n\n【美债背景·辅助注释】美国参与联合干预的深层顾虑之一，是日本持有美债的规模与潜在抛售压力。据美国财政部 TIC 报告（2026-07-14 发布，截至 2026-05），日本持有美债约 1.11 万亿美元，为海外最大持有国，约占海外总持仓（9.37 万亿）的 12%。日元持续贬值时，日本财务省干预汇率需动用美元储备——而美元的重要来源正是抛售美债。2026 年 5 月日本单月减持美债 667.5 亿美元，创 2022 年 9 月以来最大单月减持纪录。若日本为稳汇率而大规模抛售美债，将推升美债收益率（10 年期收益率每升 10bp，美国年化利息支出约增加 350 亿美元），加剧美国财政压力；同时推高全球借贷成本，引发跨资产重定价。这正是美国罕见参与联合干预的隐性动机——通过协同表态稳住日元，间接缓解美债抛售压力。", "key_point": "干预改变短期节奏但不改变利差这一根本驱动；但美债持仓博弈是美方参与的隐性筹码。", "links": [{"text": "美国财政部外汇报告", "url": "https://home.treasury.gov/policy-issues/international/exchange-rate-policies", "type": "official"}, {"text": "日本财务省干预", "url": "https://www.mof.go.jp/english/policy/international_policy/reference/fe_intervention/", "type": "official"}, {"text": "美国财政部 TIC 数据", "url": "https://ticdata.treasury.gov/Publish/mfh.txt", "type": "official"}]},
             {"title": "避险属性减弱", "weight": "情境因素", "mechanism": "传统上日元被视为避险货币，但2022-2026年这一属性明显减弱：即使地缘冲突频发，日元仍持续贬值。原因：经常账户恶化削弱避险基础；套息规模过大掩盖避险买盘；BOJ超宽松政策使日元不再被视为安全港。", "key_point": "避险属性减弱是近年新现象，不能机械套用传统框架。", "links": [{"text": "BIS 避险货币研究", "url": "https://www.bis.org/publ/work1060.htm", "type": "article"}]},
         ],
         "questions": [
@@ -1844,4 +1844,408 @@ FX_EXCHANGES_SUMMARY = [
     {"code": "CME", "name": "CME Group", "label": "美国 · 全球基准", "desc": "外汇期货发源地，G10 货币定价基准，日均 98 万份"},
     {"code": "HKEX", "name": "HKEX 香港交易所", "label": "香港 · 离岸人民币枢纽", "desc": "全球唯一人民币实物交割期货，1.13 万亿 CNH 存款池"},
     {"code": "SGX", "name": "SGX 新加坡交易所", "label": "新加坡 · 亚洲新兴市场", "desc": "亚洲第一金融期货交易所，24 种外汇期货，年成交 +49.7%"},
+]
+
+
+# ============================================================
+# 债券板块数据
+# 数据来源：investing.com 实时行情、中债估值中心、FRED、
+#           worldgovernmentbonds.com、BOJ、ECB、美国财政部
+# 数据更新：2026-08-07
+# ============================================================
+
+# ---- 主要经济体国债收益率（实时快照）----
+BOND_YIELD_CURVE = {
+    "as_of": "2026-08-07",
+    "source": "investing.com / 中债估值中心 / worldgovernmentbonds.com",
+    "countries": [
+        {
+            "code": "US", "name": "美国", "currency": "USD",
+            "central_bank": "美联储", "policy_rate": "3.50-3.75%",
+            "yields": {"2Y": 4.066, "5Y": 4.162, "10Y": 4.133, "30Y": 4.978},
+            "source": "investing.com",
+            "note": "收益率曲线正常化，10Y-2Y 期限利差约 7bp（轻微正挂）",
+        },
+        {
+            "code": "CN", "name": "中国", "currency": "CNY",
+            "central_bank": "人民银行", "policy_rate": "1.50%（7天逆回购）",
+            "yields": {"2Y": 1.25, "5Y": 1.58, "10Y": 1.71, "30Y": 2.23},
+            "source": "中债估值中心（2026-08-05）",
+            "note": "10Y 处历史低位，30Y 特别国债 2.23% 受配置盘追捧",
+        },
+        {
+            "code": "JP", "name": "日本", "currency": "JPY",
+            "central_bank": "日本银行", "policy_rate": "0.75%",
+            "yields": {"2Y": 0.62, "5Y": 1.08, "10Y": 2.682, "30Y": 3.15},
+            "source": "investing.com / BOJ",
+            "note": "10Y 达 2.68%，创三十年高位；BOJ 缩减购债推升长端",
+        },
+        {
+            "code": "DE", "name": "德国", "currency": "EUR",
+            "central_bank": "欧洲央行", "policy_rate": "2.15%",
+            "yields": {"2Y": 2.76, "5Y": 2.85, "10Y": 3.117, "30Y": 3.42},
+            "source": "worldgovernmentbonds.com / CEIC（2026-08-06）",
+            "note": "Bund 10Y 突破 3%，ECB 降息周期中长端反升",
+        },
+        {
+            "code": "GB", "name": "英国", "currency": "GBP",
+            "central_bank": "英格兰银行", "policy_rate": "3.75%",
+            "yields": {"2Y": 3.95, "5Y": 3.92, "10Y": 4.08, "30Y": 4.65},
+            "source": "UK DMO / investing.com",
+            "note": "Gilt 10Y 约 4.08%，财政担忧推升期限溢价",
+        },
+    ],
+}
+
+# ---- 国债 10Y 收益率历史走势（年度均值，%）----
+BOND_YIELD_HISTORY_10Y = [
+    {"year": "2010", "us": 3.22, "cn": 3.41, "jp": 1.20, "de": 2.74, "gb": 3.41},
+    {"year": "2011", "us": 2.78, "cn": 3.86, "jp": 1.05, "de": 2.61, "gb": 3.10},
+    {"year": "2012", "us": 1.80, "cn": 3.46, "jp": 0.78, "de": 1.54, "gb": 2.23},
+    {"year": "2013", "us": 2.35, "cn": 3.56, "jp": 0.68, "de": 1.56, "gb": 2.40},
+    {"year": "2014", "us": 2.54, "cn": 4.00, "jp": 0.55, "de": 1.10, "gb": 2.77},
+    {"year": "2015", "us": 2.14, "cn": 3.32, "jp": 0.38, "de": 0.58, "gb": 2.02},
+    {"year": "2016", "us": 1.84, "cn": 2.86, "jp": -0.05, "de": 0.06, "gb": 1.42},
+    {"year": "2017", "us": 2.33, "cn": 3.53, "jp": 0.05, "de": 0.39, "gb": 1.32},
+    {"year": "2018", "us": 2.91, "cn": 3.58, "jp": 0.08, "de": 0.45, "gb": 1.48},
+    {"year": "2019", "us": 2.14, "cn": 3.17, "jp": -0.04, "de": -0.27, "gb": 1.22},
+    {"year": "2020", "us": 0.89, "cn": 2.96, "jp": 0.03, "de": -0.49, "gb": 0.64},
+    {"year": "2021", "us": 1.45, "cn": 2.88, "jp": 0.02, "de": -0.34, "gb": 0.83},
+    {"year": "2022", "us": 2.95, "cn": 2.77, "jp": 0.22, "de": 1.07, "gb": 2.01},
+    {"year": "2023", "us": 3.96, "cn": 2.76, "jp": 0.59, "de": 2.39, "gb": 3.95},
+    {"year": "2024", "us": 4.21, "cn": 2.27, "jp": 0.95, "de": 2.36, "gb": 4.17},
+    {"year": "2025", "us": 4.05, "cn": 1.85, "jp": 1.65, "de": 2.72, "gb": 4.35},
+    {"year": "2026", "us": 4.13, "cn": 1.71, "jp": 2.68, "de": 3.12, "gb": 4.08},
+]
+
+# ---- 关键利差监控 ----
+BOND_SPREADS = {
+    "as_of": "2026-08-07",
+    "term_spreads": [
+        {"name": "美国 10Y-2Y", "value_bp": 7, "signal": "正常化", "note": "曲线倒挂已解除，衰退信号消退"},
+        {"name": "美国 10Y-3M", "value_bp": 63, "signal": "正挂", "note": "短端接近政策利率，长端略高"},
+        {"name": "中国 10Y-2Y", "value_bp": 46, "signal": "正挂", "note": "曲线陡峭，反映宽松预期"},
+        {"name": "日本 10Y-2Y", "value_bp": 206, "signal": "陡峭", "note": "BOJ 缩减购债推升长端，曲线急剧陡峭化"},
+        {"name": "德国 10Y-2Y", "value_bp": 36, "signal": "正挂", "note": "ECB 降息周期中短端下行更快"},
+    ],
+    "cross_country_spreads": [
+        {"name": "美中 10Y 利差", "value_bp": 242, "signal": "美高于中", "note": "中美利差倒挂持续，但较 2023 年 360bp 峰值收窄"},
+        {"name": "美德 10Y 利差", "value_bp": 101, "signal": "美高于德", "note": "Transatlantic 利差收窄，ECB 降息节奏快于美联储"},
+        {"name": "美日 10Y 利差", "value_bp": 145, "signal": "美高于日", "note": "JGB 10Y 飙升至 2.68%，利差较 2023 年 340bp 大幅收窄"},
+    ],
+}
+
+# ---- 全球债券市场总览 ----
+BOND_MARKET_OVERVIEW = {
+    "as_of": "2026-08-07",
+    "source": "BIS / SIFMA / ICMA / 中国中央结算公司",
+    "total_size": "约 140 万亿美元",
+    "stats": [
+        {"label": "全球债券存量", "value": "约 140 万亿 USD", "note": "BIS 2025Q4 统计，含主权+公司债"},
+        {"label": "美国债券市场", "value": "约 55 万亿 USD", "note": "SIFMA 2025Q4，全球最大单一市场"},
+        {"label": "中国债券市场", "value": "约 22 万亿 USD（160 万亿 CNY）", "note": "中央结算公司 2026-06，全球第二大"},
+        {"label": "日本债券市场", "value": "约 11 万亿 USD", "note": "BIS 2025Q4"},
+        {"label": "欧元区债券市场", "value": "约 25 万亿 USD", "note": "ECB 2025Q4，含主权+公司"},
+        {"label": "全球年发行量", "value": "约 25 万亿 USD", "note": "SIFMA 2025 年估算"},
+    ],
+    "structure": [
+        {"category": "主权债", "share": "约 60%", "desc": "各国中央政府发行，美债全球最大（约 28 万亿 USD）"},
+        {"category": "公司债", "share": "约 25%", "desc": "美国公司债市场约 11 万亿，中国约 4 万亿 USD"},
+        {"category": "地方政府债/MBS", "share": "约 15%", "desc": "含市政债、机构MBS、资产证券化"},
+    ],
+    "key_players": [
+        {"name": "美国财政部", "role": "全球最大主权债发行人，10Y 收益率为全球资产定价基准"},
+        {"name": "美联储", "role": "通过 QE/QT 影响债券供需，联邦基金利率锚定短端"},
+        {"name": "中国财政部 + 人民银行", "role": "管理国债发行节奏与收益率曲线，配合货币政策"},
+        {"name": "日本银行 (BOJ)", "role": "持有 JGB 约 50%，YCC 退出后缩减购债推升长端利率"},
+        {"name": "欧洲央行 (ECB)", "role": "PEPP/APP 资产购买计划重塑欧元区债券市场"},
+    ],
+}
+
+# ---- 债券概念知识 ----
+BOND_CONCEPTS = [
+    {
+        "title": "国债收益率曲线",
+        "summary": "不同期限国债收益率的连线，是市场对经济预期的最佳预报器",
+        "detail": "收益率曲线将同一发行人不同到期日的债券收益率串联。正常曲线向上倾斜（长端>短端），反映期限溢价。曲线倒挂（短端>长端）是经典衰退信号——2022-2023年美国10Y-2Y倒挂超700bp，2024-2025年衰退未至但增长显著放缓。曲线形态由市场预期、期限溢价、央行政策共同决定。",
+        "formula": "期限利差 = 10Y收益率 - 2Y收益率；正值=正常曲线，负值=倒挂",
+        "example": "2026-08 美国期限利差约+7bp，曲线已从深度倒挂恢复正常化，反映衰退担忧消退",
+        "links": [
+            {"text": "美联储收益率曲线", "url": "https://www.federalreserve.gov/data/yield-curves.htm", "type": "official"},
+            {"text": "FRED 10Y-2Y 利差", "url": "https://fred.stlouisfed.org/series/T10Y2Y", "type": "official"},
+        ],
+    },
+    {
+        "title": "收益率倒挂与衰退信号",
+        "summary": "短端利率高于长端是经济衰退的最强单一预测指标",
+        "detail": "倒挂逻辑：市场预期未来利率下降（央行降息应对衰退）→长端收益率下行→短端（受政策利率影响）仍高→倒挂。1960年以来美国每次衰退前都出现倒挂，但领先时间 6-18个月不等。2023年10Y-2Y最深倒挂达-108bp，2024年初恢复正常，2026年完全正挂。",
+        "formula": "10Y - 2Y < 0 → 衰退预警（领先6-18个月）",
+        "example": "2023年7月倒挂最深-108bp → 2024-2025年增长放缓但未衰退 → 2026年曲线恢复+7bp",
+        "links": [
+            {"text": "纽约联储衰退概率", "url": "https://www.newyorkfed.org/research/capital_markets/ycfaq", "type": "official"},
+        ],
+    },
+    {
+        "title": "期限溢价",
+        "summary": "投资者持有长债要求的额外补偿，是长端利率超过预期短端利率的部分",
+        "detail": "期限溢价 = 长端收益率 - 预期未来短端利率均值。当市场不确定性高时，期限溢价上升（要求更多补偿）；当央行大量购债时，期限溢价被压缩（如QE期间）。2024-2026年美国期限溢价从负值转正，反映财政赤字扩大+通胀不确定性+美联储缩表的共同影响。",
+        "formula": "期限溢价 = 实际长端收益率 - 预期短端利率均值",
+        "example": "ACM 模型显示 2026 年美国 10Y 期限溢价约 +25bp（2021 年约 -50bp）",
+        "links": [
+            {"text": "纽约联储 ACM 期限溢价", "url": "https://www.newyorkfed.org/research/capital_markets/termpremia.html", "type": "official"},
+        ],
+    },
+    {
+        "title": "主权信用评级",
+        "summary": "评级机构对一国偿债能力的评估，影响国债收益率基准",
+        "detail": "三大评级机构（标普/穆迪/惠誉）对主权债评级。美国长期为AAA，但2023年惠誉降至AA+（财政担忧），2025年穆迪跟进降至Aa1。评级下调直接影响国债收益率（推升）和全球资产配置。日本评级 A+（标普），中国 A+（标普），德国 AAA。",
+        "formula": "评级越高 → 违约风险越低 → 收益率越低（通常）",
+        "example": "2023年惠誉下调美国评级后，10Y收益率短暂上行约 10-15bp",
+        "links": [
+            {"text": "标普主权评级", "url": "https://www.spglobal.com/ratings/en/topic-index/sovereigns", "type": "official"},
+        ],
+    },
+    {
+        "title": "央行购债与收益率管理",
+        "summary": "央行通过买卖国债直接影响收益率水平，是量化宽松/紧缩的核心工具",
+        "detail": "QE（量化宽松）：央行大量购债→推高债券价格→压低收益率→刺激经济。QT（量化紧缩）：反向操作。日本BOJ曾通过YCC（收益率曲线控制）将10Y JGB锚定在0%附近，2024年退出后收益率急剧上行至2.68%。美联储持有美债约4.5万亿美元（2026年），缩表中。",
+        "formula": "央行购买量↑ → 债券价格↑ → 收益率↓",
+        "example": "BOJ 持有 JGB 总量约 50%，退出 YCC 后 10Y 从 0.5% 飙至 2.68%",
+        "links": [
+            {"text": "美联储资产负债表", "url": "https://www.federalreserve.gov/monetarypolicy/bst_recenttrends.htm", "type": "official"},
+            {"text": "BOJ 购债操作", "url": "https://www.boj.or.jp/en/statistics/boj/other/jabs/index.htm", "type": "official"},
+        ],
+    },
+]
+
+
+# ============================================================
+# 信贷板块数据
+# 数据来源：FRED、纽约联储、SOFR 参考利率网站、
+#           中国人民银行、Wind、中央结算公司
+# 数据更新：2026-08-07
+# ============================================================
+
+# ---- 全球主要无风险/基准利率 ----
+RISK_FREE_RATES = {
+    "as_of": "2026-08-07",
+    "source": "sofrrate.com / ECB / BOJ / 人民银行 / FRED",
+    "rates": [
+        {
+            "name": "SOFR", "full_name": "有担保隔夜融资利率",
+            "country": "美国", "value": 3.64, "unit": "%",
+            "source": "sofrrate.com（2026-08-05）",
+            "note": "取代 LIBOR 的美元无风险基准，基于国债回购市场",
+            "admin": "纽约联储",
+        },
+        {
+            "name": "Fed Funds Rate", "full_name": "联邦基金利率",
+            "country": "美国", "value": 3.63, "unit": "%",
+            "source": "美联储 H.15（2026-07）",
+            "note": "目标区间 3.50-3.75%，EFFR 3.63%；美联储政策利率",
+            "admin": "美联储",
+        },
+        {
+            "name": "ESTR", "full_name": "欧元短期利率",
+            "country": "欧元区", "value": 2.14, "unit": "%",
+            "source": "ECB（2026-08-05）",
+            "note": "取代 EURIBOR 的欧元无风险基准，基于银行间无担保拆借",
+            "admin": "欧洲央行",
+        },
+        {
+            "name": "SONIA", "full_name": "英镑隔夜指数平均",
+            "country": "英国", "value": 3.72, "unit": "%",
+            "source": "英格兰银行（2026-08-05）",
+            "note": "取代 LIBOR 的英镑无风险基准",
+            "admin": "英格兰银行",
+        },
+        {
+            "name": "TONA", "full_name": "东京隔夜平均利率",
+            "country": "日本", "value": 0.75, "unit": "%",
+            "source": "BOJ（2026-08-05）",
+            "note": "日元无风险基准，反映 BOJ 政策利率",
+            "admin": "日本银行",
+        },
+        {
+            "name": "Shibor", "full_name": "上海银行间同业拆放利率",
+            "country": "中国", "value": 1.41, "unit": "%",
+            "source": "全国银行间同业拆借中心（2026-07-31）",
+            "note": "隔夜 1.41%，1M 1.42%；中国货币市场基准利率",
+            "admin": "全国银行间同业拆借中心",
+        },
+        {
+            "name": "LPR", "full_name": "贷款市场报价利率",
+            "country": "中国", "value": 3.00, "unit": "%",
+            "source": "人民银行（2026-07）",
+            "note": "1年期 LPR 3.00%，5年期 3.50%；贷款定价基准",
+            "admin": "人民银行",
+        },
+    ],
+}
+
+# ---- 信用利差监控 ----
+CREDIT_SPREADS = {
+    "as_of": "2026-08-07",
+    "source": "FRED (BAML Series) / ICE BoA / Wind",
+    "spreads": [
+        {
+            "name": "美国投资级公司债 OAS",
+            "fred_code": "BAMLC0A4CBBB",
+            "value_bp": 135,
+            "trend": "收窄",
+            "note": "BBB 评级公司债相对国债的期权调整利差，2023年峰值约 190bp",
+            "risk_level": "低",
+        },
+        {
+            "name": "美国高收益债 OAS",
+            "fred_code": "BAMLH0A0HYM2",
+            "value_bp": 380,
+            "trend": "收窄",
+            "note": "高收益（垃圾债）相对国债利差，2023年峰值约 540bp，当前处于历史较低水平",
+            "risk_level": "中",
+        },
+        {
+            "name": "美国 CCC 级高收益债利差",
+            "fred_code": "BAMLH0A3HYC",
+            "value_bp": 820,
+            "trend": "稳定",
+            "note": "最低评级段，对经济衰退最敏感；2020年峰值超 2000bp",
+            "risk_level": "高",
+        },
+        {
+            "name": "中国 AAA 信用债利差",
+            "value_bp": 65,
+            "trend": "收窄",
+            "note": "AAA 中票相对国债利差，反映信用环境宽松",
+            "risk_level": "低",
+        },
+        {
+            "name": "中国 AA 信用债利差",
+            "value_bp": 180,
+            "trend": "走扩",
+            "note": "AA 中票利差，信用分层加剧，低等级融资成本上升",
+            "risk_level": "中",
+        },
+    ],
+    "interpretation": [
+        "信用利差 = 公司债收益率 - 同期限国债收益率，反映违约风险补偿",
+        "利差收窄 → 市场风险偏好上升，融资环境宽松",
+        "利差走扩 → 风险厌恶上升，企业融资困难，通常是衰退前兆",
+        "HY OAS > 600bp 为恐慌信号，< 350bp 为过度乐观",
+        "IG/HY 利差分化 → 信用分层，低资质主体被挤出市场",
+    ],
+}
+
+# ---- 中国信用债专题 ----
+CHINA_CREDIT_BONDS = {
+    "as_of": "2026-08-07",
+    "source": "中央结算公司 / 人民银行 / Wind",
+    "market_size": "约 45 万亿 CNY（含企业债、公司债、中票、短融）",
+    "categories": [
+        {
+            "name": "城投债",
+            "outstanding": "约 15 万亿 CNY",
+            "yield_range": "2.5%-5.0%（按评级和区域分化）",
+            "risk": "中高",
+            "detail": "地方政府融资平台（LGFV）发行，虽为企业债但隐含政府信用。2024年以来中央坚持'不兜底'原则，部分弱资质区域（云贵、甘肃）出现技术性违约。2026年化债政策推进中，特殊再融资债置换约 2 万亿，但尾部风险仍在。投资核心逻辑：看区域财力（一般预算收入>400亿）、看平台层级（省级>市级>区县级）、看主营业务（基建>土地>贸易）。",
+            "key_risk": "弱区域城投尾部违约风险；化债进度不及预期",
+        },
+        {
+            "name": "地产债",
+            "outstanding": "约 2.5 万亿 CNY（已大幅缩减）",
+            "yield_range": "大幅分化：国企 2.5%-3.5%，民企 8%-20%+",
+            "risk": "高",
+            "detail": "2021-2025年房地产行业深度调整，恒大、融创、碧桂园等头部民企相继违约。存量地产债以国企（保利、中海、华润）为主，民企债基本失去融资功能。2026年政策转向'保交楼+消化存量'，但民企信用修复缓慢。地产债投资已从'看规模'转向'看股东背景'：央企>地方国企>混合所有制>民企。",
+            "key_risk": "民企地产债违约率仍超 60%；销售回暖不及预期",
+        },
+        {
+            "name": "产业债",
+            "outstanding": "约 20 万亿 CNY",
+            "yield_range": "2.3%-4.5%（按行业和评级分化）",
+            "risk": "中低",
+            "detail": "非金融企业发行的信用债（中票、短融、公司债），覆盖能源、交运、电力、制造业等。AAA 央企（国家电网、中石油、中石化）利差极低（30-50bp），接近国债。AA 民企产业债利差可达 200-300bp。2025-2026年信用分层加剧：资金向高等级集中，低等级遭遇'一刀切'抛售。",
+            "key_risk": "经济下行期低评级产业债违约率上升；行业政策风险",
+        },
+        {
+            "name": "金融债",
+            "outstanding": "约 40 万亿 CNY（含政策性金融债、商业银行债、同业存单）",
+            "yield_range": "1.8%-3.0%",
+            "risk": "低",
+            "detail": "政策性银行债（国开、口行、农发）准主权信用，收益率略高于国债 10-20bp。商业银行普通债和二级资本债评级分化：国有大行 AAA，城商行 AA+。同业存单（NCD）是银行短期融资工具，3M NCD 约 1.75%，反映银行间流动性。",
+            "key_risk": "中小银行资本充足率压力；同业链条风险传染",
+        },
+    ],
+    "major_events": [
+        {
+            "date": "2024-2025",
+            "event": "城投化债",
+            "impact": "中央发行特殊再融资债约 2 万亿，置换高息城投债，降低地方融资成本。城投债'信仰'部分恢复，但弱区域仍承压。",
+        },
+        {
+            "date": "2021-2025",
+            "event": "地产债违约潮",
+            "impact": "恒大、融创、碧桂园等头部民企相继违约，存量地产债缩减超 60%。行业信用体系重构，国企民企利差扩大至 500bp+。",
+        },
+        {
+            "date": "2025-2026",
+            "event": "信用分层加剧",
+            "impact": "资管新规全面实施后，机构风险偏好下降。AAA 信用债遭抢配（利差压缩至 50bp），AA 信用债遭遇抛售（利差走扩至 180bp+）。",
+        },
+    ],
+}
+
+# ---- 信贷概念知识 ----
+CREDIT_CONCEPTS = [
+    {
+        "title": "无风险利率",
+        "summary": "理论上无违约风险的借贷利率，是所有风险资产定价的基准",
+        "detail": "无风险利率通常用主权国债收益率（美国国债）或官方基准利率（SOFR/ESTR）代表。所有信贷资产的收益率 = 无风险利率 + 信用利差 + 期限溢价 + 流动性溢价。美联储加息→无风险利率上升→所有信贷资产收益率水涨船高。2022-2023年美联储加息至5.25%，高收益债收益率突破10%；2024-2026年降息至3.50-3.75%，回落至7-8%。",
+        "formula": "信贷资产收益率 = 无风险利率 + 信用利差 + 期限溢价 + 流动性溢价",
+        "example": "2026-08 美国高收益债收益率 ≈ 4.13%（10Y UST）+ 380bp（HY OAS）= 约 7.93%",
+        "links": [
+            {"text": "FRED SOFR", "url": "https://fred.stlouisfed.org/series/SOFR", "type": "official"},
+        ],
+    },
+    {
+        "title": "信用利差（OAS）",
+        "summary": "公司债相对国债的额外收益率，补偿违约风险",
+        "detail": "OAS（Option-Adjusted Spread）剔除了嵌入式期权影响，是衡量纯信用风险的指标。投资级（IG）OAS 通常 100-200bp，高收益（HY）OAS 通常 300-600bp，恐慌时可达 1000bp+。信用利差是经济周期的领先指标：利差走扩领先衰退 3-6个月，利差收窄领先复苏 1-3个月。",
+        "formula": "OAS = 公司债收益率 - 国债收益率（经期权调整）",
+        "example": "2026-08 HY OAS 380bp → 市场风险偏好中性偏暖；若升至 600bp+ 则需警惕",
+        "links": [
+            {"text": "FRED HY OAS", "url": "https://fred.stlouisfed.org/series/BAMLH0A0HYM2", "type": "official"},
+            {"text": "FRED IG OAS", "url": "https://fred.stlouisfed.org/series/BAMLC0A4CBBB", "type": "official"},
+        ],
+    },
+    {
+        "title": "信用评级体系",
+        "summary": "评级机构对债务人偿债能力的分级，决定融资成本",
+        "detail": "三大评级机构：标普（S&P）、穆迪（Moody's）、惠誉（Fitch）。投资级：AAA/AA/A/BBB（可被机构投资者持有）。高收益级：BB/B/CCC（'垃圾债'）。违约级：D。评级下调→机构被迫抛售→价格暴跌→融资成本上升→恶化循环。中国本土评级（中诚信、联合资信）评级虚高问题突出：AA 级城投实际信用质量仅相当于国际 BBB-。",
+        "formula": "AAA > AA > A > BBB（投资级）> BB > B > CCC（高收益）> D（违约）",
+        "example": "美国国债 AAA→AA+（惠誉2023下调），中国国债 A+（标普），日本国债 A+（标普）",
+        "links": [
+            {"text": "标普评级定义", "url": "https://www.spglobal.com/ratings/en/research/articles/240115-ratingsdirect-credit-faq-12287131", "type": "official"},
+        ],
+    },
+    {
+        "title": "CDS（信用违约互换）",
+        "summary": "为债券违约风险提供保险的衍生品，CDS 利差是实时信用风险指标",
+        "detail": "CDS 买方定期支付保费，若标的实体违约，卖方赔偿本金损失。5Y CDS 利差（bp）反映市场对违约概率的实时定价。CDS 利差飙升=市场担忧加剧。主权 CDS 也是国家信用风险的温度计：美国 5Y CDS 约 15bp，中国约 35bp，意大利约 120bp。",
+        "formula": "CDS 利差（bp）≈ 年化违约概率 × 违约损失率（LGD）",
+        "example": "2026-08 美国 5Y CDS 约 15bp → 年化违约概率极低；意大利约 120bp → 风险显著",
+        "links": [
+            {"text": "FRED 主权 CDS", "url": "https://fred.stlouisfed.org/categories/32141", "type": "official"},
+        ],
+    },
+    {
+        "title": "LIBOR 退出与替代基准",
+        "summary": "2023年 LIBOR 正式退出，SOFR/ESTR/SONIA 等无风险利率取代",
+        "detail": "LIBOR（伦敦银行间拆借利率）因操纵丑闻被淘汰。替代基准均为基于实际交易的隔夜利率：美元→SOFR、欧元→ESTR、英镑→SONIA、日元→TONA、瑞郎→SARON。全球约 240 万亿美元金融合约完成基准转换。新基准为'后顾型'（基于已发生交易），而非 LIBOR 的'前瞻型'（基于报价），更难操纵但无法提前锁定利率。",
+        "formula": "SOFR → 美元；ESTR → 欧元；SONIA → 英镑；TONA → 日元",
+        "example": "2023年6月后 USD LIBOR 停止发布，全球美元贷款/衍生品转用 SOFR",
+        "links": [
+            {"text": "ARRC SOFR 过渡", "url": "https://www.newyorkfed.org/arrc", "type": "official"},
+            {"text": "IBOR 转型", "url": "https://www.isda.org/iban/iben-benchmark-reform-and-ibor-transition/", "type": "official"},
+        ],
+    },
 ]

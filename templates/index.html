@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-header">
     <h1>市场总览</h1>
-    <p class="subtitle">主要货币汇率与利率快照 · 数据更新于 {{ snapshot.as_of }}</p>
+    <p class="subtitle">主要货币汇率与利率快照 · 数据更新于 <span id="snapshot-as-of">{{ snapshot.as_of }}</span><span id="snapshot-live-tag" style="display:none;color:var(--accent-cny);font-size:12px;margin-left:6px">· 汇率实时</span></p>
 </div>
 
 <div class="callout info">
@@ -17,7 +17,7 @@
 <h2 class="section-title">市场快照</h2>
 <div class="grid-3">
     {% for item in snapshot.data_items %}
-    <div class="metric-card">
+    <div class="metric-card" data-live-pair="{{ item.pair }}">
         <div class="label">{{ item.pair }}</div>
         <div class="value">{{ item.value }}</div>
         <div class="trend {% if '升' in item.trend or '强' in item.trend %}up{% elif '贬' in item.trend or '回落' in item.trend %}down{% endif %}">{{ item.trend }}</div>
@@ -63,7 +63,7 @@
 <p style="color:var(--text-light);margin-bottom:16px">点击进入各货币的深度研究页面，含历史走势、驱动因素、利差分析、波动时期与实时汇率。</p>
 <div class="grid-3">
     {% for code, cur in currencies.items() %}
-    <a href="{{ url_for('currency_page', code=code) }}" class="currency-card">
+    <a href="{{ url_for('currency_page', code=code) }}" class="currency-card" data-ccy-pair="{{ cur.pair }}">
         <div class="cc-header">
             <span class="cc-name">{{ cur.name }} <span style="color:var(--text-dim);font-size:13px">{{ cur.code }}</span></span>
             <span class="cc-pair">{{ cur.pair }}</span>
@@ -156,11 +156,124 @@
         plot_bgcolor: 'transparent',
         font: { color: '#8b949e', family: '-apple-system, "PingFang SC", sans-serif', size: 12 },
         margin: { l: 50, r: 16, t: 8, b: 50 },
-        xaxis: { gridcolor: '#30363d', tickmode: 'linear', dtick: 1, tickangle: -30 },
+        xaxis: { gridcolor: '#30363d', tickmode: 'array', tickvals: years, ticktext: years, tickangle: -45, automargin: true },
         yaxis: { gridcolor: '#30363d', title: '归一化（2021=100）', zeroline: false },
         legend: { orientation: 'h', y: -0.3, x: 0, font: { size: 11 } },
         hovermode: 'x unified',
     }, { responsive: true, displayModeBar: false });
+})();
+</script>
+
+{# ========== 实时汇率自动覆盖：监听全局 ticker 事件，更新快照/货币卡片 ========== #}
+<script>
+(function () {
+    console.log('[Parite Home] applyTicker 模块初始化, 等待 parite:ticker 事件');
+
+    // pair -> {rate, code} 映射；ticker 返回的 pair 形如 "USD/JPY"、"EUR/USD"
+    function buildMap(data) {
+        var m = {};
+        if (!data || !data.pairs) return m;
+        data.pairs.forEach(function (p) { m[p.pair] = p; });
+        return m;
+    }
+
+    // 根据货币对决定小数位：USD/JPY 2 位，其余 4 位
+    function decimalsFor(pair) {
+        return pair === 'USD/JPY' ? 2 : 4;
+    }
+
+    function applyTicker(data) {
+        console.log('[Parite Home] applyTicker 开始执行, 入参 data.date=', data && data.date, ', pairs 数量=', data && data.pairs && data.pairs.length);
+        var map = buildMap(data);
+        var mapKeys = Object.keys(map);
+        console.log('[Parite Home] buildMap 完成, 可用货币对:', mapKeys.join(', ') || '(空)');
+        if (mapKeys.length === 0) {
+            console.warn('[Parite Home] map 为空, 终止更新');
+            return;
+        }
+
+        // 1) 更新市场快照卡片（仅汇率项，跳过"美联邦基金利率"等非汇率项）
+        var snapshotCards = document.querySelectorAll('[data-live-pair]');
+        console.log('[Parite Home] 市场快照卡片数量:', snapshotCards.length);
+        var snapshotUpdated = 0, snapshotSkipped = 0;
+        snapshotCards.forEach(function (card) {
+            var pair = card.getAttribute('data-live-pair');
+            if (!map[pair]) {
+                snapshotSkipped++;
+                console.log('[Parite Home] 快照卡片跳过 (无匹配实时数据):', pair);
+                return;
+            }
+            var valEl = card.querySelector('.value');
+            if (!valEl) {
+                console.warn('[Parite Home] 快照卡片', pair, '找不到 .value 元素');
+                return;
+            }
+            var oldVal = valEl.textContent;
+            valEl.textContent = map[pair].rate.toFixed(decimalsFor(pair));
+            snapshotUpdated++;
+            console.log('[Parite Home] 快照卡片更新:', pair, oldVal, '→', valEl.textContent);
+        });
+        console.log('[Parite Home] 快照卡片汇总: 更新', snapshotUpdated, '个, 跳过', snapshotSkipped, '个');
+
+        // 2) 更新货币卡片当前价（DXY 不在 ticker 中，自动跳过）
+        var ccyCards = document.querySelectorAll('[data-ccy-pair]');
+        console.log('[Parite Home] 货币卡片数量:', ccyCards.length);
+        var ccyUpdated = 0, ccySkipped = 0;
+        ccyCards.forEach(function (card) {
+            var pair = card.getAttribute('data-ccy-pair');
+            if (!map[pair]) {
+                ccySkipped++;
+                console.log('[Parite Home] 货币卡片跳过 (无匹配实时数据):', pair);
+                return;
+            }
+            var rateEl = card.querySelector('.cc-rate');
+            if (!rateEl) {
+                console.warn('[Parite Home] 货币卡片', pair, '找不到 .cc-rate 元素');
+                return;
+            }
+            var oldVal = rateEl.textContent;
+            rateEl.textContent = map[pair].rate.toFixed(decimalsFor(pair));
+            ccyUpdated++;
+            console.log('[Parite Home] 货币卡片更新:', pair, oldVal, '→', rateEl.textContent);
+        });
+        console.log('[Parite Home] 货币卡片汇总: 更新', ccyUpdated, '个, 跳过', ccySkipped, '个');
+
+        // 3) 更新 subtitle 时间戳 + 实时标记
+        var asOf = document.getElementById('snapshot-as-of');
+        var liveTag = document.getElementById('snapshot-live-tag');
+        if (asOf && data.date) {
+            console.log('[Parite Home] 时间戳更新:', asOf.textContent, '→', data.date);
+            asOf.textContent = data.date;
+        } else {
+            console.warn('[Parite Home] 时间戳未更新: asOf=', !!asOf, ', data.date=', data.date);
+        }
+        if (liveTag) {
+            var t = (data.generatedAt || '').split(' ')[1] || '';
+            liveTag.style.display = 'inline';
+            liveTag.textContent = '· 汇率实时' + (t ? '（' + t + '）' : '');
+            console.log('[Parite Home] 实时标记已显示:', liveTag.textContent);
+        } else {
+            console.warn('[Parite Home] #snapshot-live-tag 元素不存在');
+        }
+        console.log('[Parite Home] applyTicker 执行完毕');
+    }
+
+    // 监听 base.html 中 ticker 广播的事件
+    window.addEventListener('parite:ticker', function (e) {
+        console.log('[Parite Home] 收到 parite:ticker 事件');
+        try { applyTicker(e.detail); } catch (err) {
+            console.error('[Parite Home] applyTicker 执行抛错:', err);
+        }
+    });
+    // 如果 ticker 已先于本脚本加载完成，立即应用一次
+    if (window.__pariteLastTicker) {
+        console.log('[Parite Home] 检测到 __pariteLastTicker 已存在, 立即应用一次');
+        try { applyTicker(window.__pariteLastTicker); } catch (err) {
+            console.error('[Parite Home] applyTicker (立即应用) 执行抛错:', err);
+        }
+    } else {
+        console.log('[Parite Home] __pariteLastTicker 尚未存在, 等待 ticker 事件触发');
+    }
 })();
 </script>
 {% endblock %}

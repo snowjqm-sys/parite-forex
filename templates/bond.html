@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% set active = 'bond' %}
+{% block title %}债券市场分析{% endblock %}
+
+{% block content %}
+<!-- ============ 页面标题 ============ -->
+<div class="page-header">
+    <h1>债券市场分析</h1>
+    <p class="subtitle">数据日期：{{ yield_curve.as_of }} · 来源：{{ yield_curve.source }}</p>
+</div>
+
+<!-- ============ 债券市场简介 ============ -->
+<div class="callout info">
+    <div class="callout-title">债券市场概览</div>
+    债券是全球规模最大的固定收益市场，总存量约 {{ market_overview.total_size }}，远超股票市场。
+    其核心功能包括：为政府和企业提供融资、形成无风险利率基准（国债收益率）、传递货币政策信号。
+    债券收益率与汇率密切相关——中美 10Y 国债利差每扩大 100bp，通常带动 USD/CNY 上行约 1.5-2%。
+    收益率曲线形态更是经济周期与衰退概率的领先指标。
+</div>
+
+<!-- ============ 收益率曲线图 ============ -->
+<h2 class="section-title">主要经济体国债收益率曲线</h2>
+<div class="callout info">
+    <div class="callout-title">图表说明</div>
+    横轴为期限（2Y/5Y/10Y/30Y），纵轴为收益率（%）。曲线向上倾斜为正常形态，倒挂（短端高于长端）为衰退信号。
+</div>
+<div class="chart-box">
+    <div id="yield-curve-chart" style="width:100%;height:450px;"></div>
+</div>
+
+<!-- ============ 各国国债收益率卡片 ============ -->
+<h2 class="section-title">各经济体国债收益率明细</h2>
+<div class="grid-3">
+    {% for c in yield_curve.countries %}
+    <div class="metric-card">
+        <div class="label">{{ c.name }}（{{ c.currency }}）· {{ c.central_bank }}</div>
+        <div class="value" style="font-size:20px">政策利率 {{ c.policy_rate }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+            {% for maturity, val in c.yields.items() %}
+            <div style="background:var(--bg);border:1px solid var(--border-light);border-radius:6px;padding:6px 10px">
+                <span style="font-size:11px;color:var(--text-dim)">{{ maturity }}</span>
+                <span style="font-size:15px;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums">{{ val }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="note" style="margin-top:8px;color:var(--text-light)">{{ c.note }}</div>
+        <div class="note">来源：{{ c.source }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ============ 10Y 收益率历史走势 ============ -->
+<h2 class="section-title">10Y 国债收益率历史走势（2010-2026）</h2>
+<div class="callout info">
+    <div class="callout-title">数据说明</div>
+    年度均值数据，反映长端利率的长期趋势。美国 2020 年降至 0.89% 历史低位，2024 年升至 4.21%；
+    日本从负利率（2016 年 -0.05%）升至 2026 年 2.68%，创三十年新高。
+</div>
+<div class="chart-box">
+    <div id="yield-history-chart" style="width:100%;height:420px;"></div>
+</div>
+
+<!-- ============ 关键利差监控 ============ -->
+<h2 class="section-title">关键利差监控</h2>
+<div class="callout warn">
+    <div class="callout-title">利差信号解读</div>
+    期限利差为正（正挂）= 正常曲线，为负（倒挂）= 衰退预警。跨国利差影响资本流动与汇率方向。
+    数据日期：{{ spreads.as_of }}
+</div>
+
+<h3 style="color:var(--text);font-size:16px;margin:20px 0 10px">期限利差</h3>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>利差名称</th>
+            <th>数值 (bp)</th>
+            <th>信号</th>
+            <th>说明</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in spreads.term_spreads %}
+        <tr>
+            <td style="color:var(--text);font-weight:600">{{ s.name }}</td>
+            <td style="font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)">{{ s.value_bp }}</td>
+            <td>
+                {% if s.value_bp < 0 %}
+                <span class="pill red">倒挂</span>
+                {% else %}
+                <span class="pill green">{{ s.signal }}</span>
+                {% endif %}
+            </td>
+            <td>{{ s.note }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3 style="color:var(--text);font-size:16px;margin:20px 0 10px">跨国利差</h3>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>利差名称</th>
+            <th>数值 (bp)</th>
+            <th>信号</th>
+            <th>说明</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in spreads.cross_country_spreads %}
+        <tr>
+            <td style="color:var(--text);font-weight:600">{{ s.name }}</td>
+            <td style="font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)">{{ s.value_bp }}</td>
+            <td><span class="pill blue">{{ s.signal }}</span></td>
+            <td>{{ s.note }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ============ 全球债券市场总览 ============ -->
+<h2 class="section-title">全球债券市场总览</h2>
+
+<h3 style="color:var(--text);font-size:16px;margin:20px 0 10px">市场规模统计</h3>
+<div class="grid-3">
+    {% for stat in market_overview.stats %}
+    <div class="metric-card">
+        <div class="label">{{ stat.label }}</div>
+        <div class="value" style="font-size:18px">{{ stat.value }}</div>
+        <div class="note">{{ stat.note }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<h3 style="color:var(--text);font-size:16px;margin:20px 0 10px">市场结构</h3>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>类别</th>
+            <th>占比</th>
+            <th>说明</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in market_overview.structure %}
+        <tr>
+            <td style="color:var(--text);font-weight:600">{{ item.category }}</td>
+            <td><span class="pill purple">{{ item.share }}</span></td>
+            <td>{{ item.desc }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3 style="color:var(--text);font-size:16px;margin:20px 0 10px">主要参与者</h3>
+<div class="grid-3">
+    {% for player in market_overview.key_players %}
+    <div class="card">
+        <h3>{{ player.name }}</h3>
+        <p style="font-size:13px;color:var(--text-light);line-height:1.7;margin:0">{{ player.role }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ============ 债券概念知识 ============ -->
+<h2 class="section-title">债券概念知识</h2>
+<div class="callout tip">
+    <div class="callout-title">学习提示</div>
+    点击下方卡片标题可展开查看详细说明、公式与实例。涵盖收益率曲线、倒挂信号、期限溢价等核心概念。
+</div>
+{% for concept in concepts %}
+<details class="concept-card">
+    <summary>
+        <span class="concept-num">{{ loop.index }}</span>
+        {{ concept.title }}
+    </summary>
+    <div class="card-body">
+        <div class="summary">{{ concept.summary }}</div>
+        <div class="detail">{{ concept.detail }}</div>
+        {% if concept.formula %}
+        <div class="formula">{{ concept.formula }}</div>
+        {% endif %}
+        {% if concept.example %}
+        <div class="example"><strong>实例：</strong>{{ concept.example }}</div>
+        {% endif %}
+        {% if concept.links %}
+        <div class="driver-links" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
+            {% for link in concept.links %}
+            <a href="{{ link.url }}" target="_blank" class="link-btn {{ link.type if link.type else 'official' }}">{{ link.text }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</details>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+// ============================================================
+// 收益率曲线图
+// ============================================================
+(function() {
+    var countries = {{ yield_curve.countries | tojson }};
+    var maturities = ['2Y', '5Y', '10Y', '30Y'];
+    var colors = {
+        US: '#58a6ff', CN: '#3fb950', JP: '#ff6b6b', DE: '#bc8cff', GB: '#f0883e'
+    };
+
+    var traces = countries.map(function(c) {
+        return {
+            x: maturities,
+            y: maturities.map(function(m) { return c.yields[m]; }),
+            name: c.name + ' (' + c.currency + ')',
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: colors[c.code] || '#58a6ff', width: 2 },
+            marker: { size: 8 }
+        };
+    });
+
+    var layout = {
+        paper_bgcolor: '#1a1a2e',
+        plot_bgcolor: '#1a1a2e',
+        font: { color: '#e0e0e0', size: 12 },
+        title: { text: '主要经济体国债收益率曲线', font: { color: '#e0e0e0' } },
+        xaxis: {
+            gridcolor: '#333',
+            title: '期限',
+            tickmode: 'array',
+            tickvals: maturities,
+            ticktext: maturities,
+            automargin: true
+        },
+        yaxis: {
+            gridcolor: '#333',
+            title: '收益率 (%)'
+        },
+        legend: { orientation: 'h', y: -0.2 },
+        margin: { l: 60, r: 30, t: 50, b: 60 }
+    };
+
+    Plotly.newPlot('yield-curve-chart', traces, layout, { responsive: true, displayModeBar: true });
+})();
+
+// ============================================================
+// 10Y 收益率历史走势图
+// ============================================================
+(function() {
+    var history = {{ yield_history | tojson }};
+    var years = history.map(function(h) { return h.year; });
+
+    var series = [
+        { key: 'us', name: '美国', color: '#58a6ff' },
+        { key: 'cn', name: '中国', color: '#3fb950' },
+        { key: 'jp', name: '日本', color: '#ff6b6b' },
+        { key: 'de', name: '德国', color: '#bc8cff' },
+        { key: 'gb', name: '英国', color: '#f0883e' }
+    ];
+
+    var traces = series.map(function(s) {
+        return {
+            x: years,
+            y: history.map(function(h) { return h[s.key]; }),
+            name: s.name,
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: s.color, width: 2 },
+            marker: { size: 6 }
+        };
+    });
+
+    var layout = {
+        paper_bgcolor: '#1a1a2e',
+        plot_bgcolor: '#1a1a2e',
+        font: { color: '#e0e0e0', size: 12 },
+        title: { text: '10Y 国债收益率历史走势（年度均值）', font: { color: '#e0e0e0' } },
+        xaxis: {
+            gridcolor: '#333',
+            title: '年份',
+            tickmode: 'array',
+            tickvals: years,
+            ticktext: years,
+            automargin: true
+        },
+        yaxis: {
+            gridcolor: '#333',
+            title: '收益率 (%)'
+        },
+        legend: { orientation: 'h', y: -0.2 },
+        margin: { l: 60, r: 30, t: 50, b: 60 }
+    };
+
+    Plotly.newPlot('yield-history-chart', traces, layout, { responsive: true, displayModeBar: true });
+})();
+</script>
+{% endblock %}

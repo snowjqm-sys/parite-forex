@@ -26,6 +26,8 @@
         </li>
         <li><a href="{{ url_for('comparison') }}" class="{% if active == 'comparison' %}active{% endif %}">对比思考</a></li>
         <li><a href="{{ url_for('futures') }}" class="{% if active == 'futures' %}active{% endif %}">期货</a></li>
+        <li><a href="{{ url_for('bond') }}" class="{% if active == 'bond' %}active{% endif %}">债券</a></li>
+        <li><a href="{{ url_for('credit') }}" class="{% if active == 'credit' %}active{% endif %}">信贷</a></li>
         <li><a href="{{ url_for('explorer') }}" class="{% if active == 'explorer' %}active{% endif %}">数据</a></li>
         <li><a href="{{ url_for('feedback') }}" class="{% if active == 'feedback' %}active{% endif %}">反馈</a></li>
         <li><a href="{{ url_for('ai_config') }}" class="{% if active == 'ai_config' %}active{% endif %}">AI配置</a></li>
@@ -743,10 +745,19 @@
     var tickerTimer = null;
 
     function loadTicker() {
+        console.log('[Parite Ticker] 开始请求 /api/ticker ...');
         fetch('/api/ticker', { cache: 'no-store' })
-            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                console.log('[Parite Ticker] 收到响应, HTTP', r.status, r.statusText);
+                return r.json();
+            })
             .then(function(data) {
-                if (!data || !data.pairs || !data.pairs.length) return;
+                if (!data || !data.pairs || !data.pairs.length) {
+                    console.warn('[Parite Ticker] 响应数据为空或无 pairs 字段:', data);
+                    return;
+                }
+                console.log('[Parite Ticker] 数据获取成功, 共', data.pairs.length, '个货币对; date=', data.date, '; source=', data.source, '; generatedAt=', data.generatedAt);
+                console.log('[Parite Ticker] pairs 明细:', data.pairs.map(function(p){ return p.pair+'='+p.rate; }).join(', '));
                 var html = '';
                 data.pairs.forEach(function(p) {
                     var prev = tickerPrev[p.code];
@@ -767,8 +778,19 @@
                 });
                 // 复制一份用于无缝滚动
                 tickerTrack.innerHTML = html + html;
+
+                // 广播给所有页面：让首页快照 / 货币页"当前汇率"等自动用实时值覆盖静态值
+                // 各页面通过 window.addEventListener('parite:ticker', ...) 监听
+                try {
+                    window.__pariteLastTicker = data;
+                    window.dispatchEvent(new CustomEvent('parite:ticker', { detail: data }));
+                    console.log('[Parite Ticker] 已广播 parite:ticker 事件, 等待页面监听器处理');
+                } catch (e) {
+                    console.error('[Parite Ticker] 广播事件失败（老浏览器可能不支持 CustomEvent）:', e);
+                }
             })
-            .catch(function() {
+            .catch(function(err) {
+                console.error('[Parite Ticker] 请求失败:', err);
                 tickerTrack.innerHTML = '<span class="ticker-item ticker-loading">汇率加载中...</span>';
             });
     }

@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% set active = 'credit' %}
+{% block title %}信贷市场分析{% endblock %}
+
+{% block content %}
+<!-- ============ 页面标题 ============ -->
+<div class="page-header">
+    <h1>信贷市场分析</h1>
+    <p class="subtitle">数据日期：{{ risk_free_rates.as_of }} · 来源：{{ risk_free_rates.source }}</p>
+</div>
+
+<!-- ============ 信贷市场简介 ============ -->
+<div class="callout info">
+    <div class="callout-title">信贷市场概览</div>
+    信贷市场是利率体系与信用风险定价的核心载体。其底层是无风险利率（如 SOFR、国债收益率），
+    在此之上叠加信用利差（补偿违约风险）、期限溢价（补偿久期风险）和流动性溢价。
+    信用利差是经济周期的领先指标：利差走扩领先衰退 3-6 个月，收窄领先复苏 1-3 个月。
+    信贷市场与债券市场互为镜像——国债收益率决定无风险基准，信用债利差反映风险偏好，两者共同驱动跨境资本流动与汇率。
+</div>
+
+<!-- ============ 全球基准利率卡片 ============ -->
+<h2 class="section-title">全球基准利率</h2>
+<div class="callout info">
+    <div class="callout-title">利率体系说明</div>
+    以下为全球主要经济体无风险/基准利率。LIBOR 退出后，SOFR/ESTR/SONIA/TONA 等基于实际交易的隔夜利率成为新基准。
+    基准利率是所有信贷资产定价的锚——美联储加息 → SOFR 上升 → 美元贷款利率全面上行。
+</div>
+<div class="grid-4">
+    {% for r in risk_free_rates.rates %}
+    <div class="metric-card">
+        <div class="label">{{ r.name }} · {{ r.country }}</div>
+        <div class="value" style="font-size:24px">{{ r.value }}{{ r.unit }}</div>
+        <div class="note" style="color:var(--text-light)">{{ r.full_name }}</div>
+        <div class="note">管理机构：{{ r.admin }}</div>
+        <div class="note" style="color:var(--text-light);line-height:1.6">{{ r.note }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ============ 信用利差监控图 ============ -->
+<h2 class="section-title">信用利差监控</h2>
+<div class="callout info">
+    <div class="callout-title">图表说明</div>
+    柱状图展示各类信用利差（单位 bp），按风险等级着色：
+    <span style="color:var(--accent-cny);font-weight:600">绿色=低风险</span>，
+    <span style="color:var(--accent-orange);font-weight:600">橙色=中风险</span>，
+    <span style="color:var(--accent-jpy);font-weight:600">红色=高风险</span>。
+    数据来源：{{ credit_spreads.source }}
+</div>
+<div class="chart-box">
+    <div id="credit-spread-chart" style="width:100%;height:420px;"></div>
+</div>
+
+<!-- ============ 信用利差表格 ============ -->
+<h3 style="color:var(--text);font-size:16px;margin:20px 0 10px">信用利差明细</h3>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>利差名称</th>
+            <th>数值 (bp)</th>
+            <th>趋势</th>
+            <th>风险等级</th>
+            <th>说明</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in credit_spreads.spreads %}
+        <tr>
+            <td style="color:var(--text);font-weight:600">{{ s.name }}</td>
+            <td style="font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)">{{ s.value_bp }}</td>
+            <td>
+                {% if s.trend == '收窄' %}
+                <span class="pill green">{{ s.trend }}</span>
+                {% elif s.trend == '走扩' %}
+                <span class="pill red">{{ s.trend }}</span>
+                {% else %}
+                <span class="pill blue">{{ s.trend }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if s.risk_level == '低' %}
+                <span class="pill green">{{ s.risk_level }}</span>
+                {% elif s.risk_level == '中' %}
+                <span class="pill" style="background:rgba(240,136,62,0.15);color:var(--accent-orange)">{{ s.risk_level }}</span>
+                {% else %}
+                <span class="pill red">{{ s.risk_level }}</span>
+                {% endif %}
+            </td>
+            <td>{{ s.note }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- ============ 利差解读 ============ -->
+<h3 style="color:var(--text);font-size:16px;margin:20px 0 10px">利差解读</h3>
+<div class="callout tip">
+    <div class="callout-title">信用利差分析框架</div>
+    <ul style="list-style:none;padding:0;margin:0">
+        {% for item in credit_spreads.interpretation %}
+        <li style="padding:6px 0 6px 20px;position:relative;font-size:14px;color:var(--text-light);line-height:1.7">
+            <span style="position:absolute;left:0;color:var(--accent-cny);font-weight:700">·</span>
+            {{ item }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- ============ 中国信用债专题 ============ -->
+<h2 class="section-title">中国信用债专题</h2>
+<div class="callout info">
+    <div class="callout-title">市场总览</div>
+    中国信用债市场总存量 <strong style="color:var(--primary)">{{ china_credit.market_size }}</strong>，
+    涵盖城投债、地产债、产业债、金融债四大类别。数据来源：{{ china_credit.source }}
+</div>
+
+<div class="grid-2">
+    <div class="metric-card">
+        <div class="label">市场总存量</div>
+        <div class="value" style="font-size:20px">{{ china_credit.market_size }}</div>
+    </div>
+    <div class="metric-card">
+        <div class="label">数据日期</div>
+        <div class="value" style="font-size:20px">{{ china_credit.as_of }}</div>
+    </div>
+</div>
+
+<h3 style="color:var(--text);font-size:16px;margin:24px 0 10px">四大类别详情</h3>
+
+{% for cat in china_credit.categories %}
+<div class="card" style="margin-bottom:16px">
+    <h3 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        {{ cat.name }}
+        {% if cat.risk == '低' %}
+        <span class="pill green">风险：{{ cat.risk }}</span>
+        {% elif cat.risk == '中低' %}
+        <span class="pill green">风险：{{ cat.risk }}</span>
+        {% elif cat.risk == '中' %}
+        <span class="pill" style="background:rgba(240,136,62,0.15);color:var(--accent-orange)">风险：{{ cat.risk }}</span>
+        {% elif cat.risk == '中高' %}
+        <span class="pill" style="background:rgba(240,136,62,0.15);color:var(--accent-orange)">风险：{{ cat.risk }}</span>
+        {% else %}
+        <span class="pill red">风险：{{ cat.risk }}</span>
+        {% endif %}
+    </h3>
+    <div class="grid-3" style="margin-bottom:12px">
+        <div class="metric-card">
+            <div class="label">存量规模</div>
+            <div class="value" style="font-size:16px">{{ cat.outstanding }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="label">收益率范围</div>
+            <div class="value" style="font-size:16px">{{ cat.yield_range }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="label">风险等级</div>
+            <div class="value" style="font-size:16px">{{ cat.risk }}</div>
+        </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-light);line-height:1.8;margin:0 0 10px">{{ cat.detail }}</p>
+    <div class="callout danger" style="margin:0">
+        <div class="callout-title">关键风险</div>
+        {{ cat.key_risk }}
+    </div>
+</div>
+{% endfor %}
+
+<h3 style="color:var(--text);font-size:16px;margin:24px 0 10px">重大事件时间线</h3>
+{% for ev in china_credit.major_events %}
+<div class="event-card">
+    <div class="event-header">
+        <span class="event-date">{{ ev.date }}</span>
+        <span class="event-title">{{ ev.event }}</span>
+    </div>
+    <div class="event-impact"><span class="impact-label">影响分析：</span>{{ ev.impact }}</div>
+</div>
+{% endfor %}
+
+<!-- ============ 信贷概念知识 ============ -->
+<h2 class="section-title">信贷概念知识</h2>
+<div class="callout tip">
+    <div class="callout-title">学习提示</div>
+    点击下方卡片标题可展开查看详细说明、公式与实例。涵盖无风险利率、信用利差、评级体系、CDS 等核心概念。
+</div>
+{% for concept in concepts %}
+<details class="concept-card">
+    <summary>
+        <span class="concept-num">{{ loop.index }}</span>
+        {{ concept.title }}
+    </summary>
+    <div class="card-body">
+        <div class="summary">{{ concept.summary }}</div>
+        <div class="detail">{{ concept.detail }}</div>
+        {% if concept.formula %}
+        <div class="formula">{{ concept.formula }}</div>
+        {% endif %}
+        {% if concept.example %}
+        <div class="example"><strong>实例：</strong>{{ concept.example }}</div>
+        {% endif %}
+        {% if concept.links %}
+        <div class="driver-links" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
+            {% for link in concept.links %}
+            <a href="{{ link.url }}" target="_blank" class="link-btn {{ link.type if link.type else 'official' }}">{{ link.text }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</details>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+// ============================================================
+// 信用利差柱状图
+// ============================================================
+(function() {
+    var spreads = {{ credit_spreads.spreads | tojson }};
+
+    var riskColors = {
+        '低': '#3fb950',
+        '中': '#f0883e',
+        '高': '#ff6b6b'
+    };
+
+    var barColors = spreads.map(function(s) {
+        return riskColors[s.risk_level] || '#58a6ff';
+    });
+
+    var trace = {
+        x: spreads.map(function(s) { return s.name; }),
+        y: spreads.map(function(s) { return s.value_bp; }),
+        type: 'bar',
+        marker: {
+            color: barColors,
+            line: { color: 'rgba(255,255,255,0.15)', width: 1 }
+        },
+        text: spreads.map(function(s) {
+            return s.value_bp + 'bp · ' + s.risk_level + '风险 · ' + s.trend;
+        }),
+        hoverinfo: 'x+y+text',
+        textposition: 'outside',
+        textfont: { color: '#e0e0e0', size: 11 },
+        outsidetextfont: { color: '#e0e0e0', size: 11 }
+    };
+
+    // 在柱顶标注数值
+    var valueLabels = spreads.map(function(s) {
+        return s.value_bp + 'bp';
+    });
+    trace.text = valueLabels;
+    trace.hovertext = spreads.map(function(s) {
+        return s.value_bp + 'bp · ' + s.risk_level + '风险 · ' + s.trend + '<br>' + s.note;
+    });
+    trace.hoverinfo = 'x+text';
+
+    var layout = {
+        paper_bgcolor: '#1a1a2e',
+        plot_bgcolor: '#1a1a2e',
+        font: { color: '#e0e0e0', size: 12 },
+        title: { text: '信用利差监控（按风险等级着色）', font: { color: '#e0e0e0' } },
+        xaxis: {
+            gridcolor: '#333',
+            tickangle: -20,
+            automargin: true
+        },
+        yaxis: {
+            gridcolor: '#333',
+            title: '利差 (bp)'
+        },
+        margin: { l: 60, r: 30, t: 50, b: 80 },
+        showlegend: false,
+        shapes: [
+            // HY OAS 恐慌线 600bp
+            { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 600, y1: 600, yref: 'y',
+              line: { color: '#ff6b6b', width: 1, dash: 'dash' },
+              text: '恐慌线 600bp' }
+        ],
+        annotations: [
+            { x: 1, y: 600, xref: 'paper', yref: 'y', text: '恐慌线 600bp',
+              showarrow: false, font: { color: '#ff6b6b', size: 10 },
+              xanchor: 'right', yanchor: 'bottom' }
+        ]
+    };
+
+    Plotly.newPlot('credit-spread-chart', [trace], layout, { responsive: true, displayModeBar: true });
+})();
+</script>
+{% endblock %}
