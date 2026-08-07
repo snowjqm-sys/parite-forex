@@ -475,6 +475,71 @@
     border-left: 3px solid var(--accent-jpy);
     line-height: 1.6;
 }
+/* 计算公式面板 */
+.mc-formula-panel {
+    margin-top: 16px;
+    background: rgba(13, 17, 23, 0.6);
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.mc-formula-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(88, 166, 255, 0.06);
+    border-bottom: 1px solid #30363d;
+}
+.mc-formula-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #e6edf3;
+    font-weight: 600;
+}
+.mc-formula-icon { font-size: 16px; }
+.mc-formula-toggle {
+    margin-left: auto;
+    font-size: 12px;
+    color: #58a6ff;
+    cursor: pointer;
+    user-select: none;
+}
+.mc-formula-toggle:hover { text-decoration: underline; }
+.mc-formula-body { padding: 12px 16px; }
+.mc-formula-section {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+}
+.mc-formula-section:last-child { border-bottom: none; }
+.mc-formula-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #58a6ff;
+    margin-bottom: 6px;
+}
+.mc-formula-eq {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #c9d1d9;
+    line-height: 1.8;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    border-left: 3px solid #58a6ff;
+}
+.mc-formula-eq strong { color: #3fb950; }
+.mc-formula-note {
+    font-size: 11px;
+    color: #8b949e;
+    margin-top: 4px;
+    padding-left: 12px;
+}
+.mc-formula-hint {
+    font-size: 11px;
+    color: #8b949e;
+    font-style: italic;
+}
 </style>
 {% endblock %}
 
@@ -620,6 +685,7 @@
                         data-margin-rate="{{ c.margin_rate }}"
                         data-margin-per-lot="{{ c.margin_per_lot }}"
                         data-ref-price="{{ c.reference_price }}"
+                        data-quote-type="{{ c.quote_type }}"
                     >{{ c.code }} {{ c.name }} ({{ c.pair }}) — {{ c.exchange }}</option>
                     {% endfor %}
                 </select>
@@ -687,6 +753,39 @@
             </div>
         </div>
     </div>
+
+    <!-- 计算公式展示 -->
+    <div class="mc-formula-panel" id="mc-formula-panel">
+        <div class="mc-formula-header">
+            <span class="mc-formula-icon">📐</span>
+            <h4>计算公式</h4>
+            <span class="mc-formula-toggle" id="mc-formula-toggle" onclick="var p=document.getElementById('mc-formula-body');p.style.display=p.style.display==='none'?'block':'none';this.textContent=p.style.display==='none'?'展开':'收起';">收起</span>
+        </div>
+        <div class="mc-formula-body" id="mc-formula-body">
+            <div class="mc-formula-section">
+                <div class="mc-formula-title">① 名义价值（Notional Value）</div>
+                <div class="mc-formula-eq" id="f-notional"></div>
+                <div class="mc-formula-note" id="f-notional-note"></div>
+            </div>
+            <div class="mc-formula-section">
+                <div class="mc-formula-title">② 所需保证金（Margin Required）</div>
+                <div class="mc-formula-eq" id="f-margin"></div>
+            </div>
+            <div class="mc-formula-section">
+                <div class="mc-formula-title">③ 杠杆倍数（Leverage）</div>
+                <div class="mc-formula-eq" id="f-leverage"></div>
+            </div>
+            <div class="mc-formula-section">
+                <div class="mc-formula-title">④ 盈亏（P&L）</div>
+                <div class="mc-formula-eq" id="f-pnl"></div>
+                <div class="mc-formula-note" id="f-pnl-note"></div>
+            </div>
+            <div class="mc-formula-section">
+                <div class="mc-formula-title">⑤ 预估强平价格（Liquidation Price）</div>
+                <div class="mc-formula-eq" id="f-liq"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -709,13 +808,39 @@
             marginRate: parseFloat(opt.dataset.marginRate),
             marginPerLot: parseFloat(opt.dataset.marginPerLot),
             refPrice: parseFloat(opt.dataset.refPrice),
+            quoteType: opt.dataset.quoteType,
         };
+    }
+
+    // 名义价值计算：根据报价类型区分
+    //   indirect (EUR/USD): 面值 × 汇率（非美元面值 × 汇率 = 美元价值）
+    //   direct   (USD/JPY): 面值 / 汇率（非美元面值 / 汇率 = 美元价值）
+    //   index    (DX):      面值 × 指数
+    function notionalValue(c, price, lots) {
+        if (c.quoteType === 'direct') return c.unit / price * lots;
+        return c.unit * price * lots;
+    }
+
+    // 盈亏计算：根据报价类型区分
+    //   indirect: 面值 × (exit - entry) × lots（做多）
+    //   direct:   面值 × (1/entry - 1/exit) × lots（做多，汇率上升=外币贬值=亏损）
+    function calcPnl(c, entry, exit, lots, dir) {
+        var diff;
+        if (c.quoteType === 'direct') {
+            // 直接报价：USD/JPY，汇率上升 = 报价货币贬值
+            diff = dir === 'long' ? (1/entry - 1/exit) : (1/exit - 1/entry);
+        } else {
+            diff = dir === 'long' ? (exit - entry) : (entry - exit);
+        }
+        return c.unit * diff * lots;
     }
 
     function updateContractInfo() {
         var c = getContract();
+        var qtLabel = c.quoteType === 'direct' ? '直接报价（面值/汇率）' : c.quoteType === 'index' ? '指数合约' : '间接报价（面值×汇率）';
         infoBox.innerHTML =
             '<div class="mci-item"><span class="mci-label">合约面值</span><span class="mci-value">' + c.unitLabel + '</span></div>' +
+            '<div class="mci-item"><span class="mci-label">报价类型</span><span class="mci-value">' + qtLabel + '</span></div>' +
             '<div class="mci-item"><span class="mci-label">最小跳动</span><span class="mci-value">' + c.tickSize + ' = $' + c.tickValue.toFixed(2) + '</span></div>' +
             '<div class="mci-item"><span class="mci-label">保证金比例</span><span class="mci-value">' + (c.marginRate * 100).toFixed(1) + '%</span></div>' +
             '<div class="mci-item"><span class="mci-label">每手保证金</span><span class="mci-value">$' + c.marginPerLot.toLocaleString() + '</span></div>';
@@ -733,43 +858,109 @@
         var totalMargin = c.marginPerLot * lots;
         document.getElementById('mc-total-margin').textContent = '$' + totalMargin.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         document.getElementById('mc-margin-detail').textContent =
-            lots + ' 手 × $' + c.marginPerLot.toLocaleString() + '/手 · 保证金率 ' + (c.marginRate * 100).toFixed(1) + '%';
+            lots + ' 手 × $' + c.marginPerLot.toLocaleString() + '/手';
 
-        // 合约名义价值
-        var notional = c.unit * entry * lots;
+        // 名义价值
+        var notional = notionalValue(c, entry, lots);
         // 杠杆
         var leverage = totalMargin > 0 ? notional / totalMargin : 0;
         document.getElementById('mc-leverage').textContent = leverage.toFixed(1) + 'x';
+        var notFormula = c.quoteType === 'direct'
+            ? c.unit.toLocaleString() + ' ÷ ' + entry + ' × ' + lots + ' 手'
+            : c.unit.toLocaleString() + ' × ' + entry + ' × ' + lots + ' 手';
         document.getElementById('mc-leverage-detail').textContent =
-            '名义价值 $' + notional.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' ÷ 保证金 $' + totalMargin.toLocaleString();
+            '名义价值 $' + notional.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' = ' + notFormula;
+
+        // 更新公式区
+        updateFormula(c, entry, lots, totalMargin, notional);
 
         // 盈亏
         var pnlCard = document.getElementById('mc-pnl-card');
         var liqCard = document.getElementById('mc-liquidation-card');
         if (exit && entry) {
             pnlCard.style.display = 'block';
-            var priceDiff = dir === 'long' ? (exit - entry) : (entry - exit);
-            // 对 USD/XXX 报价（如 USD/JPY），1 个价格点 = 合约面值 × priceDiff
-            // 对 XXX/USD 报价（如 EUR/USD），1 个价格点 = 合约面值 × priceDiff
-            var pnl = c.unit * priceDiff * lots;
+            var pnl = calcPnl(c, entry, exit, lots, dir);
             var pnlEl = document.getElementById('mc-pnl');
             pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             pnlEl.className = 'mc-result-value ' + (pnl >= 0 ? 'green' : 'red');
-            var ticks = Math.abs(priceDiff / c.tickSize);
+            // 跳动点数计算
+            var ticks;
+            if (c.quoteType === 'direct') {
+                ticks = Math.abs(1/entry - 1/exit) / c.tickSize;
+            } else {
+                ticks = Math.abs(exit - entry) / c.tickSize;
+            }
             document.getElementById('mc-pnl-detail').textContent =
-                ticks.toFixed(0) + ' 个跳动点 × $' + c.tickValue.toFixed(2) + '/点 × ' + lots + ' 手';
+                ticks.toFixed(1) + ' 个跳动点 × $' + c.tickValue.toFixed(2) + '/点 × ' + lots + ' 手';
 
-            // 强平价格（保证金归零 = 价格变动 = 保证金/合约面值）
+            // 强平价格
             liqCard.style.display = 'block';
-            var liqMove = totalMargin / (c.unit * lots);
-            var liqPrice = dir === 'long' ? entry - liqMove : entry + liqMove;
+            var liqPrice;
+            if (c.quoteType === 'direct') {
+                var usdPerUnit = c.unit / entry;
+                var liqMoveUsd = totalMargin / (lots * c.unit / entry);
+                liqPrice = dir === 'long' ? 1 / (1/entry + totalMargin / (c.unit * lots)) : 1 / (1/entry - totalMargin / (c.unit * lots));
+            } else {
+                var liqMove = totalMargin / (c.unit * lots);
+                liqPrice = dir === 'long' ? entry - liqMove : entry + liqMove;
+            }
             document.getElementById('mc-liquidation').textContent = liqPrice.toFixed(4);
-            document.getElementById('mc-liquidation-detail').textContent =
-                '价格' + (dir === 'long' ? '下跌' : '上涨') + ' ' + liqMove.toFixed(4) + ' 即触及强平线';
+            var liqDesc = c.quoteType === 'direct'
+                ? '汇率' + (dir === 'long' ? '上涨' : '下跌') + '至 ' + liqPrice.toFixed(4) + ' 即触及强平线'
+                : '价格' + (dir === 'long' ? '下跌' : '上涨') + ' ' + Math.abs(liqPrice - entry).toFixed(4) + ' 即触及强平线';
+            document.getElementById('mc-liquidation-detail').textContent = liqDesc;
         } else {
             pnlCard.style.display = 'none';
             liqCard.style.display = 'none';
         }
+    }
+
+    // 更新公式展示
+    function updateFormula(c, entry, lots, totalMargin, notional) {
+        var isDirect = c.quoteType === 'direct';
+        var isIdx = c.quoteType === 'index';
+
+        // ① 名义价值
+        var notEq = isDirect
+            ? '名义价值 = 合约面值 ÷ 汇率 × 手数<br>= ' + c.unit.toLocaleString() + ' ÷ ' + entry + ' × ' + lots
+            : '名义价值 = 合约面值 × 汇率 × 手数<br>= ' + c.unit.toLocaleString() + ' × ' + entry + ' × ' + lots;
+        notEq += ' = <strong>$' + notional.toLocaleString(undefined, {maximumFractionDigits: 0}) + '</strong>';
+        document.getElementById('f-notional').innerHTML = notEq;
+        document.getElementById('f-notional-note').textContent = isDirect
+            ? '直接报价（USD/JPY、USD/CAD）：面值以外币计，需除以汇率换算为美元'
+            : isIdx ? '指数合约：面值 × 指数点位' : '间接报价（EUR/USD、GBP/USD 等）：面值以外币计，乘以汇率换算为美元';
+
+        // ② 保证金
+        document.getElementById('f-margin').innerHTML =
+            '保证金 = 每手保证金 × 手数<br>= $' + c.marginPerLot.toLocaleString() + ' × ' + lots
+            + ' = <strong>$' + totalMargin.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</strong>';
+
+        // ③ 杠杆
+        var lev = totalMargin > 0 ? notional / totalMargin : 0;
+        document.getElementById('f-leverage').innerHTML =
+            '杠杆 = 名义价值 ÷ 保证金<br>= $' + notional.toLocaleString(undefined, {maximumFractionDigits: 0})
+            + ' ÷ $' + totalMargin.toLocaleString() + ' = <strong>' + lev.toFixed(1) + 'x</strong>';
+
+        // ④ 盈亏
+        var pnlEq = isDirect
+            ? '盈亏 = 面值 × (1/开仓价 − 1/平仓价) × 手数  <span class="mc-formula-hint">（做多；做空则相反）</span><br>'
+              + '= ' + c.unit.toLocaleString() + ' × (1/' + entry + ' − 1/平仓价) × ' + lots
+            : '盈亏 = 面值 × (平仓价 − 开仓价) × 手数  <span class="mc-formula-hint">（做多；做空则相反）</span><br>'
+              + '= ' + c.unit.toLocaleString() + ' × (平仓价 − ' + entry + ') × ' + lots;
+        document.getElementById('f-pnl').innerHTML = pnlEq;
+        document.getElementById('f-pnl-note').textContent = isDirect
+            ? '直接报价合约：汇率上升 = 报价货币贬值。做多时需用倒数差计算实际美元损益'
+            : '间接报价合约：汇率上升 = 报价货币升值。做多时直接用价格差计算';
+
+        // ⑤ 强平
+        var liqEq = isDirect
+            ? '强平价 = 1 / (1/开仓价 ± 保证金/(面值×手数))<br>'
+              + '做多：1 / (1/' + entry + ' + ' + totalMargin + '/(' + c.unit.toLocaleString() + '×' + lots + '))'
+              + '<br>做空：1 / (1/' + entry + ' − ' + totalMargin + '/(' + c.unit.toLocaleString() + '×' + lots + '))'
+            : '强平价 = 开仓价 ∓ 保证金 / (面值 × 手数)<br>'
+              + '做多：' + entry + ' − ' + totalMargin + '/(' + c.unit.toLocaleString() + '×' + lots + ')'
+              + '<br>做空：' + entry + ' + ' + totalMargin + '/(' + c.unit.toLocaleString() + '×' + lots + ')';
+        document.getElementById('f-liq').innerHTML = liqEq;
     }
 
     select.addEventListener('change', function() {

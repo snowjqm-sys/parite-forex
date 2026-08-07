@@ -1512,6 +1512,7 @@ MARGIN_CALCULATOR_CONTRACTS = [
         "exchange": "CME",
         "contract_unit": 12500000,       # 合约面值（日元）
         "contract_unit_label": "12,500,000 JPY",
+        "quote_type": "direct",          # 直接报价：USD/XXX，名义价值 = 面值 / 汇率
         "tick_size": 0.000001,           # 最小变动价位（USD/JPY 报价单位）
         "tick_value": 12.50,             # 每个跳动点价值（美元）
         "margin_rate": 0.02,             # 保证金比例（2%）
@@ -1523,6 +1524,7 @@ MARGIN_CALCULATOR_CONTRACTS = [
         "exchange": "CME",
         "contract_unit": 125000,
         "contract_unit_label": "125,000 EUR",
+        "quote_type": "indirect",        # 间接报价：XXX/USD，名义价值 = 面值 × 汇率
         "tick_size": 0.00005,
         "tick_value": 6.25,
         "margin_rate": 0.022,
@@ -1534,6 +1536,7 @@ MARGIN_CALCULATOR_CONTRACTS = [
         "exchange": "CME",
         "contract_unit": 62500,
         "contract_unit_label": "62,500 GBP",
+        "quote_type": "indirect",
         "tick_size": 0.0001,
         "tick_value": 6.25,
         "margin_rate": 0.025,
@@ -1545,6 +1548,7 @@ MARGIN_CALCULATOR_CONTRACTS = [
         "exchange": "CME",
         "contract_unit": 100000,
         "contract_unit_label": "100,000 AUD",
+        "quote_type": "indirect",
         "tick_size": 0.0001,
         "tick_value": 10.00,
         "margin_rate": 0.018,
@@ -1556,6 +1560,7 @@ MARGIN_CALCULATOR_CONTRACTS = [
         "exchange": "CME",
         "contract_unit": 100000,
         "contract_unit_label": "100,000 CAD",
+        "quote_type": "direct",
         "tick_size": 0.0001,
         "tick_value": 10.00,
         "margin_rate": 0.015,
@@ -1567,6 +1572,7 @@ MARGIN_CALCULATOR_CONTRACTS = [
         "exchange": "ICE",
         "contract_unit": 1000,
         "contract_unit_label": "$1,000 × 指数",
+        "quote_type": "index",
         "tick_size": 0.005,
         "tick_value": 5.00,
         "margin_rate": 0.016,

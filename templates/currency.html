@@ -449,6 +449,8 @@
 <script>
 const CODE = "{{ cur.code }}";
 const PAIR = "{{ cur.pair }}";
+const RATE_A = "{{ cur.rate_pair[0] }}";
+const RATE_B = "{{ cur.rate_pair[1] }}";
 const TREND_COLOR = "{% if code == 'cny' %}#3fb950{% elif code == 'jpy' %}#ff6b6b{% elif code == 'usd' %}#58a6ff{% else %}#bc8cff{% endif %}";
 
 // ============================================================
@@ -987,9 +989,9 @@ fetch('/api/currency/' + CODE + '/daily').then(r => r.json()).then(data => {
 // 利差图 + 利差深度研究
 fetch('/api/rates').then(r => r.json()).then(data => {
     const yrs = data.filter(d => !d.date.includes('-')).map(d => d.date);
-    const rateA = data.filter(d => !d.date.includes('-')).map(d => d.a);
-    const rateB = data.filter(d => !d.date.includes('-')).map(d => d.b);
-    const spreads = data.filter(d => !d.date.includes('-')).map(d => d.a !== null && d.b !== null ? d.a - d.b : null);
+    const rateA = data.filter(d => !d.date.includes('-')).map(d => d[RATE_A]);
+    const rateB = data.filter(d => !d.date.includes('-')).map(d => d[RATE_B]);
+    const spreads = data.filter(d => !d.date.includes('-')).map(d => d[RATE_A] != null && d[RATE_B] != null ? d[RATE_A] - d[RATE_B] : null);
     const histMap = {{ history | tojson }};
     const hm = {}; histMap.forEach(h => hm[h.date] = h.rate);
     const rates = yrs.map(y => hm[y] || null);
