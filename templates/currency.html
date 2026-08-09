@@ -1,11 +1,42 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}{{ cur.name }} · {{ cur.pair }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" id="sec-top">
     <h1>{{ cur.name }} <span class="pair-badge">{{ cur.pair }}</span></h1>
     <p class="subtitle">{{ cur.pair_label }} · {{ cur.region }} · {{ cur.category }}</p>
 </div>
+
+<!-- ============ 快速导航（锚点） ============ -->
+<nav class="toc-nav" aria-label="快速导航">
+    <div class="toc-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        本章导航
+    </div>
+    <div class="toc-links">
+        <a href="#sec-overview">现状概览</a>
+        {% if deep.currency_role %}<a href="#sec-role">货币角色</a>{% endif %}
+        <a href="#sec-history">历史走势</a>
+        <a href="#sec-compare">多币对比</a>
+        <a href="#sec-monthly">月度/日度</a>
+        {% if code != 'usd' %}
+        <a href="#sec-spread">利差研究</a>
+        {% if code == 'jpy' %}<a href="#sec-carry">套息专题</a>{% endif %}
+        {% else %}
+        <a href="#sec-fed">美联储利率</a>
+        <a href="#sec-treasury">美债收益率</a>
+        <a href="#sec-dxy">DXY构成</a>
+        {% endif %}
+        {% if cur.turning_points %}<a href="#sec-turning">波动时期</a>{% endif %}
+        {% if deep.recent_events %}<a href="#sec-events">近期大事</a>{% endif %}
+        <a href="#sec-drivers">驱动因素</a>
+        {% if deep.deep_drivers %}<a href="#sec-deep">深度驱动</a>{% endif %}
+        <a href="#sec-think">自由思考</a>
+        <a href="#sec-data">历史数据</a>
+        <a href="#sec-live">实时汇率</a>
+    </div>
+</nav>
+
 
 <div class="callout info">
     <div class="callout-title">{{ cur.pair }} 现状</div>
@@ -34,14 +65,14 @@
 
 {% if deep.currency_role %}
 <!-- 货币角色与特性 -->
-<h2 class="section-title">货币角色与特性</h2>
+<h2 class="section-title" id="sec-role">货币角色与特性</h2>
 <div class="card deep-role-card">
     <p class="deep-role-text">{{ deep.currency_role }}</p>
 </div>
 {% endif %}
 
 <!-- 历史走势（年度） -->
-<h2 class="section-title">{{ cur.pair }} 历史走势（年度）
+<h2 class="section-title" id="sec-history">{{ cur.pair }} 历史走势（年度）
     <button class="chart-toggle-btn" data-target="history-chart" onclick="toggleChartMode(this)">🔬 专业模式</button>
 </h2>
 <div class="chart-box">
@@ -70,7 +101,7 @@
 </div>
 
 <!-- 近一年月度走势 -->
-<h2 class="section-title">{{ cur.pair }} 近一年月度走势
+<h2 class="section-title" id="sec-monthly">{{ cur.pair }} 近一年月度走势
     <button class="chart-toggle-btn" data-target="monthly-chart" onclick="toggleChartMode(this)">🔬 专业模式</button>
 </h2>
 <div class="callout info">
@@ -107,7 +138,7 @@
 </div>
 
 <!-- ============ 利差深度研究 ============ -->
-<h2 class="section-title">{{ cur.rate_context }} 深度研究</h2>
+<h2 class="section-title" id="sec-deep">{{ cur.rate_context }} 深度研究</h2>
 <div class="callout tip">
     <div class="callout-title">利差是汇率的第一性驱动</div>
     利差反映两国货币政策分化程度，是资金流向和汇率趋势的核心预测变量。以下从利差走势、统计特征、利差-汇率回归关系三个维度展开分析。
@@ -153,7 +184,7 @@
 
 {% if code == 'jpy' %}
 <!-- 日元套息交易专题 -->
-<h2 class="section-title">日元套息交易（Carry Trade）专题</h2>
+<h2 class="section-title" id="sec-carry">日元套息交易（Carry Trade）专题</h2>
 <div class="callout warn">
     <div class="callout-title">为什么美日利差是外汇市场最重要的利差</div>
     日元是全球最经典的融资货币，美日利差直接驱动数万亿规模的套息交易。利差扩大→套息交易扩张→日元贬值；利差收窄或风险事件→套息平仓→日元急升。这种"缓贬急升"的不对称特征是日元最独特的运行规律。
@@ -213,7 +244,7 @@
 
 {% else %}
 <!-- ============ 美元专属：美联储利率 + 美债收益率 ============ -->
-<h2 class="section-title">美联储利率周期</h2>
+<h2 class="section-title" id="sec-fed">美联储利率周期</h2>
 <div class="callout info">
     <div class="callout-title">联邦基金利率是美元的第一性驱动</div>
     美联储联邦基金利率决定美元的融资成本和利差优势。加息周期推升美元，降息周期压制美元。当前利率 3.50-3.75%，处于 2024 年开始的降息周期中。
@@ -233,7 +264,7 @@
 </div>
 
 <!-- 美债收益率 -->
-<h2 class="section-title">美债收益率走势</h2>
+<h2 class="section-title" id="sec-treasury">美债收益率走势</h2>
 <div class="callout tip">
     <div class="callout-title">美债收益率 = 全球资产定价之锚</div>
     10 年期美债收益率是全球风险资产的定价基准。收益率上升→美元走强（利差扩大），收益率下降→美元走弱。2Y-10Y 利差倒挂是经济衰退的经典预警信号。
@@ -263,7 +294,7 @@
 </table>
 
 <!-- 美元指数构成 -->
-<h2 class="section-title">美元指数（DXY）构成</h2>
+<h2 class="section-title" id="sec-dxy">美元指数（DXY）构成</h2>
 <div class="callout info">
     <div class="callout-title">DXY 不是全部货币的平均</div>
     美元指数仅由 6 种货币加权构成，欧元占比 57.6%，几乎决定了一半走势。DXY 不含人民币，不能完全反映美元对亚洲货币的强弱。
@@ -322,7 +353,7 @@
 
 {% if deep.recent_events %}
 <!-- 近期大事件深度分析 -->
-<h2 class="section-title">近期大事件深度分析</h2>
+<h2 class="section-title" id="sec-events">近期大事件深度分析</h2>
 {% for ev in deep.recent_events %}
 <div class="event-card">
     <div class="event-header">
@@ -336,7 +367,90 @@
 {% endif %}
 
 <!-- 驱动因素 -->
-<h2 class="section-title">{{ cur.name }}驱动因素详解</h2>
+<h2 class="section-title" id="sec-drivers">{{ cur.name }}驱动因素详解</h2>
+<!-- 驱动因素概览（快速梳理） -->
+<div class="drivers-overview-card">
+    <div class="drivers-overview-head">
+        <span class="drivers-overview-icon">⚡</span>
+        <span class="drivers-overview-title">驱动因素概览</span>
+        <span class="drivers-overview-sub">按影响力度与传导链路分类，点击下方链接跳转到详情</span>
+    </div>
+    <div class="drivers-overview-body">
+        {% for d in drivers %}
+        <a href="#driver-{{ loop.index }}" class="dov-item dov-{% if d.weight == '核心驱动' %}core{% elif '基本面' in d.weight %}fund{% elif '结构' in d.weight or '长期' in d.weight %}struct{% else %}amp{% endif %}">
+            <span class="dov-num">{{ loop.index }}</span>
+            <span class="dov-title">{{ d.title }}</span>
+            <span class="dov-tag">{{ d.weight }}</span>
+        </a>
+        {% endfor %}
+        {% if deep.deep_drivers %}
+        {% for dd in deep.deep_drivers %}
+        <a href="#deep-driver-{{ loop.index }}" class="dov-item dov-deep">
+            <span class="dov-num">D{{ loop.index }}</span>
+            <span class="dov-title">{{ dd.factor }}</span>
+            <span class="dov-tag">{{ dd.category }}</span>
+        </a>
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+{% for d in drivers %}
+<div class="driver-card {% if code == 'cny' %}cny{% elif code == 'jpy' %}jpy{% endif %}" id="driver-{{ loop.index }}">
+    <div class="driver-icon">{{ loop.index }}</div>
+    <div>
+        <h3>{{ d.title }}
+            <span class="weight-tag
+                {% if d.weight == '核心驱动' %}core
+                {% elif '基本面' in d.weight %}fundamental
+                {% elif '结构' in d.weight or '长期' in d.weight %}structural
+                {% else %}amplifier{% endif %}">{{ d.weight }}</span>
+        </h3>
+        <p class="mechanism">{{ d.mechanism | replace('\n', '<br>') | safe }}</p>
+        <div class="key-point">{{ d.key_point }}</div>
+        {% if d.links %}
+        <div class="driver-links">
+            {% for link in d.links %}
+            <a href="{{ link.url }}" target="_blank" class="link-btn {% if link.type == 'ths' %}ths{% elif link.type == 'article' %}article{% else %}official{% endif %}">
+                {% if link.type == 'ths' %}同花顺{% elif link.type == 'article' %}文章{% else %}官方{% endif %} · {{ link.text }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% if deep.deep_drivers %}
+<!-- 深度驱动因素 -->
+<h2 class="section-title" id="sec-deep">深度驱动因素分析</h2>
+{% for dd in deep.deep_drivers %}
+<div class="deep-driver-card" id="deep-driver-{{ loop.index }}">
+    <div class="dd-category-tag
+        {% if '结构' in dd.category %}structural
+        {% elif '周期' in dd.category %}cyclical
+        {% else %}event{% endif %}">{{ dd.category }}</div>
+    <h3 class="dd-factor">{{ dd.factor }}</h3>
+    <p class="dd-mechanism">{{ dd.mechanism }}</p>
+    <div class="dd-detail"><span class="detail-label">详解：</span>{{ dd.detail }}</div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- 自由思考 -->
+<h2 class="section-title" id="sec-think">自由思考</h2>
+<div class="callout tip">
+    <div class="callout-title">独立思考</div>
+    基于以上分析，尝试回答以下问题，形成自己的观点。
+</div>
+<div class="card">
+    <ul class="question-list">
+        {% for q in questions %}
+        <li>{{ q }}</li>
+        {% endfor %}
+    </ul>
+
+
 {% for d in drivers %}
 <div class="driver-card {% if code == 'cny' %}cny{% elif code == 'jpy' %}jpy{% endif %}">
     <div class="driver-icon">{{ loop.index }}</div>
@@ -380,7 +494,7 @@
 {% endif %}
 
 <!-- 自由思考 -->
-<h2 class="section-title">自由思考</h2>
+<h2 class="section-title" id="sec-think">自由思考</h2>
 <div class="callout tip">
     <div class="callout-title">独立思考</div>
     基于以上分析，尝试回答以下问题，形成自己的观点。
@@ -394,7 +508,7 @@
 </div>
 
 <!-- 历史数据表 -->
-<h2 class="section-title">历史数据明细</h2>
+<h2 class="section-title" id="sec-data">历史数据明细</h2>
 <table class="data-table">
     <thead><tr><th>年份</th><th>{{ cur.pair }}</th><th>关键事件</th></tr></thead>
     <tbody>
@@ -406,7 +520,7 @@
 
 <!-- 实时汇率小窗（底部，自动刷新） -->
 <div class="live-section">
-    <h2 class="section-title">实时汇率 · {{ cur.code }}
+    <h2 class="section-title" id="sec-live">实时汇率 · {{ cur.code }}
         <button id="live-refresh-btn" class="refresh-btn" title="手动刷新" onclick="manualRefresh()">↻ 刷新</button>
     </h2>
     <div class="callout warn">

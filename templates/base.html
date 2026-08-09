@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Parité{% endblock %} · 多货币研究平台</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     {% block head %}{% endblock %}
 </head>
 <body>
+<!-- Dream Journal 装饰：柔光光晕 orb（替代蝴蝶/面具装饰） -->
+<div class="dj-orb top-right" aria-hidden="true"></div>
+<div class="dj-orb bottom-left" aria-hidden="true"></div>
 <nav class="navbar">
     <div class="nav-brand">
         <span class="brand-text">Parité</span>
@@ -32,6 +38,17 @@
         <li><a href="{{ url_for('feedback') }}" class="{% if active == 'feedback' %}active{% endif %}">反馈</a></li>
         <li><a href="{{ url_for('ai_config') }}" class="{% if active == 'ai_config' %}active{% endif %}">AI配置</a></li>
     </ul>
+    <!-- 快速跳转搜索 -->
+    <div class="quick-search">
+        <span class="quick-search-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+        </span>
+        <input id="quick-search-input" class="quick-search-input" type="text" placeholder="快速跳转…搜索板块/货币" autocomplete="off">
+        <div id="quick-search-suggest" class="quick-search-suggest"></div>
+    </div>
 </nav>
 
 <!-- ============ 全局滚动汇率横条 ============ -->
@@ -43,7 +60,9 @@
 </div>
 
 <div class="container">
+    <main class="fade-in">
     {% block content %}{% endblock %}
+    </main>
 </div>
 
 <footer class="footer">
@@ -56,152 +75,54 @@
 {% block scripts %}{% endblock %}
 
 <!-- ============ 全局 AI 研究助手 ============ -->
-<!-- 右下角浮动按钮（支持蓝莓 / 自嘲熊 切换） -->
+<!-- 右下角浮动按钮 — 蓝莓发光球 -->
 <button id="ai-fab" class="ai-fab" title="蓝莓 AI 研究助手" aria-label="蓝莓 AI 研究助手">
-    <!-- 蓝莓图标（仿 Apple 🫐 表情：一簇深紫蓝色浆果 + 星形花萼 + 果粉） -->
-    <span class="fab-icon fab-icon-blueberry">
-        <svg width="30" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <radialGradient id="bbBody" cx="35%" cy="30%" r="80%" fx="35%" fy="30%">
-                    <stop offset="0%" stop-color="#6b5ce7"/>
-                    <stop offset="55%" stop-color="#3b2f9e"/>
-                    <stop offset="100%" stop-color="#1c155a"/>
-                </radialGradient>
-                <radialGradient id="bbShine" cx="30%" cy="25%" r="35%" fx="30%" fy="25%">
-                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.62"/>
-                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-                </radialGradient>
-                <radialGradient id="bbCalyx" cx="50%" cy="50%" r="60%">
-                    <stop offset="0%" stop-color="#5a9e54"/>
-                    <stop offset="100%" stop-color="#2a5e2a"/>
-                </radialGradient>
-            </defs>
-            <!-- 后排两颗小浆果 -->
-            <circle cx="9.2" cy="13" r="6" fill="url(#bbBody)"/>
-            <circle cx="22.8" cy="13" r="6" fill="url(#bbBody)"/>
-            <!-- 前排大浆果 -->
-            <circle cx="16" cy="20.5" r="8.6" fill="url(#bbBody)"/>
-            <!-- 果粉斑点 -->
-            <circle cx="7" cy="11" r="0.7" fill="#fff" fill-opacity="0.55"/>
-            <circle cx="11" cy="15" r="0.6" fill="#fff" fill-opacity="0.5"/>
-            <circle cx="24.5" cy="11" r="0.7" fill="#fff" fill-opacity="0.55"/>
-            <circle cx="20.5" cy="15" r="0.6" fill="#fff" fill-opacity="0.5"/>
-            <circle cx="13" cy="22.5" r="0.85" fill="#fff" fill-opacity="0.52"/>
-            <circle cx="19.5" cy="19" r="0.65" fill="#fff" fill-opacity="0.48"/>
-            <circle cx="18.5" cy="25" r="0.7" fill="#fff" fill-opacity="0.45"/>
-            <circle cx="11.5" cy="19.5" r="0.55" fill="#fff" fill-opacity="0.42"/>
-            <!-- 高光 -->
-            <ellipse cx="7" cy="11" rx="1.9" ry="1.4" fill="url(#bbShine)"/>
-            <ellipse cx="20.8" cy="11" rx="1.9" ry="1.4" fill="url(#bbShine)"/>
-            <ellipse cx="12.5" cy="17.5" rx="3.1" ry="2.3" fill="url(#bbShine)"/>
-            <!-- 星形花萼（每颗顶部） -->
-            <g transform="translate(9.2,7)">
-                <path d="M0,-2.3 L0.95,-0.65 L2.7,-0.1 L1.45,1.15 L1.78,3 L0,2 L-1.78,3 L-1.45,1.15 L-2.7,-0.1 L-0.95,-0.65 Z" fill="url(#bbCalyx)" stroke="#1f3f22" stroke-width="0.3" stroke-linejoin="round"/>
-            </g>
-            <g transform="translate(22.8,7)">
-                <path d="M0,-2.3 L0.95,-0.65 L2.7,-0.1 L1.45,1.15 L1.78,3 L0,2 L-1.78,3 L-1.45,1.15 L-2.7,-0.1 L-0.95,-0.65 Z" fill="url(#bbCalyx)" stroke="#1f3f22" stroke-width="0.3" stroke-linejoin="round"/>
-            </g>
-            <g transform="translate(16,12)">
-                <path d="M0,-3.1 L1.25,-0.85 L3.6,-0.1 L1.95,1.55 L2.35,4 L0,2.7 L-2.35,4 L-1.95,1.55 L-3.6,-0.1 L-1.25,-0.85 Z" fill="url(#bbCalyx)" stroke="#1f3f22" stroke-width="0.35" stroke-linejoin="round"/>
-                <circle cx="0" cy="0.6" r="0.8" fill="#1f3f22" opacity="0.5"/>
-            </g>
-        </svg>
-    </span>
-    <!-- 自嘲熊图标（Nagano Jokebear：极简白底黑线 + 波浪底边 + 举双手 + 3字嘴） -->
-    <span class="fab-icon fab-icon-bear" style="display:none;">
-        <svg width="30" height="30" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <!-- 身体主体：圆角方头 + 波浪下摆（像幽灵/团子） -->
-            <path d="
-                M 6,12
-                Q 6,5.2 12,5.2
-                L 20,5.2
-                Q 26,5.2 26,12
-                L 26,25.2
-                Q 26,26.6 24.8,26.2
-                Q 24,25.8 23.2,26.4
-                Q 22.4,27 21.6,26.6
-                Q 20.8,26.2 20,26.8
-                Q 19.2,27.4 18.4,27
-                Q 17.6,26.6 16.8,27
-                Q 16,27.4 15.2,27
-                Q 14.4,26.6 13.6,27
-                Q 12.8,27.4 12,27
-                Q 11.2,26.6 10.4,26.8
-                Q 9.6,27 8.8,26.6
-                Q 8,26.2 7.2,26.2
-                Q 6,26.6 6,25.2
-                Z"
-                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-            <!-- 左耳 -->
-            <path d="M 11.6,6.8 Q 10.6,5.2 11.6,4.4 Q 12.8,3.8 13.4,5.4 Q 13.4,6.5 12.6,7 Z"
-                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round"/>
-            <!-- 右耳 -->
-            <path d="M 20.4,6.8 Q 21.4,5.2 20.4,4.4 Q 19.2,3.8 18.6,5.4 Q 18.6,6.5 19.4,7 Z"
-                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round"/>
-            <!-- 左爪（举起来） -->
-            <path d="M 6.2,17.2 Q 4,15.4 4.6,13 Q 5.2,10.6 8,11.4 Q 10,12.2 9.6,14.4 Q 9.2,16 7.4,16.8"
-                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
-            <!-- 左爪小肉垫凹痕 -->
-            <path d="M 6.6,13.2 Q 6.2,12.6 6.8,12.2" fill="none" stroke="#1a1a1a" stroke-width="0.9" stroke-linecap="round"/>
-            <!-- 右爪（举起来） -->
-            <path d="M 25.8,17.2 Q 28,15.4 27.4,13 Q 26.8,10.6 24,11.4 Q 22,12.2 22.4,14.4 Q 22.8,16 24.6,16.8"
-                fill="#ffffff" stroke="#1a1a1a" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
-            <!-- 右爪小肉垫凹痕 -->
-            <path d="M 25.4,13.2 Q 25.8,12.6 25.2,12.2" fill="none" stroke="#1a1a1a" stroke-width="0.9" stroke-linecap="round"/>
-            <!-- 左眼：小黑圆点 -->
-            <circle cx="13" cy="13.6" r="1.05" fill="#1a1a1a"/>
-            <!-- 右眼：小黑圆点 -->
-            <circle cx="19" cy="13.6" r="1.05" fill="#1a1a1a"/>
-            <!-- 鼻子：小黑圆点 -->
-            <circle cx="16" cy="16.3" r="1.05" fill="#1a1a1a"/>
-            <!-- 嘴：标志性 3 字曲线（空心描边） -->
-            <path d="M 16,17.4 C 14.4,18.0 13.6,18.6 13.6,19.4 C 13.6,19.8 14.0,20.2 14.6,20.0
-                     C 15.2,19.7 15.4,19.1 16,18.9 C 16.6,19.1 16.8,19.7 17.4,20.0
-                     C 18.0,20.2 18.4,19.8 18.4,19.4 C 18.4,18.6 17.6,18.0 16,17.4 Z"
-                fill="none" stroke="#1a1a1a" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-        </svg>
-    </span>
+    <span class="ai-orb-icon" style="font-size: 26px; line-height: 1;">🫐</span>
 </button>
 
-<!-- 聊天面板 -->
-<div id="ai-panel" class="ai-panel" style="display:none;">
-    <div class="ai-panel-header">
-        <span class="ai-panel-title" id="ai-panel-title">AI 研究助手</span>
-        <div class="ai-panel-actions">
-            <button id="ai-panel-swapicon" class="ai-panel-expand" title="切换助手图标（蓝莓 / 自嘲熊）" aria-label="切换助手图标">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12a9 9 0 1 1-3-6.7"/>
-                    <polyline points="21 4 21 10 15 10"/>
-                </svg>
-            </button>
-            <button id="ai-panel-expand" class="ai-panel-expand" title="分屏模式（左看网站右提问）" aria-label="分屏模式" aria-pressed="false">
-                <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="13" height="18" rx="1"/>
-                    <line x1="20" y1="3" x2="20" y2="21"/>
-                </svg>
-                <svg class="icon-collapse" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                    <polyline points="4 14 4 20 10 20"/>
-                    <polyline points="20 10 20 4 14 4"/>
-                    <line x1="14" y1="10" x2="21" y2="3"/>
-                    <line x1="3" y1="21" x2="10" y2="14"/>
-                </svg>
-            </button>
-            <button id="ai-panel-close" class="ai-panel-close" title="关闭" aria-label="关闭">&times;</button>
-        </div>
+<!-- 聊天面板 — P5游戏风格对话框 -->
+<div id="ai-panel" class="ai-panel p5-dialog" style="display:none;">
+    <!-- P5斜切名字标签 -->
+    <div class="p5-name-tag">
+        <span class="p5-name-emoji">🫐</span>
+        <span class="p5-name-text" id="ai-panel-title">蓝莓</span>
     </div>
-    <div id="ai-messages" class="ai-messages">
-        <div class="ai-msg bot">
-            <div class="ai-msg-content">你好，我是 AI 研究助手，可以帮你解答外汇、货币政策、汇率分析等问题。也可以在页面选中文字后点击"询问AI"。</div>
+    <!-- 关闭按钮 -->
+    <button id="ai-panel-close" class="ai-panel-close p5-close" title="关闭" aria-label="关闭">×</button>
+    <!-- 分屏按钮 -->
+    <button id="ai-panel-expand" class="p5-expand-btn" title="分屏模式" aria-label="分屏模式" aria-pressed="false">
+        <svg class="icon-expand" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="13" height="18" rx="1"/>
+            <line x1="20" y1="3" x2="20" y2="21"/>
+        </svg>
+        <svg class="icon-collapse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <polyline points="4 14 4 20 10 20"/>
+            <polyline points="20 10 20 4 14 4"/>
+            <line x1="14" y1="10" x2="21" y2="3"/>
+            <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+    </button>
+
+    <!-- 主对话框：白框 + 黑边斜切 -->
+    <div class="p5-dialog-box">
+        <!-- 左侧蓝莓头像 -->
+        <div class="p5-avatar">
+            <div class="p5-avatar-inner">🫐</div>
         </div>
-    </div>
-    <div class="ai-input-area">
-        <textarea id="ai-input" class="ai-input" placeholder="输入问题，回车发送..." rows="1"></textarea>
-        <button id="ai-send" class="ai-send" title="发送" aria-label="发送">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-        </button>
+        <!-- 右侧消息+输入 -->
+        <div class="p5-dialog-right">
+            <div id="ai-messages" class="ai-messages p5-messages">
+                <div class="ai-msg bot">
+                    <div class="ai-msg-content p5-speech">嘿！有什么想知道的尽管问～</div>
+                </div>
+            </div>
+            <div class="ai-input-area p5-input-area">
+                <input id="ai-input" class="ai-input p5-input" type="text" placeholder="跟蓝莓说点什么…">
+                <button id="ai-send" class="ai-send p5-send-btn" title="发送" aria-label="发送">
+                    <span>SEND</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -259,7 +180,6 @@
     var panel = document.getElementById('ai-panel');
     var panelClose = document.getElementById('ai-panel-close');
     var panelExpand = document.getElementById('ai-panel-expand');
-    var panelSwapIcon = document.getElementById('ai-panel-swapicon');
     var panelTitle = document.getElementById('ai-panel-title');
     var messages = document.getElementById('ai-messages');
     var input = document.getElementById('ai-input');
@@ -271,44 +191,17 @@
     var hasConfigured = false;
     var isSplitMode = false;
 
-    // ---------- 助手图标切换（蓝莓 / 自嘲熊） ----------
-    var fabIconBB = fab.querySelector('.fab-icon-blueberry');
-    var fabIconBear = fab.querySelector('.fab-icon-bear');
-    var ICON_KEY = 'parite_ai_icon';
+    // ---------- 助手配置：蓝莓 ----------
+    var WELCOME_TEXT = '嘿！有什么想知道的尽管问～';
 
-    function applyAssistantIcon(name) {
-        if (name === 'bear') {
-            fabIconBB.style.display = 'none';
-            fabIconBear.style.display = '';
-            fab.title = '自嘲熊 AI 研究助手';
-            fab.setAttribute('aria-label', '自嘲熊 AI 研究助手');
-            if (panelTitle) panelTitle.textContent = '自嘲熊 AI 研究助手';
-        } else {
-            fabIconBB.style.display = '';
-            fabIconBear.style.display = 'none';
-            fab.title = '蓝莓 AI 研究助手';
-            fab.setAttribute('aria-label', '蓝莓 AI 研究助手');
-            if (panelTitle) panelTitle.textContent = '蓝莓 AI 研究助手';
-        }
+    // 更新首条欢迎语
+    var firstBotMsg = document.querySelector('#ai-messages .ai-msg.bot .ai-msg-content');
+    if (firstBotMsg) {
+        firstBotMsg.textContent = WELCOME_TEXT;
     }
-
-    // 初始化：读取 localStorage 中保存的偏好
-    try {
-        var savedIcon = localStorage.getItem(ICON_KEY);
-        if (savedIcon === 'bear' || savedIcon === 'blueberry') {
-            applyAssistantIcon(savedIcon);
-        }
-    } catch (e) { /* localStorage 不可用时静默 */ }
-
-    if (panelSwapIcon) {
-        panelSwapIcon.addEventListener('click', function () {
-            var cur;
-            try { cur = localStorage.getItem(ICON_KEY) || 'blueberry'; } catch (e) { cur = 'blueberry'; }
-            var next = cur === 'blueberry' ? 'bear' : 'blueberry';
-            try { localStorage.setItem(ICON_KEY, next); } catch (e) {}
-            applyAssistantIcon(next);
-        });
-    }
+    fab.title = '蓝莓';
+    fab.setAttribute('aria-label', '蓝莓');
+    if (panelTitle) panelTitle.textContent = '蓝莓';
 
     // ---------- 面板展开/收起 ----------
     function togglePanel() {
@@ -321,7 +214,80 @@
         }
     }
 
-    fab.addEventListener('click', togglePanel);
+    // ---------- AI FAB 拖拽（自由移动） ----------
+    var isDragging = false;
+    var dragStartX = 0, dragStartY = 0;
+    var fabStartX = 0, fabStartY = 0;
+    var hasMoved = false;
+    var MOVE_THRESHOLD = 5;
+
+    function getEventPos(e) {
+        if (e.touches && e.touches[0]) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function onDragStart(e) {
+        var pos = getEventPos(e);
+        dragStartX = pos.x;
+        dragStartY = pos.y;
+        var rect = fab.getBoundingClientRect();
+        fabStartX = rect.left;
+        fabStartY = rect.top;
+        hasMoved = false;
+        isDragging = true;
+        fab.classList.add('dragging');
+        e.preventDefault();
+    }
+
+    function onDragMove(e) {
+        if (!isDragging) return;
+        var pos = getEventPos(e);
+        var dx = pos.x - dragStartX;
+        var dy = pos.y - dragStartY;
+        if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
+            hasMoved = true;
+        }
+        var newX = fabStartX + dx;
+        var newY = fabStartY + dy;
+        // 边界检测
+        var fabSize = fab.offsetWidth;
+        var maxX = window.innerWidth - fabSize;
+        var maxY = window.innerHeight - fabSize;
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+        fab.style.right = 'auto';
+        fab.style.bottom = 'auto';
+        fab.style.left = newX + 'px';
+        fab.style.top = newY + 'px';
+        // 面板跟随
+        if (panel.style.display !== 'none') {
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+            panel.style.left = Math.min(newX, window.innerWidth - panel.offsetWidth) + 'px';
+            panel.style.top = Math.max(0, newY - panel.offsetHeight) + 'px';
+        }
+        e.preventDefault();
+    }
+
+    function onDragEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        fab.classList.remove('dragging');
+        // 如果没有明显移动，视为点击
+        if (!hasMoved) {
+            togglePanel();
+        }
+    }
+
+    fab.addEventListener('mousedown', onDragStart);
+    fab.addEventListener('touchstart', onDragStart, { passive: false });
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('touchmove', onDragMove, { passive: false });
+    document.addEventListener('mouseup', onDragEnd);
+    document.addEventListener('touchend', onDragEnd);
+
     panelClose.addEventListener('click', function () {
         panel.style.display = 'none';
         // 关闭时同步退出分屏，避免下次打开仍是分屏遮挡
@@ -797,6 +763,292 @@
 
     loadTicker();
     tickerTimer = setInterval(loadTicker, 60000);
+})();
+
+// ============ 日记卡片展开/折叠（Journal Accordion） ============
+(function () {
+    function initJournalCards() {
+        var cards = document.querySelectorAll('.journal-card');
+        cards.forEach(function (card) {
+            var header = card.querySelector('.journal-card-header');
+            if (!header) return;
+            header.addEventListener('click', function () {
+                card.classList.toggle('open');
+            });
+        });
+
+        // 为带 .expandable 类的 .card 添加展开行为
+        var expandableCards = document.querySelectorAll('.card.expandable');
+        expandableCards.forEach(function (card) {
+            var header = card.querySelector('.card-header, .card-title-row, h3, h4');
+            if (!header) {
+                header = card.firstElementChild;
+            }
+            if (!header || header.dataset.journalBound) return;
+            header.dataset.journalBound = '1';
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function () {
+                card.classList.toggle('open');
+                var body = card.querySelector('.card-body, .card-content, .card-inner');
+                if (body) {
+                    if (card.classList.contains('open')) {
+                        body.style.maxHeight = body.scrollHeight + 'px';
+                    } else {
+                        body.style.maxHeight = '0';
+                    }
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initJournalCards);
+    } else {
+        initJournalCards();
+    }
+})();
+
+// ============ 快速跳转搜索（Quick Jump Search） ============
+(function () {
+    var input = document.getElementById('quick-search-input');
+    var suggest = document.getElementById('quick-search-suggest');
+    if (!input || !suggest) return;
+
+    // 从 currency_nav 构建索引 + 固定板块
+    var pages = [
+        { title: '总览', icon: '🏠', desc: '首页：汇率雷达 / 图表 / 核心数据', url: window.__parite ? (window.__parite.root || '') + '/' : '/', group: '站点导航' },
+        { title: '基础入门', icon: '📖', desc: '外汇基础知识 / 学习路径 / 术语', url: window.__parite ? (window.__parite.root || '') + '/basics' : '/basics', group: '站点导航' },
+        { title: '对比思考', icon: '⚖️', desc: '多货币横向对比 / 利差矩阵', url: window.__parite ? (window.__parite.root || '') + '/comparison' : '/comparison', group: '站点导航' },
+        { title: '期货板块', icon: '📈', desc: '货币期货 / 保证金计算器 / 交易所', url: window.__parite ? (window.__parite.root || '') + '/futures' : '/futures', group: '站点导航' },
+        { title: '债券板块', icon: '🏛️', desc: '国债收益率 / 收益率曲线', url: window.__parite ? (window.__parite.root || '') + '/bond' : '/bond', group: '站点导航' },
+        { title: '信贷板块', icon: '💳', desc: '信贷脉冲 / 利差深度研究', url: window.__parite ? (window.__parite.root || '') + '/credit' : '/credit', group: '站点导航' },
+        { title: '数据探索', icon: '🔍', desc: '历史数据查询 / 图表分析', url: window.__parite ? (window.__parite.root || '') + '/explorer' : '/explorer', group: '站点导航' },
+        { title: '反馈建议', icon: '💬', desc: '内容纠错 / 功能建议', url: window.__parite ? (window.__parite.root || '') + '/feedback' : '/feedback', group: '站点导航' },
+    ];
+
+    // 从下拉菜单读取货币列表
+    var dropdownLinks = document.querySelectorAll('.dropdown-menu a');
+    dropdownLinks.forEach(function (a) {
+        var label = a.firstChild ? a.firstChild.textContent.trim() : a.textContent.trim();
+        var pairEl = a.querySelector('.pair-tag');
+        var pair = pairEl ? pairEl.textContent.trim() : '';
+        pages.push({
+            title: label,
+            icon: '💴',
+            desc: pair ? '货币研究 · ' + pair : '货币研究',
+            url: a.href,
+            group: '货币研究'
+        });
+    });
+
+    // 常见板块关键词提示（默认输入为空时展示）
+    var defaultSuggests = [
+        { title: '美元 DXY 指数构成', icon: '🇺🇸', desc: '美元指数构成', keyword: 'dxy', inline: 'sec-dxy' },
+        { title: '日元 货币政策', icon: '🇯🇵', desc: '日元核心驱动', keyword: '日元', inline: 'sec-drivers' },
+        { title: '人民币 汇率机制', icon: '🇨🇳', desc: '人民币深度分析', keyword: '人民币', inline: 'sec-deep' },
+        { title: '利差 / Carry', icon: '📊', desc: '套息交易分析', keyword: '利差', inline: 'sec-spread' },
+        { title: '历史走势 / 月度数据', icon: '📉', desc: '图表区', keyword: '历史', inline: 'sec-history' },
+        { title: '驱动因素概览', icon: '⚡', desc: '按影响分类', keyword: '驱动', inline: 'sec-drivers' },
+        { title: '实时汇率 / 事件日历', icon: '⏱️', desc: '最新数据', keyword: '实时', inline: 'sec-live' },
+        { title: '转折点分析', icon: '🔄', desc: '关键信号位', keyword: '转折', inline: 'sec-turning' },
+    ];
+
+    var activeIdx = -1;
+    var currentItems = [];
+
+    function escapeHTML(s) {
+        return (s || '').replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function highlight(text, q) {
+        if (!q) return escapeHTML(text);
+        try {
+            var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+            return escapeHTML(text).replace(re, '<mark style="background:rgba(108,176,255,0.25);color:#fff;padding:0 2px;border-radius:2px;">$1</mark>');
+        } catch (e) { return escapeHTML(text); }
+    }
+
+    function render(items, q) {
+        if (!items.length) {
+            suggest.innerHTML = '<div class="qs-empty">未找到匹配项</div>';
+            currentItems = [];
+            return;
+        }
+        // 按组分类
+        var byGroup = {};
+        items.forEach(function (it) {
+            var g = it.group || '相关板块';
+            if (!byGroup[g]) byGroup[g] = [];
+            byGroup[g].push(it);
+        });
+        var order = ['相关板块', '货币研究', '站点导航', '搜索建议'];
+        var html = '';
+        var flat = [];
+        order.forEach(function (g) {
+            if (!byGroup[g]) return;
+            html += '<div class="qs-group-label">' + escapeHTML(g) + '</div>';
+            byGroup[g].forEach(function (it) {
+                flat.push(it);
+                html += '<div class="qs-item' + (flat.length - 1 === activeIdx ? ' active' : '') + '" data-idx="' + (flat.length - 1) + '">'
+                    + '<div class="qs-icon">' + escapeHTML(it.icon) + '</div>'
+                    + '<div class="qs-meta">'
+                    + '<div class="qs-title">' + highlight(it.title, q) + '</div>'
+                    + '<div class="qs-desc">' + highlight(it.desc, q) + '</div>'
+                    + '</div></div>';
+            });
+        });
+        // 加上其他组（如果有）
+        Object.keys(byGroup).forEach(function (g) {
+            if (order.indexOf(g) >= 0) return;
+            html += '<div class="qs-group-label">' + escapeHTML(g) + '</div>';
+            byGroup[g].forEach(function (it) {
+                flat.push(it);
+                html += '<div class="qs-item' + (flat.length - 1 === activeIdx ? ' active' : '') + '" data-idx="' + (flat.length - 1) + '">'
+                    + '<div class="qs-icon">' + escapeHTML(it.icon) + '</div>'
+                    + '<div class="qs-meta">'
+                    + '<div class="qs-title">' + highlight(it.title, q) + '</div>'
+                    + '<div class="qs-desc">' + highlight(it.desc, q) + '</div>'
+                    + '</div></div>';
+            });
+        });
+        suggest.innerHTML = html;
+        currentItems = flat;
+        // 绑定点击
+        suggest.querySelectorAll('.qs-item').forEach(function (el) {
+            el.addEventListener('click', function () {
+                var idx = parseInt(el.getAttribute('data-idx'), 10);
+                goItem(currentItems[idx]);
+            });
+        });
+    }
+
+    function goItem(it) {
+        if (!it) return;
+        hide();
+        if (it.inline) {
+            // 本页内锚点跳转
+            var el = document.getElementById(it.inline);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+        }
+        if (it.url) window.location.href = it.url;
+    }
+
+    function show() { suggest.classList.add('show'); }
+    function hide() { suggest.classList.remove('show'); activeIdx = -1; }
+
+    function search(q) {
+        q = (q || '').trim();
+        activeIdx = -1;
+        if (!q) {
+            // 默认展示：当前页板块锚点 + 推荐搜索
+            var sections = [];
+            document.querySelectorAll('h1, h2.section-title, [id^="sec-"]').forEach(function (s) {
+                var id = s.id;
+                if (!id) return;
+                var title = s.textContent.replace(/\s+/g, ' ').trim().slice(0, 30);
+                if (!title) return;
+                sections.push({
+                    title: title,
+                    icon: '📍',
+                    desc: '本页板块',
+                    inline: id,
+                    group: '相关板块'
+                });
+            });
+            var merged = sections.slice(0, 6);
+            defaultSuggests.slice(0, 6).forEach(function (d) { d.group = '搜索建议'; merged.push(d); });
+            render(merged, '');
+            show();
+            return;
+        }
+        var ql = q.toLowerCase();
+        var results = [];
+        // 页面匹配
+        pages.forEach(function (p) {
+            var score = 0;
+            if (p.title.toLowerCase().includes(ql)) score += 10;
+            if (p.desc && p.desc.toLowerCase().includes(ql)) score += 5;
+            if (p.group && p.group.toLowerCase().includes(ql)) score += 3;
+            if (score > 0) results.push(Object.assign({}, p, { _score: score }));
+        });
+        // 当前页锚点匹配
+        document.querySelectorAll('[id^="sec-"]').forEach(function (s) {
+            var titleEl = s.querySelector('.section-title, h1, h2, h3');
+            var title = titleEl ? titleEl.textContent : s.textContent;
+            title = title.replace(/\s+/g, ' ').trim().slice(0, 40);
+            if (!title) return;
+            var hay = (s.id + ' ' + title).toLowerCase();
+            if (hay.includes(ql)) {
+                results.push({
+                    title: title,
+                    icon: '📍',
+                    desc: '本页 · #' + s.id,
+                    inline: s.id,
+                    group: '相关板块',
+                    _score: 8
+                });
+            }
+        });
+        // 默认建议匹配关键词
+        defaultSuggests.forEach(function (d) {
+            if ((d.keyword + ' ' + d.title).toLowerCase().includes(ql)) {
+                results.push(Object.assign({ group: '搜索建议', _score: 6 }, d));
+            }
+        });
+        results.sort(function (a, b) { return b._score - a._score; });
+        render(results.slice(0, 12), q);
+        show();
+    }
+
+    input.addEventListener('focus', function () { search(input.value); });
+    input.addEventListener('input', function () { search(input.value); });
+    input.addEventListener('keydown', function (e) {
+        if (!suggest.classList.contains('show')) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') { search(input.value); e.preventDefault(); }
+            return;
+        }
+        var n = currentItems.length;
+        if (e.key === 'ArrowDown') {
+            activeIdx = (activeIdx + 1) % n;
+            search(input.value);
+            e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+            activeIdx = (activeIdx - 1 + n) % n;
+            search(input.value);
+            e.preventDefault();
+        } else if (e.key === 'Enter') {
+            if (activeIdx >= 0 && currentItems[activeIdx]) {
+                goItem(currentItems[activeIdx]);
+            }
+            e.preventDefault();
+        } else if (e.key === 'Escape') {
+            hide();
+            input.blur();
+        }
+    });
+    document.addEventListener('click', function (e) {
+        if (e.target !== input && !suggest.contains(e.target)) hide();
+    });
+
+    // Ctrl/Cmd+K 聚焦搜索
+    document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            input.focus();
+            input.select();
+        }
+    });
+    // 快捷键提示 placeholder
+    if (navigator.platform && navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
+        input.placeholder = '快速跳转 ⌘K  搜索板块/货币';
+    } else {
+        input.placeholder = '快速跳转 Ctrl+K  搜索板块/货币';
+    }
 })();
 </script>
 
