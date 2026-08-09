@@ -120,7 +120,7 @@ body::before {
 .page-header h1 {
     font-size: 30px;
     font-family: var(--font-serif);
-    background: linear-gradient(135deg, #8B6914 0%, #C9A24B 35%, #F0D080 65%, #B8860B 100%);
+    background: linear-gradient(135deg, #B8860B 0%, #E0B84C 35%, #FFE082 65%, #D4A017 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -136,14 +136,14 @@ body::before {
 .section-title {
     font-size: 20px;
     font-family: var(--font-serif);
-    background: linear-gradient(135deg, #8B6914 0%, #C9A24B 35%, #E8C36A 70%, #B8860B 100%);
+    background: linear-gradient(135deg, #B8860B 0%, #E0B84C 35%, #FFD96A 70%, #D4A017 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     color: transparent;
     margin: 36px 0 16px;
     padding-left: 12px;
-    border-left: 3px solid #C9A24B;
+    border-left: 3px solid #E0B84C;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -162,7 +162,7 @@ body::before {
 .card:hover { border-color: var(--border); }
 .card h3 {
     color: transparent;
-    background: linear-gradient(135deg, #B8860B, #D4A843);
+    background: linear-gradient(135deg, #D4A017, #FFD96A);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
