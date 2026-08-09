@@ -2923,8 +2923,8 @@ body.ai-split-open::before {
 .p5-dialog-box {
     display: flex;
     gap: 0;
-    background: #ffffff;
-    border: 4px solid #000000;
+    background: #0d0d14;
+    border: 4px solid #1e1e2a;
     position: relative;
     margin-top: 10px;
     min-height: 170px;
@@ -2937,15 +2937,15 @@ body.ai-split-open::before {
         0 22px
     );
     box-shadow:
-        0 0 0 1px #fff,
-        8px 8px 0 0 #000,
-        0 20px 50px rgba(0,0,0,0.5);
+        0 0 0 1px rgba(138,100,220,0.25),
+        8px 8px 0 0 rgba(138,100,220,0.2),
+        0 20px 50px rgba(0,0,0,0.7);
 }
 .p5-dialog-box::before {
     content: '';
     position: absolute;
     top: 4px; left: 4px; right: 4px; bottom: 4px;
-    border: 1px solid rgba(0,0,0,0.06);
+    border: 1px solid rgba(255,255,255,0.06);
     pointer-events: none;
     clip-path: polygon(
         18px 0, 100% 0, 100% calc(100% - 18px),
@@ -2957,13 +2957,13 @@ body.ai-split-open::before {
 .p5-avatar {
     width: 130px;
     min-width: 130px;
-    background: linear-gradient(160deg, #000 0%, #1a0a2e 50%, #3d1a5c 100%);
+    background: linear-gradient(160deg, #05050a 0%, #160828 50%, #2d1348 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
-    border-right: 4px solid #000;
+    border-right: 4px solid #1e1e2a;
 }
 .p5-avatar::before {
     content: '';
@@ -2994,7 +2994,7 @@ body.ai-split-open::before {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: #0d0d14;
     min-width: 0;
 }
 
@@ -3007,32 +3007,32 @@ body.ai-split-open::before {
         0deg,
         transparent,
         transparent 28px,
-        rgba(0,0,0,0.025) 28px,
-        rgba(0,0,0,0.025) 29px
+        rgba(255,255,255,0.02) 28px,
+        rgba(255,255,255,0.02) 29px
     );
 }
 .p5-messages::-webkit-scrollbar { width: 6px; }
-.p5-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+.p5-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
 
 .p5-messages .ai-msg { margin-bottom: 14px; }
 .p5-messages .ai-msg-content {
     font-family: 'Nunito', 'Noto Serif SC', 'PingFang SC', sans-serif;
     font-size: 15px;
     line-height: 1.75;
-    color: #111;
+    color: #e8e8f0;
     font-weight: 500;
 }
 .p5-speech {
     position: relative;
     padding-left: 10px;
-    border-left: 3px solid #ff1a1a;
+    border-left: 3px solid #ff3b4a;
 }
 
 /* 用户消息 */
 .p5-messages .ai-msg.user .ai-msg-content {
-    background: #fff5f5;
-    border-left: 3px solid #000;
-    color: #222;
+    background: #1a1a28;
+    border-left: 3px solid #e8e8f0;
+    color: #e8e8f0;
     padding: 8px 14px;
     margin-left: 24px;
     font-weight: 600;
@@ -3059,20 +3059,20 @@ body.ai-split-open::before {
     display: flex;
     gap: 0;
     padding: 12px 16px 16px 20px;
-    border-top: 2px dashed rgba(0,0,0,0.15);
-    background: #fafafa;
+    border-top: 2px dashed rgba(255,255,255,0.12);
+    background: #08080e;
     align-items: stretch;
 }
 .p5-input {
     flex: 1;
     padding: 10px 14px;
-    border: 3px solid #000;
+    border: 3px solid #2a2a3a;
     border-right: none;
     font-size: 14px;
     font-family: 'Nunito', 'PingFang SC', sans-serif;
     font-weight: 600;
-    color: #111;
-    background: #fff;
+    color: #e8e8f0;
+    background: #14141e;
     outline: none;
     resize: none;
     min-height: auto;
@@ -3086,8 +3086,8 @@ body.ai-split-open::before {
         0 10px
     );
 }
-.p5-input::placeholder { color: rgba(0,0,0,0.35); font-weight: 500; }
-.p5-input:focus { background: #fffbf0; }
+.p5-input::placeholder { color: rgba(255,255,255,0.3); font-weight: 500; }
+.p5-input:focus { background: #1c1c2a; border-color: #ff3b4a; }
 
 /* 发送按钮 */
 .p5-send-btn {
@@ -3095,9 +3095,9 @@ body.ai-split-open::before {
     padding: 0 22px 0 18px;
     height: 44px;
     min-width: 100px;
-    background: #ff1a1a;
+    background: #ff3b4a;
     color: #fff;
-    border: 3px solid #000;
+    border: 3px solid #2a2a3a;
     border-left: none;
     cursor: pointer;
     overflow: hidden;
