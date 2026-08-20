@@ -112,7 +112,7 @@ Promise.all(allCodes.map(c => fetch('/api/currency/'+c+'/history').then(r=>r.jso
             y: data.map(d => (d.rate/base)*100),
             name: PAIR_LABELS[code],
             type: 'scatter', mode: 'lines',
-            line: { color: PAIR_COLORS[code], width: 3 }
+            line: { color: PAIR_COLORS[code], width: 4 }
         };
     });
     Plotly.newPlot('compare-chart', traces, {

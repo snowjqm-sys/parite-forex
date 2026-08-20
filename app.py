@@ -636,6 +636,51 @@ def feedback():
 
 
 # ============================================================
+# 外汇日报 / 周报
+# ============================================================
+@app.route("/reports")
+def reports_index():
+    """报告中心：列出所有日报和周报"""
+    daily = DATA.DAILY_REPORTS
+    weekly = DATA.WEEKLY_REPORTS
+    return render_template("reports.html", active="reports",
+                           daily_reports=daily, weekly_reports=weekly,
+                           currency_nav=DATA.CURRENCY_NAV)
+
+
+@app.route("/reports/daily/<date>")
+def daily_report(date):
+    """单篇日报详情"""
+    report = None
+    for r in DATA.DAILY_REPORTS:
+        if r["date"] == date:
+            report = r
+            break
+    if not report:
+        abort(404)
+    return render_template("daily_report.html", active="reports",
+                           report=report,
+                           daily_reports=DATA.DAILY_REPORTS,
+                           currency_nav=DATA.CURRENCY_NAV)
+
+
+@app.route("/reports/weekly/<date>")
+def weekly_report(date):
+    """单篇周报详情"""
+    report = None
+    for r in DATA.WEEKLY_REPORTS:
+        if r["date"] == date:
+            report = r
+            break
+    if not report:
+        abort(404)
+    return render_template("weekly_report.html", active="reports",
+                           report=report,
+                           weekly_reports=DATA.WEEKLY_REPORTS,
+                           currency_nav=DATA.CURRENCY_NAV)
+
+
+# ============================================================
 # 数据 API
 # ============================================================
 @app.route("/api/snapshot")

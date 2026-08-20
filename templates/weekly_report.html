@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+{% block title %}{{ report.week_label }} 周报 · Parité{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ report.week_label }} 周报</h1>
+    <p class="subtitle">{{ report.title }}</p>
+</div>
+
+<div class="report-nav">
+    <a href="{{ url_for('reports_index') }}" class="report-back">← 返回报告中心</a>
+    <div class="report-nav-list">
+        {% for r in weekly_reports %}
+        <a href="{{ url_for('weekly_report', date=r.date) }}" class="{% if r.date == report.date %}active{% endif %}">{{ r.week_label }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="report-summary-box">
+    <div class="report-summary-label">📊 本周概述</div>
+    <div class="report-summary-text">{{ report.summary }}</div>
+</div>
+
+<!-- 本周 vs 上周对比 -->
+<div class="weekly-comparison">
+    <h2 class="section-title">📈 本周 vs 上周对比</h2>
+    <div class="comparison-grid">
+        <div class="comparison-col current">
+            <div class="comparison-col-header">
+                <span class="comparison-badge">本周</span>
+            </div>
+            <div class="comparison-content">
+                <h3 class="comparison-sub-title">关键走势</h3>
+                <ul class="comparison-list">
+                    {% for item in report.comparison.current_week.highlights %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                <h3 class="comparison-sub-title">重要事件</h3>
+                <ul class="comparison-events">
+                    {% for item in report.comparison.current_week.key_events %}
+                    <li><span class="event-date">{{ item.date }}</span>{{ item.event }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="comparison-divider"></div>
+        <div class="comparison-col last">
+            <div class="comparison-col-header">
+                <span class="comparison-badge last">上周</span>
+            </div>
+            <div class="comparison-content">
+                <h3 class="comparison-sub-title">关键走势</h3>
+                <ul class="comparison-list">
+                    {% for item in report.comparison.last_week.highlights %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                <h3 class="comparison-sub-title">重要事件</h3>
+                <ul class="comparison-events">
+                    {% for item in report.comparison.last_week.key_events %}
+                    <li><span class="event-date">{{ item.date }}</span>{{ item.event }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分析 -->
+<div class="weekly-analysis">
+    <h2 class="section-title">💡 核心分析</h2>
+    <div class="analysis-theme">
+        <span class="analysis-label">主题：</span>
+        <span class="analysis-value">{{ report.analysis.theme }}</span>
+    </div>
+    <ul class="analysis-points">
+        {% for point in report.analysis.points %}
+        <li>{{ point }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- 后市展望 -->
+<div class="weekly-forecast">
+    <h2 class="section-title">🔭 后市展望</h2>
+    <div class="forecast-sections">
+        <div class="forecast-block next-week">
+            <div class="forecast-block-header">
+                <span class="forecast-block-title">下周展望</span>
+                <span class="forecast-risk risk-{{ report.forecast.next_week.risk_level }}">风险：{{ report.forecast.next_week.risk_level }}</span>
+            </div>
+            <div class="forecast-view">{{ report.forecast.next_week.view }}</div>
+            <div class="forecast-key-dates">
+                <h4>关键日期</h4>
+                <ul>
+                    {% for item in report.forecast.next_week.key_dates %}
+                    <li><span class="key-date">{{ item.date }}</span>{{ item.event }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% if report.forecast.medium_term %}
+        <div class="forecast-block medium-term">
+            <div class="forecast-block-header">
+                <span class="forecast-block-title">中期展望</span>
+            </div>
+            <div class="forecast-view">{{ report.forecast.medium_term.view }}</div>
+            <p class="forecast-detail">{{ report.forecast.medium_term.detail }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.page-header h1 {
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+.report-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.report-back {
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+.report-back:hover { color: #58a6ff; }
+.report-nav-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.report-nav-list a {
+    padding: 5px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.report-nav-list a.active,
+.report-nav-list a:hover {
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+.report-summary-box {
+    background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.06));
+    border: 1px solid rgba(88,166,255,0.25);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+}
+.report-summary-label {
+    font-size: 13px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+.report-summary-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text);
+}
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-family: var(--font-serif);
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+.weekly-comparison {
+    margin-bottom: 40px;
+}
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+}
+.comparison-col {
+    padding: 20px 24px;
+}
+.comparison-col.current {
+    background: linear-gradient(180deg, rgba(88,166,255,0.08), transparent);
+}
+.comparison-col.last {
+    background: rgba(255,255,255,0.01);
+}
+.comparison-divider {
+    width: 1px;
+    background: var(--border-light);
+    margin: 16px 0;
+}
+.comparison-col-header {
+    margin-bottom: 16px;
+}
+.comparison-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 4px;
+    background: rgba(88,166,255,0.2);
+    color: #58a6ff;
+    letter-spacing: 1px;
+}
+.comparison-badge.last {
+    background: rgba(136,141,147,0.15);
+    color: #8b949e;
+}
+.comparison-sub-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin: 12px 0 8px;
+}
+.comparison-list,
+.comparison-events {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.comparison-list li,
+.comparison-events li {
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding-left: 14px;
+    position: relative;
+}
+.comparison-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: #58a6ff;
+    font-size: 10px;
+}
+.comparison-events .event-date {
+    display: inline-block;
+    background: rgba(188,140,255,0.15);
+    color: #bc8cff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 8px;
+    font-family: var(--font-mono, monospace);
+}
+.weekly-analysis {
+    margin-bottom: 40px;
+}
+.analysis-theme {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+.analysis-label {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-right: 8px;
+}
+.analysis-value {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+.analysis-points {
+    list-style: none;
+    padding: 0;
+}
+.analysis-points li {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 14px 18px 14px 42px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    position: relative;
+}
+.analysis-points li::before {
+    content: attr(data-num);
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #58a6ff;
+    color: #0d1117;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.analysis-points li:nth-child(1)::before { content: '1'; }
+.analysis-points li:nth-child(2)::before { content: '2'; }
+.analysis-points li:nth-child(3)::before { content: '3'; }
+.analysis-points li:nth-child(4)::before { content: '4'; }
+.analysis-points li:nth-child(5)::before { content: '5'; }
+.analysis-points li:nth-child(6)::before { content: '6'; }
+.weekly-forecast {
+    margin-bottom: 32px;
+}
+.forecast-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+.forecast-block {
+    background: linear-gradient(135deg, var(--bg-card), rgba(88,166,255,0.04));
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+.forecast-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.forecast-block-title {
+    font-size: 13px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 1px;
+}
+.forecast-risk {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+.forecast-risk. risk-中等 { background: rgba(188,140,255,0.15); color: #bc8cff; }
+.forecast-risk. risk-中高 { background: rgba(255,140,0,0.15); color: #ff8c00; }
+.forecast-risk. risk-高 { background: rgba(255,59,74,0.15); color: #ff3b4a; }
+.forecast-view {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(88,166,255,0.15);
+}
+.forecast-key-dates h4 {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+.forecast-key-dates ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.forecast-key-dates li {
+    padding: 6px 0;
+    font-size: 13px;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+}
+.forecast-key-dates .key-date {
+    display: inline-block;
+    background: rgba(88,166,255,0.12);
+    color: #58a6ff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 10px;
+    font-family: var(--font-mono, monospace);
+    white-space: nowrap;
+}
+.forecast-detail {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-top: 10px;
+}
+@media (max-width: 768px) {
+    .comparison-grid {
+        grid-template-columns: 1fr;
+    }
+    .comparison-divider {
+        width: 100%;
+        height: 1px;
+        margin: 0;
+    }
+}
+</style>
+{% endblock %}

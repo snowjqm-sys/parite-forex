@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}外汇报告中心 · Parité{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>外汇报告中心</h1>
+    <p class="subtitle">每日市场动态 · 每周深度回顾 · 关键事件影响分析</p>
+</div>
+
+<div class="reports-tabs">
+    <button class="reports-tab active" data-tab="daily">📅 日报</button>
+    <button class="reports-tab" data-tab="weekly">📊 周报</button>
+</div>
+
+<div id="daily-list" class="reports-list">
+    {% for report in daily_reports %}
+    <a href="{{ url_for('daily_report', date=report.date) }}" class="report-card">
+        <div class="report-card-header">
+            <span class="report-card-date">{{ report.date }} ({{ report.weekday }})</span>
+            <span class="report-card-type daily">日报</span>
+        </div>
+        <h3 class="report-card-title">{{ report.title }}</h3>
+        <p class="report-card-summary">{{ report.summary }}</p>
+        <div class="report-card-footer">
+            {% if report.sections %}
+            <span class="report-sections-count">{{ report.sections|length }} 个板块</span>
+            {% endif %}
+            <span class="report-card-arrow">→</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div id="weekly-list" class="reports-list" style="display:none;">
+    {% for report in weekly_reports %}
+    <a href="{{ url_for('weekly_report', date=report.date) }}" class="report-card">
+        <div class="report-card-header">
+            <span class="report-card-date">{{ report.week_label }}</span>
+            <span class="report-card-type weekly">周报</span>
+        </div>
+        <h3 class="report-card-title">{{ report.title }}</h3>
+        <p class="report-card-summary">{{ report.summary }}</p>
+        <div class="report-card-footer">
+            <span class="report-card-meta">对比分析 · 后市展望</span>
+            <span class="report-card-arrow">→</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<style>
+.page-header h1 {
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+.reports-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.reports-tab {
+    padding: 10px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--text-light);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.reports-tab.active {
+    background: #1a1a28;
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+.reports-tab:hover:not(.active) {
+    border-color: var(--border);
+    color: var(--text);
+}
+.reports-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+}
+.report-card {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 20px 22px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.report-card:hover {
+    border-color: #58a6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.report-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.report-card-date {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 500;
+}
+.report-card-type {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+}
+.report-card-type.daily {
+    background: rgba(255,59,74,0.15);
+    color: #ff3b4a;
+}
+.report-card-type.weekly {
+    background: rgba(188,140,255,0.15);
+    color: #bc8cff;
+}
+.report-card-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-family: var(--font-serif);
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+.report-card-summary {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+.report-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
+}
+.report-sections-count {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+.report-card-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+.report-card-arrow {
+    color: #58a6ff;
+    font-size: 18px;
+    font-weight: 700;
+}
+</style>
+
+<script>
+document.querySelectorAll('.reports-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.reports-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        var target = tab.dataset.tab;
+        document.getElementById('daily-list').style.display = target === 'daily' ? '' : 'none';
+        document.getElementById('weekly-list').style.display = target === 'weekly' ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

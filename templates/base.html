@@ -35,6 +35,7 @@
         <li><a href="{{ url_for('bond') }}" class="{% if active == 'bond' %}active{% endif %}">债券</a></li>
         <li><a href="{{ url_for('credit') }}" class="{% if active == 'credit' %}active{% endif %}">信贷</a></li>
         <li><a href="{{ url_for('explorer') }}" class="{% if active == 'explorer' %}active{% endif %}">数据</a></li>
+        <li><a href="{{ url_for('reports_index') }}" class="{% if active == 'reports' %}active{% endif %}">报告</a></li>
         <li><a href="{{ url_for('feedback') }}" class="{% if active == 'feedback' %}active{% endif %}">反馈</a></li>
         <li><a href="{{ url_for('ai_config') }}" class="{% if active == 'ai_config' %}active{% endif %}">AI配置</a></li>
     </ul>
@@ -823,6 +824,7 @@
         { title: '债券板块', icon: '🏛️', desc: '国债收益率 / 收益率曲线', url: window.__parite ? (window.__parite.root || '') + '/bond' : '/bond', group: '站点导航' },
         { title: '信贷板块', icon: '💳', desc: '信贷脉冲 / 利差深度研究', url: window.__parite ? (window.__parite.root || '') + '/credit' : '/credit', group: '站点导航' },
         { title: '数据探索', icon: '🔍', desc: '历史数据查询 / 图表分析', url: window.__parite ? (window.__parite.root || '') + '/explorer' : '/explorer', group: '站点导航' },
+        { title: '报告中心', icon: '📊', desc: '外汇日报 / 周报 / 市场分析', url: window.__parite ? (window.__parite.root || '') + '/reports' : '/reports', group: '站点导航' },
         { title: '反馈建议', icon: '💬', desc: '内容纠错 / 功能建议', url: window.__parite ? (window.__parite.root || '') + '/feedback' : '/feedback', group: '站点导航' },
     ];
 

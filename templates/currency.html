@@ -780,7 +780,7 @@ function renderFreqChart(id, mode) {
         var ytitle = pair || PAIR;
         Plotly.react(id, [{
             x: xs, y: ys, type: 'scatter', mode: 'lines+markers',
-            line: { color: TREND_COLOR, width: 3 },
+            line: { color: TREND_COLOR, width: 4 },
             marker: { size: id === 'daily-chart' ? 5 : 7 }
         }], {
             paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
@@ -796,7 +796,7 @@ function renderFreqChart(id, mode) {
         var traces = [{
             x: xs, y: ys, name: pair || PAIR,
             type: 'scatter', mode: 'lines+markers',
-            line: { color: TREND_COLOR, width: 3 },
+            line: { color: TREND_COLOR, width: 4 },
             marker: { size: id === 'daily-chart' ? 5 : 7 },
             fill: 'tozeroy', fillcolor: _hexToRgba(TREND_COLOR, 0.06)
         }];
@@ -902,10 +902,10 @@ function renderSpreadChart(mode) {
         ], _proLayout({
             title: { text: '{{ cur.rate_context }} vs ' + PAIR + ' · 专业版', font: { color: '#e6edf3' } },
             xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'array', tickvals: yrs, ticktext: yrs,
-                     tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikemode: 'across' },
+                     tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikedash: 'dash', spikemode: 'across' },
             yaxis: Object.assign({}, _proYaxis('利差 (%)'), { zeroline: false }),
             yaxis2: Object.assign({}, _proYaxis(PAIR), { overlaying: 'y', side: 'right', zeroline: false,
-                       showspikes: true, spikecolor: TREND_COLOR, spikemode: 'across' }),
+                       showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikedash: 'dash', spikemode: 'across' }),
             annotations: annotations, shapes: shapes,
             margin: { t: 100, b: 70, l: 70, r: 70 }
         }), { responsive: true, displayModeBar: true });
@@ -1026,7 +1026,7 @@ function renderSpreadDetailChart(mode) {
         }], _proLayout({
             title: { text: '{{ cur.rate_context }} 历史走势 · 专业版', font: { color: '#e6edf3' } },
             xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'array', tickvals: years, ticktext: years,
-                     tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikemode: 'across' },
+                     tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikedash: 'dash', spikemode: 'across' },
             yaxis: _proYaxis('利差 (%)'),
             shapes: shapes, annotations: annotations,
             margin: { t: 60, b: 80, l: 70, r: 40 }
@@ -1328,10 +1328,10 @@ function renderTreasuryChart(mode) {
     var fedRate = data.map(function(d){return d.fed_rate;});
 
     var traces = [
-        { x: years, y: y2, name: '2Y', type: 'scatter', mode: 'lines+markers', line: { color: '#58a6ff', width: 3 }, marker: { size: 6 } },
-        { x: years, y: y10, name: '10Y', type: 'scatter', mode: 'lines+markers', line: { color: '#f0883e', width: 3.5 }, marker: { size: 7 } },
-        { x: years, y: y30, name: '30Y', type: 'scatter', mode: 'lines+markers', line: { color: '#bc8cff', width: 3 }, marker: { size: 6 } },
-        { x: years, y: fedRate, name: '联邦基金利率', type: 'scatter', mode: 'lines', line: { color: '#3fb950', width: 3, dash: 'dash' } }
+        { x: years, y: y2, name: '2Y', type: 'scatter', mode: 'lines+markers', line: { color: '#58a6ff', width: 4 }, marker: { size: 6 } },
+        { x: years, y: y10, name: '10Y', type: 'scatter', mode: 'lines+markers', line: { color: '#f0883e', width: 4 }, marker: { size: 7 } },
+        { x: years, y: y30, name: '30Y', type: 'scatter', mode: 'lines+markers', line: { color: '#bc8cff', width: 4 }, marker: { size: 6 } },
+        { x: years, y: fedRate, name: '联邦基金利率', type: 'scatter', mode: 'lines', line: { color: '#3fb950', width: 4, dash: 'dash' } }
     ];
 
     var layout = {
@@ -1348,7 +1348,7 @@ function renderTreasuryChart(mode) {
         layout = _proLayout({
             title: { text: '美债收益率与联邦基金利率 · 专业版', font: { color: '#e6edf3' } },
             xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'array', tickvals: years, ticktext: years,
-                     tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikemode: 'across' },
+                     tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikedash: 'dash', spikemode: 'across' },
             yaxis: _proYaxis('收益率 (%)'),
             legend: { orientation: 'h', y: 1.12 },
             annotations: [{

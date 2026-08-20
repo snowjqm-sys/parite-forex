@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block title %}{{ report.date }} 日报 · Parité{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ report.date }} 日报</h1>
+    <p class="subtitle">{{ report.weekday }} · {{ report.title }}</p>
+</div>
+
+<div class="report-nav">
+    <a href="{{ url_for('reports_index') }}" class="report-back">← 返回报告中心</a>
+    <div class="report-nav-list">
+        {% for r in daily_reports %}
+        <a href="{{ url_for('daily_report', date=r.date) }}" class="{% if r.date == report.date %}active{% endif %}">{{ r.date }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="report-summary-box">
+    <div class="report-summary-label">📝 今日概述</div>
+    <div class="report-summary-text">{{ report.summary }}</div>
+</div>
+
+{% for section in report.sections %}
+<div class="report-section section-{{ section.type }}">
+    <h2 class="section-title">{{ section.title }}</h2>
+
+    {% if section.type == 'market_move' %}
+    <div class="market-table">
+        <table>
+            <thead>
+                <tr><th>货币对</th><th>涨跌幅</th><th>收盘价</th><th>驱动因素</th></tr>
+            </thead>
+            <tbody>
+                {% for item in section.data %}
+                <tr>
+                    <td class="pair">{{ item.pair }}</td>
+                    <td class="change {% if item.change[0] == '+' %}up{% else %}down{% endif %}">{{ item.change }}</td>
+                    <td>{{ item.close }}</td>
+                    <td class="reason">{{ item.reason }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% elif section.type == 'event' %}
+    <div class="event-timeline">
+        {% for item in section.data %}
+        <div class="event-item">
+            <div class="event-time">{{ item.time }}</div>
+            <div class="event-content">
+                <div class="event-title">{{ item.event }} <span class="event-impact impact-{{ item.impact }}">{{ item.impact }}</span></div>
+                <div class="event-detail">{{ item.detail }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% elif section.type == 'impact' %}
+    <div class="impact-grid">
+        {% for item in section.data %}
+        <div class="impact-card">
+            <div class="impact-currency">{{ item.currency }}</div>
+            <div class="impact-level">{{ item.impact }}</div>
+            <div class="impact-analysis">{{ item.analysis }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% elif section.type == 'forecast' %}
+    <div class="forecast-grid">
+        {% for item in section.data %}
+        <div class="forecast-card">
+            <div class="forecast-horizon">{{ item.horizon }}</div>
+            <div class="forecast-view">{{ item.view }}</div>
+            <div class="forecast-detail">{{ item.detail }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+<style>
+.page-header h1 {
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+.section-title {
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+.report-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.report-back {
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+.report-back:hover { color: #58a6ff; }
+.report-nav-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.report-nav-list a {
+    padding: 5px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.report-nav-list a.active,
+.report-nav-list a:hover {
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+.report-summary-box {
+    background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.06));
+    border: 1px solid rgba(88,166,255,0.25);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+}
+.report-summary-label {
+    font-size: 13px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+.report-summary-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text);
+}
+.report-section {
+    margin-bottom: 32px;
+}
+.market-table {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+}
+.market-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.market-table th {
+    background: var(--bg-card);
+    color: var(--text-dim);
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-light);
+}
+.market-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-light);
+}
+.market-table tr:last-child td { border-bottom: none; }
+.market-table .pair {
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    font-family: var(--font-mono, monospace);
+}
+.market-table .change.up { color: #3fb950; font-weight: 700; }
+.market-table .change.down { color: #ff3b4a; font-weight: 700; }
+.market-table .reason { color: var(--text-light); }
+.event-timeline {
+    position: relative;
+    padding-left: 32px;
+}
+.event-timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--border-light);
+}
+.event-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 12px;
+}
+.event-item::after {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #58a6ff;
+    border: 2px solid var(--bg-card);
+}
+.event-time {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.event-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+.event-impact {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    letter-spacing: 0.5px;
+}
+.event-impact.高 { background: rgba(255,59,74,0.15); color: #ff3b4a; }
+.event-impact.中等 { background: rgba(188,140,255,0.15); color: #bc8cff; }
+.event-impact.低 { background: rgba(63,185,80,0.15); color: #3fb950; }
+.event-detail {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+.impact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+.impact-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 16px 20px;
+    transition: border-color 0.2s;
+}
+.impact-card:hover { border-color: #58a6ff; }
+.impact-currency {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 6px;
+}
+.impact-level {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-jpy, #58a6ff);
+    margin-bottom: 8px;
+}
+.impact-analysis {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+.forecast-card {
+    background: linear-gradient(135deg, var(--bg-card), rgba(88,166,255,0.04));
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 10px;
+    padding: 18px 22px;
+}
+.forecast-horizon {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.forecast-view {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 8px;
+}
+.forecast-detail {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+</style>
+{% endblock %}
