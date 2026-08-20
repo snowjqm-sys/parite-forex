@@ -216,7 +216,7 @@
             name: c.name + ' (' + c.currency + ')',
             type: 'scatter',
             mode: 'lines+markers',
-            line: { color: colors[c.code] || '#58a6ff', width: 2 },
+            line: { color: colors[c.code] || '#58a6ff', width: 3 },
             marker: { size: 8 }
         };
     });
@@ -232,11 +232,13 @@
             tickmode: 'array',
             tickvals: maturities,
             ticktext: maturities,
-            automargin: true
+            automargin: true,
+            showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across'
         },
         yaxis: {
             gridcolor: '#333',
-            title: '收益率 (%)'
+            title: '收益率 (%)',
+            showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across'
         },
         legend: { orientation: 'h', y: -0.2 },
         margin: { l: 60, r: 30, t: 50, b: 60 }
@@ -267,7 +269,7 @@
             name: s.name,
             type: 'scatter',
             mode: 'lines+markers',
-            line: { color: s.color, width: 2 },
+            line: { color: s.color, width: 3 },
             marker: { size: 6 }
         };
     });
@@ -283,11 +285,13 @@
             tickmode: 'array',
             tickvals: years,
             ticktext: years,
-            automargin: true
+            automargin: true,
+            showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across'
         },
         yaxis: {
             gridcolor: '#333',
-            title: '收益率 (%)'
+            title: '收益率 (%)',
+            showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across'
         },
         legend: { orientation: 'h', y: -0.2 },
         margin: { l: 60, r: 30, t: 50, b: 60 }

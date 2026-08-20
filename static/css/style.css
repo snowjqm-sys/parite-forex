@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    外汇教学研究站 — 深色主题样式表
    配色：深蓝黑底 + 柔和强调（蓝/绿/红/紫）
    字体：Lora 衬线标题 + Nunito 圆体正文 + Noto Serif SC 中文衬线
@@ -361,6 +361,12 @@ table.data-table {
     border-radius: var(--radius);
     padding: 16px;
     margin-bottom: 16px;
+}
+.chart-box .js-plotly-plot,
+.chart-box .plotly-gravure-container {
+    background: #1c2128 !important;
+    border-radius: 8px;
+    overflow: hidden;
 }
 .chart-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
 

@@ -104,13 +104,13 @@ document.getElementById('load-btn').addEventListener('click', () => {
         Plotly.newPlot('explore-chart', [{
             x: data.map(d=>d.date), y: data.map(d=>d.rate),
             type: 'scatter', mode: 'lines+markers',
-            line: { color: COLORS[code] || '#58a6ff', width: 3 },
+            line: { color: COLORS[code] || '#58a6ff', width: 4 },
             text: data.map(d=>d.event), hoverinfo: 'x+y+text'
         }], {
             paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
             font: { color: '#e6edf3', size: 12 },
             title: { text: '历史走势', font: {color:'#e6edf3'} },
-            xaxis: { gridcolor: '#30363d', tickmode: 'array', tickvals: data.map(d=>d.date), ticktext: data.map(d=>d.date), tickangle: -45, automargin: true }, yaxis: { gridcolor: '#30363d' },
+            xaxis: { gridcolor: '#30363d', tickmode: 'array', tickvals: data.map(d=>d.date), ticktext: data.map(d=>d.date), tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' }, yaxis: { gridcolor: '#30363d', showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' },
             margin: { t: 50, b: 70 }
         }, { responsive: true });
     });

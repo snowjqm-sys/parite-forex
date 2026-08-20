@@ -112,15 +112,15 @@ Promise.all(allCodes.map(c => fetch('/api/currency/'+c+'/history').then(r=>r.jso
             y: data.map(d => (d.rate/base)*100),
             name: PAIR_LABELS[code],
             type: 'scatter', mode: 'lines',
-            line: { color: PAIR_COLORS[code], width: 2 }
+            line: { color: PAIR_COLORS[code], width: 3 }
         };
     });
     Plotly.newPlot('compare-chart', traces, {
         paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
         font: { color: '#e6edf3', size: 12 },
         title: { text: '多货币归一化对比（2010=100）', font: { color: '#e6edf3' } },
-        xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'array', tickvals: allData[0].map(d=>d.date), ticktext: allData[0].map(d=>d.date), tickangle: -45, automargin: true },
-        yaxis: { gridcolor: '#30363d', title: '指数（2010=100）' },
+        xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'array', tickvals: allData[0].map(d=>d.date), ticktext: allData[0].map(d=>d.date), tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' },
+        yaxis: { gridcolor: '#30363d', title: '指数（2010=100）', showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' },
         legend: { x: 1.02, y: 1, xanchor: 'left', font: { size: 11 }, bgcolor: 'rgba(28,33,40,0.8)' },
         margin: { t: 50, b: 70, r: 140 }
     }, { responsive: true });
@@ -161,13 +161,13 @@ function renderRegression(code) {
           name: '年度数据', text: hover, hoverinfo: 'text',
           marker: { size: 10, color: PAIR_COLORS[code], opacity: 0.8 } },
         { x: line.map(p=>p.x), y: line.map(p=>p.y), type: 'scatter', mode: 'lines',
-          name: '回归线', line: { color: '#ff6b6b', width: 3 } }
+          name: '回归线', line: { color: '#ff6b6b', width: 4 } }
     ], {
         paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
         font: { color: '#e6edf3', size: 12 },
         title: { text: `${d.x_label} vs ${d.y_label}（R²=${reg.r_squared}）`, font: { color: '#e6edf3' } },
-        xaxis: { gridcolor: '#30363d', title: d.x_label, zeroline: true, zerolinecolor: '#30363d' },
-        yaxis: { gridcolor: '#30363d', title: d.y_label },
+        xaxis: { gridcolor: '#30363d', title: d.x_label, zeroline: true, zerolinecolor: '#30363d', showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' },
+        yaxis: { gridcolor: '#30363d', title: d.y_label, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' },
         legend: { orientation: 'h', y: 1.12 },
         margin: { t: 60, b: 50 }
     }, { responsive: true });

@@ -146,18 +146,18 @@
         return {
             x: years, y: vals,
             mode: 'lines+markers', name: s.label,
-            line: { color: s.color, width: 2 },
-            marker: { size: 5 },
+            line: { color: s.color, width: 3 },
+            marker: { size: 6 },
         };
     });
 
     Plotly.newPlot('overview-chart', traces, {
-        paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
+        paper_bgcolor: '#1c2128',
+        plot_bgcolor: '#0d1117',
         font: { color: '#8b949e', family: '-apple-system, "PingFang SC", sans-serif', size: 12 },
         margin: { l: 50, r: 16, t: 8, b: 50 },
-        xaxis: { gridcolor: '#30363d', tickmode: 'array', tickvals: years, ticktext: years, tickangle: -45, automargin: true },
-        yaxis: { gridcolor: '#30363d', title: '归一化（2021=100）', zeroline: false },
+        xaxis: { gridcolor: '#30363d', tickmode: 'array', tickvals: years, ticktext: years, tickangle: -45, automargin: true, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' },
+        yaxis: { gridcolor: '#30363d', title: '归一化（2021=100）', zeroline: false, showspikes: true, spikecolor: 'rgba(255,255,255,0.7)', spikethickness: 1.5, spikedash: 'dash', spikemode: 'across' },
         legend: { orientation: 'h', y: -0.3, x: 0, font: { size: 11 } },
         hovermode: 'x unified',
     }, { responsive: true, displayModeBar: false });
