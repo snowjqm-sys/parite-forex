@@ -479,6 +479,7 @@ def _send_feedback_mail(fb):
 @app.route("/")
 def index():
     """首页：市场总览"""
+    announcements = _load_announcements()
     return render_template(
         "index.html",
         active="index",
@@ -489,6 +490,7 @@ def index():
         rate_radar=DATA.RATE_RADAR,
         recent_updates=DATA.RECENT_UPDATES,
         interest_rates=DATA.INTEREST_RATES,
+        announcements=announcements,
     )
 
 
@@ -690,12 +692,53 @@ def api_snapshot():
 
 @app.route("/api/currency/<code>/history")
 def api_currency_history(code):
-    """货币历史数据"""
+    """货币历史数据 — 静态年度数据 + 当前年份自动用实时汇率刷新"""
+    from datetime import datetime
+
     code = code.lower()
     cur = DATA.CURRENCIES.get(code)
     if not cur:
         return jsonify({"error": "unknown currency"}), 404
-    return jsonify(cur["history"])
+
+    history = list(cur.get("history", []))
+    current_year = str(datetime.now().year)
+
+    # 尝试用实时汇率刷新当前年份的数据点（USD/DXY 无单一货币对，跳过）
+    pair = DATA.LIVE_PAIRS.get(code)
+    if pair and cur.get("pair") != "DXY":
+        from_ccy, to_ccy = pair["from"], pair["to"]
+        try:
+            live_data, _ = _fetch_latest_rates(from_ccy, [to_ccy])
+            live_rates = live_data.get("rates", {})
+            live_rate = live_rates.get(to_ccy)
+            live_date = live_data.get("date", datetime.now().strftime("%Y-%m-%d"))
+            is_fallback = bool(live_data.get("_fallback"))
+            if live_rate:
+                live_rate = round(float(live_rate), 4)
+                event_suffix = f"（实时·{live_date}）" if not is_fallback else f"（兜底·{live_date}）"
+                # 更新或追加当前年份
+                updated = False
+                for item in history:
+                    if item.get("date") == current_year:
+                        item["rate"] = live_rate
+                        # 保留原事件描述的核心部分，只更新日期标注
+                        orig_event = item.get("event", "")
+                        # 去掉旧的日期标注括号
+                        if "（" in orig_event:
+                            orig_event = orig_event[:orig_event.index("（")]
+                        item["event"] = orig_event + event_suffix
+                        updated = True
+                        break
+                if not updated:
+                    history.append({
+                        "date": current_year,
+                        "rate": live_rate,
+                        "event": f"实时汇率{event_suffix}",
+                    })
+        except Exception:
+            pass  # 实时获取失败时回退到静态数据
+
+    return jsonify(history)
 
 
 @app.route("/api/rates")
@@ -1299,5 +1342,75 @@ def api_ai_ask():
         return jsonify({"error": f"请求失败：{e}"}), 200
 
 
+# ============================================================
+# 公告系统（管理员发布，首页展示最新一条）
+# ============================================================
+def _announcements_path():
+    return os.path.join(_data_dir(), "announcements.json")
+
+
+def _load_announcements():
+    """读取所有公告"""
+    path = _announcements_path()
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8-sig") as f:
+            return _json.load(f)
+    except Exception:
+        return []
+
+
+def _save_announcements(announcements):
+    with open(_announcements_path(), "w", encoding="utf-8") as f:
+        _json.dump(announcements, f, ensure_ascii=False, indent=2)
+
+
+@app.route("/api/announcements", methods=["GET"])
+def api_get_announcements():
+    """获取所有公告（公开）"""
+    announcements = _load_announcements()
+    return jsonify(announcements)
+
+
+@app.route("/api/announcements", methods=["POST"])
+def api_create_announcement():
+    """创建新公告（仅管理员）"""
+    if not _is_admin():
+        return jsonify({"error": "需要管理员权限"}), 403
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    content = (data.get("content") or "").strip()
+    tag = (data.get("tag") or "公告").strip()
+    if not content:
+        return jsonify({"error": "公告内容不能为空"}), 400
+    announcements = _load_announcements()
+    new_item = {
+        "id": int(time.time()),
+        "title": title,
+        "content": content,
+        "tag": tag,
+        "link": (data.get("link") or "").strip() or None,
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+    }
+    announcements.insert(0, new_item)
+    _save_announcements(announcements)
+    return jsonify({"success": True, "announcement": new_item})
+
+
+@app.route("/api/announcements/<int:ann_id>", methods=["DELETE"])
+def api_delete_announcement(ann_id):
+    """删除公告（仅管理员）"""
+    if not _is_admin():
+        return jsonify({"error": "需要管理员权限"}), 403
+    announcements = _load_announcements()
+    announcements = [a for a in announcements if a.get("id") != ann_id]
+    _save_announcements(announcements)
+    return jsonify({"success": True})
+
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    # debug=True 但关闭 reloader，避免文件变动触发重载导致服务中断
+    # 支持通过环境变量 PORT 覆盖端口（默认 5000），方便多实例调试
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="127.0.0.1", port=port, debug=True, use_reloader=False)

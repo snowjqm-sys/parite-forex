@@ -536,7 +536,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="{{ url_for('static', filename='js/plotly-2.35.2.min.js') }}"></script>
 <style>
 /* 图表切换按钮 */
 .chart-toggle-btn {
@@ -719,7 +719,7 @@ function renderHistoryChart(mode) {
         };
         Plotly.react('history-chart', [{
             x: years, y: rates, type: 'scatter', mode: 'lines+markers',
-            line: { color: TREND_COLOR, width: 4 }, marker: { size: 7 },
+            line: { color: TREND_COLOR, width: 2.5 }, marker: { size: 7 },
             text: events, hoverinfo: 'x+y+text'
         }], layout, { responsive: true, displayModeBar: true });
     } else {
@@ -727,7 +727,7 @@ function renderHistoryChart(mode) {
         var traces = [{
             x: years, y: rates, name: PAIR,
             type: 'scatter', mode: 'lines+markers',
-            line: { color: TREND_COLOR, width: 4 }, marker: { size: 8 },
+            line: { color: TREND_COLOR, width: 2.5 }, marker: { size: 8 },
             text: events, hoverinfo: 'x+y+text',
             fill: 'tozeroy', fillcolor: _hexToRgba(TREND_COLOR, 0.08)
         }];
@@ -736,7 +736,7 @@ function renderHistoryChart(mode) {
         if (ma3) traces.push({
             x: years, y: ma3, name: '3年均值 MA3',
             type: 'scatter', mode: 'lines',
-            line: { color: '#f0883e', width: 3.5, dash: 'dash' }
+            line: { color: '#f0883e', width: 2, dash: 'dash' }
         });
         // 标注最大最小
         var annotations = [
@@ -780,7 +780,7 @@ function renderFreqChart(id, mode) {
         var ytitle = pair || PAIR;
         Plotly.react(id, [{
             x: xs, y: ys, type: 'scatter', mode: 'lines+markers',
-            line: { color: TREND_COLOR, width: 4 },
+            line: { color: TREND_COLOR, width: 2.5 },
             marker: { size: id === 'daily-chart' ? 5 : 7 }
         }], {
             paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
@@ -796,7 +796,7 @@ function renderFreqChart(id, mode) {
         var traces = [{
             x: xs, y: ys, name: pair || PAIR,
             type: 'scatter', mode: 'lines+markers',
-            line: { color: TREND_COLOR, width: 4 },
+            line: { color: TREND_COLOR, width: 2.5 },
             marker: { size: id === 'daily-chart' ? 5 : 7 },
             fill: 'tozeroy', fillcolor: _hexToRgba(TREND_COLOR, 0.06)
         }];
@@ -806,7 +806,7 @@ function renderFreqChart(id, mode) {
         var maLong = _ma(ys, longWin);
         if (maShort) traces.push({
             x: xs, y: maShort, name: 'MA' + shortWin, type: 'scatter', mode: 'lines',
-            line: { color: '#f0883e', width: 3.5, dash: 'dash' }
+            line: { color: '#f0883e', width: 2, dash: 'dash' }
         });
         if (maLong) traces.push({
             x: xs, y: maLong, name: 'MA' + longWin, type: 'scatter', mode: 'lines',
@@ -850,7 +850,7 @@ function renderSpreadChart(mode) {
     if (mode === 'simple') {
         Plotly.react('spread-chart', [
             { x: yrs, y: spreads, name: '{{ cur.rate_context }}(%)', yaxis: 'y', type: 'bar', marker: { color: '#58a6ff', opacity: 0.7 } },
-            { x: yrs, y: rates, name: PAIR, yaxis: 'y2', type: 'scatter', mode: 'lines+markers', line: { color: TREND_COLOR, width: 4 } }
+            { x: yrs, y: rates, name: PAIR, yaxis: 'y2', type: 'scatter', mode: 'lines+markers', line: { color: TREND_COLOR, width: 2.5 } }
         ], {
             paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
             font: { color: '#e6edf3', size: 12 },
@@ -898,7 +898,7 @@ function renderSpreadChart(mode) {
                        line: { color: 'rgba(255,255,255,0.1)', width: 1 } },
               text: barTexts, textposition: 'outside', textfont: { color: '#c9d1d9', size: 10 } },
             { x: yrs, y: rates, name: PAIR, yaxis: 'y2', type: 'scatter', mode: 'lines+markers',
-              line: { color: TREND_COLOR, width: 4 }, marker: { size: 8 } }
+              line: { color: TREND_COLOR, width: 2.5 }, marker: { size: 8 } }
         ], _proLayout({
             title: { text: '{{ cur.rate_context }} vs ' + PAIR + ' · 专业版', font: { color: '#e6edf3' } },
             xaxis: { gridcolor: '#30363d', title: '年份', tickmode: 'array', tickvals: yrs, ticktext: yrs,
@@ -1003,7 +1003,7 @@ function renderSpreadDetailChart(mode) {
             { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: 0, y1: 0,
               line: { color: '#555', width: 1 } },
             { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: m.avg, y1: m.avg,
-              line: { color: 'rgba(248,136,62,0.5)', width: 3.5, dash: 'dash' } },
+              line: { color: 'rgba(248,136,62,0.5)', width: 2, dash: 'dash' } },
             { type: 'line', x0: 0, x1: 1, xref: 'paper', y0: m.peak, y1: m.peak,
               line: { color: 'rgba(255,107,107,0.4)', width: 1, dash: 'dot' } }
         ];
@@ -1057,7 +1057,7 @@ function renderScatterChart(mode) {
             x: regLine.map(function(p){return p.x;}),
             y: regLine.map(function(p){return p.y;}),
             mode: 'lines', type: 'scatter',
-            line: { color: '#f0883e', width: 3, dash: 'dash' },
+            line: { color: '#f0883e', width: 2, dash: 'dash' },
             name: '回归线'
         });
         Plotly.react('scatter-chart', traces, {
@@ -1086,7 +1086,7 @@ function renderScatterChart(mode) {
             x: regLine.map(function(p){return p.x;}),
             y: regLine.map(function(p){return p.y;}),
             mode: 'lines', type: 'scatter',
-            line: { color: '#f0883e', width: 3.5, dash: 'dash' },
+            line: { color: '#f0883e', width: 2, dash: 'dash' },
             name: 'OLS 回归线'
         });
         // 残差线（每个点到回归线的垂直距离）
@@ -1199,7 +1199,7 @@ fetch('/api/rates').then(r => r.json()).then(data => {
 
     // 加载散点回归数据
     fetch('/api/regression').then(r2 => r2.json()).then(regData => {
-        var rd = regData[CODE];
+        var rd = regData[CODE.toLowerCase()];
         if (rd && rd.points) {
             SPREAD_DETAIL_DATA.scatterPoints = rd.points.map(function(p) {
                 return { x: p.x, y: p.y, year: p.year };
@@ -1263,7 +1263,7 @@ fetch('/api/fed-rate').then(r => r.json()).then(data => {
     });
     Plotly.react('fed-rate-chart', [{
         x: dates, y: rates, type: 'scatter', mode: 'lines+markers',
-        line: { color: '#58a6ff', width: 3.5, shape: 'hv' },
+        line: { color: '#58a6ff', width: 2.5, shape: 'hv' },
         marker: { size: 10, color: colors, line: { color: '#fff', width: 1 } },
         text: actions, hoverinfo: 'x+y+text'
     }], {
@@ -1328,10 +1328,10 @@ function renderTreasuryChart(mode) {
     var fedRate = data.map(function(d){return d.fed_rate;});
 
     var traces = [
-        { x: years, y: y2, name: '2Y', type: 'scatter', mode: 'lines+markers', line: { color: '#58a6ff', width: 4 }, marker: { size: 6 } },
-        { x: years, y: y10, name: '10Y', type: 'scatter', mode: 'lines+markers', line: { color: '#f0883e', width: 4 }, marker: { size: 7 } },
-        { x: years, y: y30, name: '30Y', type: 'scatter', mode: 'lines+markers', line: { color: '#bc8cff', width: 4 }, marker: { size: 6 } },
-        { x: years, y: fedRate, name: '联邦基金利率', type: 'scatter', mode: 'lines', line: { color: '#3fb950', width: 4, dash: 'dash' } }
+        { x: years, y: y2, name: '2Y', type: 'scatter', mode: 'lines+markers', line: { color: '#58a6ff', width: 2.5 }, marker: { size: 6 } },
+        { x: years, y: y10, name: '10Y', type: 'scatter', mode: 'lines+markers', line: { color: '#f0883e', width: 2.5 }, marker: { size: 7 } },
+        { x: years, y: y30, name: '30Y', type: 'scatter', mode: 'lines+markers', line: { color: '#bc8cff', width: 2.5 }, marker: { size: 6 } },
+        { x: years, y: fedRate, name: '联邦基金利率', type: 'scatter', mode: 'lines', line: { color: '#3fb950', width: 2.5, dash: 'dash' } }
     ];
 
     var layout = {
@@ -1471,7 +1471,8 @@ document.getElementById('cmp-export').addEventListener('click', function() {
 });
 
 // 初始渲染（默认勾选当前货币）
-document.querySelector('.cmp-ccy[value="' + CODE + '"]').checked = true;
+var defaultCcy = document.querySelector('.cmp-ccy[value="' + CODE.toLowerCase() + '"]');
+if (defaultCcy) { defaultCcy.checked = true; }
 renderCompareChart();
 
 // 实时汇率（自动刷新，每 60 秒，带涨跌颜色 + 指数退避重试 + fallback 提示）

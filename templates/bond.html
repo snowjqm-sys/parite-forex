@@ -197,7 +197,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="{{ url_for('static', filename='js/plotly-2.35.2.min.js') }}"></script>
 <script>
 // ============================================================
 // 收益率曲线图
@@ -216,7 +216,7 @@
             name: c.name + ' (' + c.currency + ')',
             type: 'scatter',
             mode: 'lines+markers',
-            line: { color: colors[c.code] || '#58a6ff', width: 4 },
+            line: { color: colors[c.code] || '#58a6ff', width: 2.5 },
             marker: { size: 8 }
         };
     });
@@ -269,7 +269,7 @@
             name: s.name,
             type: 'scatter',
             mode: 'lines+markers',
-            line: { color: s.color, width: 4 },
+            line: { color: s.color, width: 2.5 },
             marker: { size: 6 }
         };
     });

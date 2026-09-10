@@ -103,7 +103,7 @@ CURRENCIES = {
         "code": "JPY", "name": "日元", "name_en": "Japanese Yen",
         "pair": "USD/JPY", "pair_label": "美元兑日元",
         "region": "亚洲", "category": "融资货币",
-        "current": {"rate": 159.16, "date": "2026-07-31", "source": "美联储 H.10"},
+        "current": {"rate": 153.27, "date": "2026-09-09", "source": "Frankfurter/ECB"},
         "trend": "长期贬值", "trend_dir": "up",
         "core_insight": "干预后风险缓解，但 280bp 利差仍是核心压力",
         "rate_context": "美日利差", "rate_pair": ("us", "jp"),
@@ -131,7 +131,7 @@ CURRENCIES = {
             {"date": "2023", "rate": 140.50, "event": "利差维持，财务省多次干预"},
             {"date": "2024", "rate": 151.46, "event": "BOJ 结束负利率，加息极缓"},
             {"date": "2025", "rate": 149.57, "event": "美联储降息，日元小幅反弹"},
-            {"date": "2026", "rate": 159.16, "event": "美日联合干预后回落（美联储 H.10，2026-07-31）"},
+            {"date": "2026", "rate": 153.27, "event": "美日联合干预后回落（Frankfurter/ECB，2026-09-09）"},
         ],
         "drivers": [
             {"title": "美日利差持续高位", "weight": "核心驱动", "mechanism": "美联储联邦基金利率3.63%，日本隔夜拆借0.84%，利差约280基点。巨大的利差使套息交易有利可图，资金持续从日元流向美元资产。利差演变：2021年仅18bp → 2023年达513bp峰值 → 2026-07收窄至约280bp，但仍处历史高位。利差是日元走势的最强预测变量。", "key_point": "只要利差维持高位，日元就持续承压。这是预判反转的首要指标。", "links": [{"text": "美联储 H.15 利率", "url": "https://www.federalreserve.gov/releases/h15/", "type": "official"}, {"text": "BOJ 政策利率", "url": "https://www.boj.or.jp/en/statistics/boj/other/cabs/index.htm", "type": "official"}, {"text": "美日利差走势", "url": "https://forex.10jqka.com.cn/quotes/", "type": "ths"}]},
@@ -203,7 +203,7 @@ CURRENCIES = {
         "code": "CNY", "name": "人民币", "name_en": "Chinese Yuan",
         "pair": "USD/CNY", "pair_label": "美元兑人民币",
         "region": "亚洲", "category": "管理浮动",
-        "current": {"rate": 6.7509, "date": "2026-07-31", "source": "美联储 H.10"},
+        "current": {"rate": 6.7078, "date": "2026-09-09", "source": "Frankfurter/ECB"},
         "trend": "升值", "trend_dir": "down",
         "core_insight": "中美利差倒挂缓解，人民币触及 2023 年以来最强",
         "rate_context": "中美利差", "rate_pair": ("us", "cn"),
@@ -231,7 +231,7 @@ CURRENCIES = {
             {"date": "2023", "rate": 7.08, "event": "中美利差倒挂，贬值压力"},
             {"date": "2024", "rate": 7.20, "event": "美元强势，年内高点 7.30+"},
             {"date": "2025", "rate": 7.19, "event": "美联储降息后企稳"},
-            {"date": "2026", "rate": 6.75, "event": "2023年2月以来最强（美联储 H.10，2026-07-31）"},
+            {"date": "2026", "rate": 6.71, "event": "2023年2月以来最强（Frankfurter/ECB，2026-09-09）"},
         ],
         "drivers": [
             {"title": "美元走弱（美联储降息）", "weight": "核心驱动", "mechanism": "美联储联邦基金利率从2023年峰值5.03%降至2026-07的3.63%，累计降息约140bp。美元指数走弱，人民币对美元被动升值。USD/CNY从2024年7.20降至2026-07的6.75，升值约6.3%。关键：要区分'美元跌'和'人民币涨'——用美元指数拆分主动与被动成分。", "key_point": "区分主动升值与被动升值是分析人民币的核心视角，决定升值可持续性。", "links": [{"text": "美联储 FOMC 声明", "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "type": "official"}, {"text": "ICE 美元指数", "url": "https://www.theice.com/products/194/US-Dollar-Index-Futures", "type": "official"}, {"text": "美元指数走势", "url": "https://forex.10jqka.com.cn/quotes/", "type": "ths"}]},
@@ -319,7 +319,7 @@ CURRENCIES = {
         "code": "EUR", "name": "欧元", "name_en": "Euro",
         "pair": "EUR/USD", "pair_label": "欧元兑美元",
         "region": "欧洲", "category": "自由浮动",
-        "current": {"rate": 1.0912, "date": "2026-08-04", "source": "欧洲央行"},
+        "current": {"rate": 1.1652, "date": "2026-09-09", "source": "Frankfurter/ECB"},
         "trend": "震荡偏强", "trend_dir": "up",
         "core_insight": "ECB 持续降息，欧元在 1.09 附近寻找方向",
         "rate_context": "欧美利差", "rate_pair": ("eu", "us"),
@@ -347,7 +347,7 @@ CURRENCIES = {
             {"date": "2023", "rate": 1.081, "event": "ECB激进加息，欧元回升"},
             {"date": "2024", "rate": 1.082, "event": "ECB降息周期开启"},
             {"date": "2025", "rate": 1.085, "event": "欧美利差收窄"},
-            {"date": "2026", "rate": 1.0912, "event": "ECB参考汇率（2026-08-04）"},
+            {"date": "2026", "rate": 1.1652, "event": "ECB参考汇率（2026-09-09）"},
         ],
         "drivers": [
             {"title": "欧美央行政策分化", "weight": "核心驱动", "mechanism": "ECB主要再融资利率2.15%，美联储3.63%，欧美利差约-148bp（美国高于欧元区）。利差演变：2023年欧美利差倒挂达-107bp峰值 → 2026-07收窄至-148bp→实际上美联储降息使利差收窄。EUR/USD对欧美央行政策路径预期高度敏感。", "key_point": "欧美央行政策预期差是EUR/USD最核心的驱动变量。", "links": [{"text": "ECB 货币政策", "url": "https://www.ecb.europa.eu/mopo/html/index.en.html", "type": "official"}, {"text": "美联储 FOMC", "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm", "type": "official"}, {"text": "欧美利差", "url": "https://forex.10jqka.com.cn/quotes/", "type": "ths"}]},
@@ -434,7 +434,7 @@ CURRENCIES = {
         "code": "GBP", "name": "英镑", "name_en": "British Pound",
         "pair": "GBP/USD", "pair_label": "英镑兑美元",
         "region": "欧洲", "category": "自由浮动",
-        "current": {"rate": 1.3008, "date": "2026-08-04", "source": "欧洲央行"},
+        "current": {"rate": 1.3565, "date": "2026-09-09", "source": "Frankfurter/ECB"},
         "trend": "走强", "trend_dir": "up",
         "core_insight": "英镑利率高于美国，套息资金流入支撑汇率",
         "rate_context": "英美利差", "rate_pair": ("gb", "us"),
@@ -462,7 +462,7 @@ CURRENCIES = {
             {"date": "2023", "rate": 1.244, "event": "BOE高利率支撑"},
             {"date": "2024", "rate": 1.278, "event": "BOE开启降息"},
             {"date": "2025", "rate": 1.285, "event": "美元走弱推动"},
-            {"date": "2026", "rate": 1.3008, "event": "ECB参考汇率（2026-08-04）"},
+            {"date": "2026", "rate": 1.3565, "event": "ECB参考汇率（2026-09-09）"},
         ],
         "drivers": [
             {"title": "英美利差", "weight": "核心驱动", "mechanism": "BOE基准利率3.75%，美联储3.63%，英美利差约+12bp（英国略高）。2023年BOE激进加息至5.25%峰值支撑英镑。英镑对英美利差高度敏感，BOE相对鹰派立场是英镑走强的关键。", "key_point": "BOE相对美联储的鹰鸽程度是英镑短期方向的核心。", "links": [{"text": "BOE 货币政策", "url": "https://www.bankofengland.co.uk/monetary-policy", "type": "official"}, {"text": "英美利差", "url": "https://forex.10jqka.com.cn/quotes/", "type": "ths"}]},
@@ -533,7 +533,7 @@ CURRENCIES = {
         "code": "AUD", "name": "澳元", "name_en": "Australian Dollar",
         "pair": "AUD/USD", "pair_label": "澳元兑美元",
         "region": "大洋洲", "category": "商品货币",
-        "current": {"rate": 0.6591, "date": "2026-08-04", "source": "欧洲央行"},
+        "current": {"rate": 0.7225, "date": "2026-09-09", "source": "Frankfurter/ECB"},
         "trend": "震荡", "trend_dir": "flat",
         "core_insight": "大宗商品价格企稳，澳元在 0.66 附近盘整",
         "rate_context": "美澳利差", "rate_pair": ("au", "us"),
@@ -561,7 +561,7 @@ CURRENCIES = {
             {"date": "2023", "rate": 0.661, "event": "RBA滞后加息"},
             {"date": "2024", "rate": 0.661, "event": "中国需求疲软"},
             {"date": "2025", "rate": 0.650, "event": "RBA降息"},
-            {"date": "2026", "rate": 0.6591, "event": "ECB参考汇率（2026-08-04）"},
+            {"date": "2026", "rate": 0.7225, "event": "ECB参考汇率（2026-09-09）"},
         ],
         "drivers": [
             {"title": "大宗商品价格（尤其铁矿石）", "weight": "核心驱动", "mechanism": "澳大利亚是全球最大铁矿石出口国，铁矿石占其出口约30%。铁矿石价格与AUD/USD高度正相关（相关系数约0.6-0.8）。大宗商品周期是澳元最核心的驱动，反映全球（尤其中国）需求。", "key_point": "大宗商品价格是澳元的命脉，铁矿石是核心指标。", "links": [{"text": "澳大利亚统计局贸易", "url": "https://www.abs.gov.au/statistics/economy/international-trade", "type": "official"}, {"text": "铁矿石价格", "url": "https://forex.10jqka.com.cn/quotes/", "type": "ths"}]},
@@ -648,7 +648,7 @@ CURRENCIES = {
         "code": "CHF", "name": "瑞郎", "name_en": "Swiss Franc",
         "pair": "USD/CHF", "pair_label": "美元兑瑞郎",
         "region": "欧洲", "category": "避险货币",
-        "current": {"rate": 0.8703, "date": "2026-08-04", "source": "欧洲央行"},
+        "current": {"rate": 0.8071, "date": "2026-09-09", "source": "Frankfurter/ECB"},
         "trend": "瑞郎强势", "trend_dir": "down",
         "core_insight": "SNB 大幅降息至 0.25%，但避险需求仍支撑瑞郎",
         "rate_context": "美瑞利差", "rate_pair": ("us", "ch"),
@@ -676,7 +676,7 @@ CURRENCIES = {
             {"date": "2023", "rate": 0.906, "event": "瑞郎强势"},
             {"date": "2024", "rate": 0.880, "event": "SNB降息"},
             {"date": "2025", "rate": 0.880, "event": "避险与利差平衡"},
-            {"date": "2026", "rate": 0.8703, "event": "ECB参考汇率（2026-08-04）"},
+            {"date": "2026", "rate": 0.8071, "event": "ECB参考汇率（2026-09-09）"},
         ],
         "drivers": [
             {"title": "避险需求", "weight": "核心驱动", "mechanism": "瑞郎是传统避险货币，地缘冲突、金融危机、市场动荡时资金流入瑞郎。瑞士政治稳定、经常账户顺差、法治健全构成避险基础。2022年俄乌冲突、银行业动荡均推升瑞郎。避险属性是瑞郎长期强势的根本。", "key_point": "避险需求是瑞郎的核心溢价来源，风险事件是主要催化剂。", "links": [{"text": "SNB 货币政策", "url": "https://www.snb.ch/en/the-snb/mandates-goals/monetary-policy/monetary_policy", "type": "official"}]},
@@ -2332,6 +2332,55 @@ CREDIT_CONCEPTS = [
 # ============================================================
 DAILY_REPORTS = [
     {
+        "date": "2026-09-05",
+        "weekday": "周五",
+        "title": "财政部直接干预利率定价，美债与美元走势背离",
+        "summary": "美国财政部近期采取非常规操作——调整发债结构、回购长久期债券，被市场解读为直接管控长期融资成本。此举侵蚀了美联储的利率定价权责边界，导致长端利率下行但短端利率反向上行，美债收益率与美元走势出现背离。Warsh 讲话态度微妙，9 月议息会议成为关键观察窗口。",
+        "sections": [
+            {
+                "type": "market_move",
+                "title": "主要货币对涨跌",
+                "data": [
+                    {"pair": "EUR/USD", "change": "+0.38%", "close": "1.1622", "reason": "美元信用受质疑，欧元走强"},
+                    {"pair": "USD/JPY", "change": "-0.52%", "close": "156.25", "reason": "长端利率下行叠加美元走弱，日元受益"},
+                    {"pair": "GBP/USD", "change": "+0.25%", "close": "1.3530", "reason": "美元整体偏弱"},
+                    {"pair": "USD/CNY", "change": "-0.18%", "close": "6.7109", "reason": "人民币随非美货币走强"},
+                    {"pair": "AUD/USD", "change": "+0.15%", "close": "0.7204", "reason": "风险偏好改善"},
+                    {"pair": "USD/CHF", "change": "-0.30%", "close": "0.8092", "reason": "瑞郎避险需求上升"},
+                ]
+            },
+            {
+                "type": "event",
+                "title": "重大事件",
+                "data": [
+                    {"time": "持续", "event": "财政部调整发债结构", "impact": "高", "detail": "增加短债发行、减少长债供给，降低长久期债券供给压力以压低 term premium"},
+                    {"time": "持续", "event": "财政部回购长久期债券", "impact": "高", "detail": "直接从市场回购长期国债，非常规操作，被解读为主动压低长期融资成本"},
+                    {"time": "近期", "event": "Warsh 讲话", "impact": "高", "detail": "态度微妙——市场关注其是否暗示财政部行为越界，影响正常债务管理 vs 政策边界发生变化的判断"},
+                    {"time": "9月议息", "event": "美联储 9 月 FOMC 会议", "impact": "高", "detail": "关键观察窗口——若加息则与财政部意图分道扬镳，大概率不会加息"},
+                ]
+            },
+            {
+                "type": "impact",
+                "title": "影响分析",
+                "data": [
+                    {"currency": "美元", "impact": "信用受质疑", "analysis": "财政部直接管控利率侵蚀美联储权责边界，市场担忧美元信用——美债利率下降但美元走弱、黄金上涨，属于第二种情形"},
+                    {"currency": "美债", "impact": "长短端背离", "analysis": "长端利率因财政部操作下行，短端利率因 Warsh 讲话偏鹰上行，2 年期与 10 年期/30 年期走势分开"},
+                    {"currency": "黄金", "impact": "避险走高", "analysis": "美元信用问题预期升温，黄金作为替代避险资产受益"},
+                    {"currency": "日元", "impact": "间接利好", "analysis": "美元走弱叠加长端利率下行，缩小美日利差，利好日元"},
+                ]
+            },
+            {
+                "type": "forecast",
+                "title": "后市展望",
+                "data": [
+                    {"horizon": "9月议息", "view": "关键节点", "detail": "美联储若不加息，意味着默认财政部的利率管控——美元信用压力将持续；若加息，则与财政部意图分道扬镳，市场波动加剧"},
+                    {"horizon": "1 个月", "view": "美元偏弱", "detail": "财政部干预 + 美联储权责边界模糊，美元信用溢价上升，倾向走弱"},
+                    {"horizon": "3 个月", "view": "取决于 Warsh 后续态度", "detail": "若市场确认财政部行为属正常债务管理（第一种情形），美元影响有限；若确认为政策边界变化（第二种情形），美元信用危机将持续发酵"},
+                ]
+            }
+        ]
+    },
+    {
         "date": "2026-08-20",
         "weekday": "周四",
         "title": "美联储鹰派言论主导，美元指数站稳 102",
@@ -2466,6 +2515,67 @@ DAILY_REPORTS = [
 # 外汇周报（每周日更新）
 # ============================================================
 WEEKLY_REPORTS = [
+    {
+        "week_label": "2026 年第 36 周 (09/01 - 09/05)",
+        "date": "2026-09-05",
+        "title": "财政部非常规干预利率，美元信用面临考验",
+        "summary": "本周核心事件是美国财政部采取非常规操作——调整发债结构、回购长久期债券，直接干预长期利率定价。此举被市场解读为侵蚀美联储权责边界，引发美元信用质疑。长端利率下行但短端反向上行，美债收益率与美元走势出现背离。Warsh 讲话态度微妙，9 月 FOMC 会议成为关键分水岭。",
+        "comparison": {
+            "current_week": {
+                "highlights": [
+                    "财政部调整发债结构+回购长久期债券，直接压低 term premium",
+                    "10 年期美债收益率下行，但 2 年期因 Warsh 偏鹰讲话反向上行",
+                    "美元指数走弱，EUR/USD 收于 1.1622",
+                    "USD/JPY 下跌至 156.25，长端利率下行缩小美日利差",
+                    "黄金避险走强，市场担忧美元信用",
+                ],
+                "key_events": [
+                    {"date": "09-01", "event": "财政部发债结构公告"},
+                    {"date": "09-03", "event": "财政部长久期债券回购操作"},
+                    {"date": "09-04", "event": "Warsh 讲话——态度微妙，短端利率上行"},
+                    {"date": "09-05", "event": "非农数据与 FOMC 预热"},
+                ]
+            },
+            "last_week": {
+                "highlights": [
+                    "美元指数站稳 102，鹰派言论主导",
+                    "EUR/USD 收于 1.0845，承压下行",
+                    "USD/JPY 在 150 附近震荡",
+                    "杰克逊霍尔年会鲍威尔讲话预热",
+                ],
+                "key_events": [
+                    {"date": "08-18", "event": "美国零售销售数据"},
+                    {"date": "08-19", "event": "美联储理事威廉姆斯讲话"},
+                    {"date": "08-20", "event": "日本 7 月 CPI 数据"},
+                ]
+            }
+        },
+        "analysis": {
+            "theme": "财政部越界干预：正常债务管理 vs 政策边界变化",
+            "points": [
+                "财政部直接管控长期融资成本，侵蚀了美联储的利率定价权责——这不是正常债务管理，而是非常规干预",
+                "两种情形判断：第一种（正常债务管理）→ 长端利率下降，美元影响有限；第二种（政策边界变化）→ 美元信用问题，美债利率降但美元走弱、黄金上涨。当前市场定价指向第二种情形",
+                "Warsh 讲话后短端利率上行（2 年期最明显），长端也跟随走——市场在重新评估美联储是否会被迫配合财政部",
+                "9 月 FOMC 会议为关键分水岭：若加息则与财政部分道扬镳，大概率不会加息——若不加息则默认财政部管控",
+                "美债长短端走势分开，表明市场正在区分财政部的影响（长端）与美联储的影响（短端）",
+            ]
+        },
+        "forecast": {
+            "next_week": {
+                "view": "美元偏弱，关注 FOMC",
+                "key_dates": [
+                    {"date": "下周", "event": "美国 8 月 CPI 数据"},
+                    {"date": "下周", "event": "美联储 9 月 FOMC 议息会议（关键分水岭）"},
+                    {"date": "下周", "event": "财政部后续操作动向"},
+                ],
+                "risk_level": "高",
+            },
+            "medium_term": {
+                "view": "美元信用压力持续",
+                "detail": "若 9 月 FOMC 不加息（大概率），财政部干预效果将持续发酵——长端利率受压制但美元信用溢价上升。黄金和日元作为避险资产可能继续走强。中期取决于 Warsh 后续态度和市场对政策边界的最终定价。",
+            }
+        }
+    },
     {
         "week_label": "2026 年第 34 周 (08/18 - 08/20)",
         "date": "2026-08-20",

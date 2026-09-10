@@ -362,32 +362,15 @@ table.data-table {
     padding: 16px;
     margin-bottom: 16px;
 }
-/* 强制所有 Plotly 容器使用深色背景 */
-.js-plotly-plot,
-.plotly-gravure-container,
-.js-plotly-plot .plotly,
-.js-plotly-plot svg,
-.js-plotly-plot .main-svg,
-.js-plotly-plot .modebar,
-.js-plotly-plot .hoverlayer,
-.js-plotly-plot .hoverlayer .hoverinfo,
-.js-plotly-plot .hoverlayer .hoverlabel,
-.js-plotly-plot .plotly-bg,
-.js-plotly-plot .xlayer,
-.js-plotly-plot .ylayer,
-.js-plotly-plot .cartesianlayer,
-.js-plotly-plot .shapelayer,
-.js-plotly-plot .barlayer,
-.js-plotly-plot .scatterlayer,
-.js-plotly-plot .pie,
-.js-plotly-plot .legend {
+/* Plotly 容器深色背景（仅容器级别，不干扰 Plotly 内部 SVG 渲染） */
+.js-plotly-plot {
     background: #1c2128 !important;
-    fill: #1c2128 !important;
 }
-/* 确保绘图区域也是深色 */
-.js-plotly-plot .modebar-btn path,
+.js-plotly-plot .modebar-btn path {
+    fill: #e6edf3;
+}
 .js-plotly-plot .modebar-btn:hover path {
-    fill: #e6edf3 !important;
+    fill: #e6edf3;
 }
 .js-plotly-plot .hoverlayer .hoverinfo,
 .js-plotly-plot .hoverlayer .hoverlabel {
@@ -395,27 +378,98 @@ table.data-table {
     border-color: #30363d !important;
 }
 .js-plotly-plot .hoverlayer .hoverlabel text {
-    fill: #e6edf3 !important;
-}
-.js-plotly-plot text {
     fill: #e6edf3;
 }
-/* 轴和网格线颜色 */
-.js-plotly-plot .gridline,
-.js-plotly-plot .zeroline {
-    stroke: #30363d !important;
-}
-.js-plotly-plot .tick text,
-.js-plotly-plot .xtick text,
-.js-plotly-plot .ytick text {
-    fill: #8b949e !important;
-}
-.js-plotly-plot .axis-title text,
-.js-plotly-plot .xaxis-title text,
-.js-plotly-plot .yaxis-title text {
-    fill: #e6edf3 !important;
-}
 .chart-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+
+/* ---------- 公告栏 ---------- */
+.announcement-bar {
+    background: linear-gradient(135deg, rgba(88,166,255,0.15), rgba(188,140,255,0.12));
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: annFadeIn 0.5s ease-out;
+}
+@keyframes annFadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.announcement-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.announcement-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(88,166,255,0.25);
+    color: #58a6ff;
+    white-space: nowrap;
+}
+.announcement-title {
+    font-weight: 600;
+    color: var(--text);
+    background: linear-gradient(135deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.announcement-text {
+    color: var(--text-light);
+    flex: 1;
+    min-width: 200px;
+}
+.announcement-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+.announcement-toggle {
+    background: transparent;
+    border: 1px solid rgba(88,166,255,0.4);
+    color: #58a6ff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.announcement-toggle:hover {
+    background: rgba(88,166,255,0.15);
+}
+.announcement-list {
+    margin: -8px 0 16px 0;
+    padding: 8px 0;
+    border-top: 1px solid var(--border-light);
+}
+.announcement-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.announcement-item:last-child {
+    border-bottom: none;
+}
+.announcement-item .announcement-text {
+    flex: 1;
+    min-width: 150px;
+}
 
 /* ---------- 提示框 ---------- */
 .callout {

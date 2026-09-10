@@ -94,7 +94,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="{{ url_for('static', filename='js/plotly-2.35.2.min.js') }}"></script>
 <script>
 const COLORS = {jpy:'#ff6b6b',cny:'#3fb950',eur:'#58a6ff',gbp:'#bc8cff',aud:'#f0883e',chf:'#a5d6ff',usd:'#7ee787'};
 
@@ -104,7 +104,7 @@ document.getElementById('load-btn').addEventListener('click', () => {
         Plotly.newPlot('explore-chart', [{
             x: data.map(d=>d.date), y: data.map(d=>d.rate),
             type: 'scatter', mode: 'lines+markers',
-            line: { color: COLORS[code] || '#58a6ff', width: 4 },
+            line: { color: COLORS[code] || '#58a6ff', width: 2.5 },
             text: data.map(d=>d.event), hoverinfo: 'x+y+text'
         }], {
             paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',

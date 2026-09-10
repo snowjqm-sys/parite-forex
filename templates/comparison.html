@@ -90,7 +90,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="{{ url_for('static', filename='js/plotly-2.35.2.min.js') }}"></script>
 <script>
 const PAIR_COLORS = {
     jpy: '#ff6b6b', cny: '#3fb950', eur: '#58a6ff',
@@ -112,7 +112,7 @@ Promise.all(allCodes.map(c => fetch('/api/currency/'+c+'/history').then(r=>r.jso
             y: data.map(d => (d.rate/base)*100),
             name: PAIR_LABELS[code],
             type: 'scatter', mode: 'lines',
-            line: { color: PAIR_COLORS[code], width: 4 }
+            line: { color: PAIR_COLORS[code], width: 2.5 }
         };
     });
     Plotly.newPlot('compare-chart', traces, {
@@ -161,7 +161,7 @@ function renderRegression(code) {
           name: '年度数据', text: hover, hoverinfo: 'text',
           marker: { size: 10, color: PAIR_COLORS[code], opacity: 0.8 } },
         { x: line.map(p=>p.x), y: line.map(p=>p.y), type: 'scatter', mode: 'lines',
-          name: '回归线', line: { color: '#ff6b6b', width: 4 } }
+          name: '回归线', line: { color: '#ff6b6b', width: 2.5 } }
     ], {
         paper_bgcolor: '#1c2128', plot_bgcolor: '#0d1117',
         font: { color: '#e6edf3', size: 12 },

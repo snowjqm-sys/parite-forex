@@ -138,6 +138,50 @@
     </div>
 </div>
 {% endif %}
+
+{% if is_admin %}
+<!-- 公告管理 -->
+<h2 class="section-title">公告管理</h2>
+<div class="callout info">
+    <div class="callout-title">首页公告栏</div>
+    发布公告后会立即显示在网站首页的公告栏中，最新的一条会置顶显示。支持添加标签（如「更新」「维护」「公告」）来区分公告类型。
+</div>
+
+<div class="card">
+    <div class="feedback-form">
+        <div class="form-row">
+            <label for="ann-tag">公告标签</label>
+            <select id="ann-tag" style="width:140px;">
+                <option value="公告">公告</option>
+                <option value="更新">更新</option>
+                <option value="维护">维护</option>
+                <option value="重要">重要</option>
+                <option value="新功能">新功能</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="ann-title">公告标题（可选）</label>
+            <input type="text" id="ann-title" placeholder="简短标题，可选">
+        </div>
+        <div class="form-row">
+            <label for="ann-content">公告内容 <span style="color:var(--accent)">*</span></label>
+            <textarea id="ann-content" rows="3" placeholder="公告具体内容..."></textarea>
+        </div>
+        <div class="form-row" style="flex-direction:row; gap:12px; align-items:center;">
+            <button id="ann-create-btn">发布公告</button>
+            <span id="ann-status" class="fb-status"></span>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+    <h3 style="font-size:15px;margin-bottom:12px;">历史公告</h3>
+    <div id="ann-list" style="max-height:300px;overflow-y:auto;">
+        <div style="color:var(--text-dim);text-align:center;padding:20px;">加载中...</div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
@@ -329,6 +373,85 @@ if (IS_ADMIN) {
             }).finally(() => {
                 mailTestBtn.disabled = false;
                 mailTestBtn.textContent = '发送测试邮件';
+            });
+        });
+    }
+
+    // ============ 公告管理 ============
+    function loadAnnouncements() {
+        fetch('/api/announcements').then(r => r.json()).then(data => {
+            const listEl = document.getElementById('ann-list');
+            if (!data.length) {
+                listEl.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px;">暂无公告</div>';
+                return;
+            }
+            listEl.innerHTML = data.map(a => `
+                <div style="padding:12px 0;border-bottom:1px solid var(--border-light);display:flex;align-items:flex-start;gap:10px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                            <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(88,166,255,0.25);color:#58a6ff;">${a.tag || '公告'}</span>
+                            ${a.title ? `<strong style="font-size:13px;color:var(--text);">${a.title}</strong>` : ''}
+                            <span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${a.created_at}</span>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-light);line-height:1.5;white-space:pre-wrap;">${a.content}</div>
+                    </div>
+                    <button class="ann-del-btn" data-id="${a.id}" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;white-space:nowrap;">删除</button>
+                </div>
+            `).join('');
+            listEl.querySelectorAll('.ann-del-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.dataset.id);
+                    if (confirm('确认删除这条公告？')) {
+                        fetch(`/api/announcements/${id}`, { method: 'DELETE' })
+                            .then(r => r.json()).then(data => {
+                                if (data.success) loadAnnouncements();
+                                else alert('删除失败：' + (data.error || '未知错误'));
+                            });
+                    }
+                });
+            });
+        }).catch(() => {
+            document.getElementById('ann-list').innerHTML = '<div style="color:var(--accent-orange);text-align:center;padding:20px;">加载公告失败</div>';
+        });
+    }
+    loadAnnouncements();
+
+    const annCreateBtn = document.getElementById('ann-create-btn');
+    if (annCreateBtn) {
+        annCreateBtn.addEventListener('click', () => {
+            const tag = document.getElementById('ann-tag').value;
+            const title = document.getElementById('ann-title').value.trim();
+            const content = document.getElementById('ann-content').value.trim();
+            const status = document.getElementById('ann-status');
+            if (!content) {
+                status.className = 'fb-status error';
+                status.textContent = '公告内容不能为空';
+                return;
+            }
+            annCreateBtn.disabled = true;
+            annCreateBtn.textContent = '发布中...';
+            fetch('/api/announcements', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tag, title, content })
+            }).then(r => r.json()).then(data => {
+                if (data.error) {
+                    status.className = 'fb-status error';
+                    status.textContent = data.error;
+                } else {
+                    status.className = 'fb-status success';
+                    status.textContent = '公告发布成功！';
+                    document.getElementById('ann-title').value = '';
+                    document.getElementById('ann-content').value = '';
+                    loadAnnouncements();
+                    setTimeout(() => { status.className = 'fb-status'; status.textContent = ''; }, 3000);
+                }
+            }).catch(() => {
+                status.className = 'fb-status error';
+                status.textContent = '发布失败，请稍后重试';
+            }).finally(() => {
+                annCreateBtn.disabled = false;
+                annCreateBtn.textContent = '发布公告';
             });
         });
     }

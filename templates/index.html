@@ -13,6 +13,44 @@
     Parité 是一个多货币研究平台，研究主要货币的汇率驱动因素、历史走势、利差分析与实时数据。数据来自美联储、ECB、OECD、PBOC 等官方权威源。
 </div>
 
+{# ========== 公告栏 ========== #}
+{% if announcements %}
+<div class="announcement-bar">
+    {% set latest = announcements[0] %}
+    <div class="announcement-content">
+        <span class="announcement-tag">{{ latest.tag or '公告' }}</span>
+        {% if latest.title %}
+        <span class="announcement-title">{{ latest.title }}</span>
+        {% endif %}
+        {% if latest.link %}
+        <a href="{{ latest.link }}" class="announcement-text" style="text-decoration:none;color:inherit;cursor:pointer">{{ latest.content }} <span style="color:#58a6ff;font-size:12px">→ 点击查看</span></a>
+        {% else %}
+        <span class="announcement-text">{{ latest.content }}</span>
+        {% endif %}
+        <span class="announcement-time">{{ latest.created_at }}</span>
+    </div>
+    {% if announcements|length > 1 %}
+    <button class="announcement-toggle" onclick="toggleAnnouncementList()">查看全部 {{ announcements|length }} 条 ▾</button>
+    {% endif %}
+</div>
+{% if announcements|length > 1 %}
+<div class="announcement-list" id="announcementList" style="display:none;">
+    {% for ann in announcements[1:] %}
+    <div class="announcement-item">
+        <span class="announcement-tag">{{ ann.tag or '公告' }}</span>
+        {% if ann.title %}<span class="announcement-title">{{ ann.title }}</span>{% endif %}
+        {% if ann.link %}
+        <a href="{{ ann.link }}" class="announcement-text" style="text-decoration:none;color:inherit;cursor:pointer">{{ ann.content }} <span style="color:#58a6ff;font-size:12px">→ 点击查看</span></a>
+        {% else %}
+        <span class="announcement-text">{{ ann.content }}</span>
+        {% endif %}
+        <span class="announcement-time">{{ ann.created_at }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+
 {# ========== 市场快照（原有，不变） ========== #}
 <h2 class="section-title">市场快照</h2>
 <div class="grid-3">
@@ -120,7 +158,20 @@
 </div>
 
 {# ========== Plotly 归一化走势图 ========== #}
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="{{ url_for('static', filename='js/plotly-2.35.2.min.js') }}"></script>
+<script>
+function toggleAnnouncementList() {
+    var list = document.getElementById('announcementList');
+    var btn = document.querySelector('.announcement-toggle');
+    if (list.style.display === 'none') {
+        list.style.display = 'block';
+        btn.textContent = '收起 ▴';
+    } else {
+        list.style.display = 'none';
+        btn.textContent = '查看全部 ▾';
+    }
+}
+</script>
 <script>
 (function() {
     var rateData = {{ interest_rates | tojson }};
@@ -146,7 +197,7 @@
         return {
             x: years, y: vals,
             mode: 'lines+markers', name: s.label,
-            line: { color: s.color, width: 4 },
+            line: { color: s.color, width: 2.5 },
             marker: { size: 6 },
         };
     });
