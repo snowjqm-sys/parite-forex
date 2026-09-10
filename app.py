@@ -61,11 +61,12 @@ _NO_CACHE_API_PREFIXES = (
 # 静态数据 API（允许缓存 10 分钟，数据一天顶多变几次）
 _STATIC_API_PREFIXES = (
     "/api/snapshot",            # 市场总览快照（和 data.py 同步更新）
-    "/api/currency/",           # 货币历史 / 月度 / 日度（历史数据，不会变）
     "/api/rates",               # 利率序列（data.py 静态）
     "/api/currencies",          # 货币元信息
     "/api/regression",          # OLS 回归结果（同上）
 )
+# 注意：/api/currency/<code>/history|monthly|daily 已改为实时获取 Frankfurter 数据，
+# 不再走静态缓存，归入默认 /api/* 的 no-cache 策略。
 
 
 def _apply_cache(resp, vercel_cdn, cdn_cache, client_cache):

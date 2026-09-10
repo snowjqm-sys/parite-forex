@@ -1143,13 +1143,13 @@ function fillSpreadTable(d) {
 }
 
 // 历史走势图（年度）
-fetch('/api/currency/' + CODE + '/history').then(r => r.json()).then(data => {
+fetch('/api/currency/' + CODE + '/history', { cache: 'no-store' }).then(r => r.json()).then(data => {
     CHART_DATA_STORE['history-chart'] = { type: 'yearly', data: data, meta: {} };
     renderHistoryChart('simple');
 });
 
 // 近一年月度走势图
-fetch('/api/currency/' + CODE + '/monthly').then(r => r.json()).then(data => {
+fetch('/api/currency/' + CODE + '/monthly', { cache: 'no-store' }).then(r => r.json()).then(data => {
     if (data.error) { document.getElementById('monthly-chart').innerHTML = '<div class="live-error">月度数据加载失败：' + data.error + '</div>'; return; }
     const items = data.data || [];
     if (items.length === 0) { document.getElementById('monthly-chart').innerHTML = '<div class="live-error">暂无月度数据</div>'; return; }
@@ -1158,7 +1158,7 @@ fetch('/api/currency/' + CODE + '/monthly').then(r => r.json()).then(data => {
 }).catch(err => { document.getElementById('monthly-chart').innerHTML = '<div class="live-error">月度数据加载失败</div>'; });
 
 // 近一月日度走势图
-fetch('/api/currency/' + CODE + '/daily').then(r => r.json()).then(data => {
+fetch('/api/currency/' + CODE + '/daily', { cache: 'no-store' }).then(r => r.json()).then(data => {
     if (data.error) { document.getElementById('daily-chart').innerHTML = '<div class="live-error">日度数据加载失败：' + data.error + '</div>'; return; }
     const items = data.data || [];
     if (items.length === 0) { document.getElementById('daily-chart').innerHTML = '<div class="live-error">暂无日度数据</div>'; return; }
