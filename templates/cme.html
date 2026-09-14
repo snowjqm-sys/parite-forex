@@ -1,0 +1,1915 @@
+{% extends "base.html" %}
+{% block title %}CME小窝{% endblock %}
+
+{% block head %}
+<style>
+/* ============ CME War Room 特有样式 ============ */
+.cme-hero {
+    position: relative;
+    margin-bottom: 28px;
+    padding: 44px 32px 40px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 12% 0%, rgba(88, 166, 255, 0.22), transparent 55%),
+        radial-gradient(ellipse at 88% 100%, rgba(188, 140, 255, 0.20), transparent 55%),
+        radial-gradient(ellipse at 65% 15%, rgba(240, 136, 62, 0.10), transparent 60%),
+        var(--bg-elevated);
+}
+.cme-hero .hero-eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--primary);
+    background: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.35);
+    padding: 3px 12px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+}
+.cme-hero h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #e6edf3, #58a6ff 60%, #bc8cff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.cme-hero .hero-sub {
+    color: var(--text-light);
+    font-size: 15px;
+    max-width: 760px;
+    line-height: 1.7;
+}
+.cme-hero .hero-chips {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cme-hero .hero-chip {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--text-light);
+    background: rgba(28, 33, 40, 0.6);
+    border: 1px solid var(--border);
+    padding: 5px 13px;
+    border-radius: 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.cme-hero .hero-chip:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(88, 166, 255, 0.10);
+    transform: translateY(-1px);
+}
+.cme-hero .hero-chip::after {
+    content: " ↗";
+    font-size: 11px;
+    opacity: 0.65;
+}
+
+.cme-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .cme-grid { grid-template-columns: 1fr; }
+}
+
+.cme-panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+}
+.cme-panel h2 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.cme-panel .panel-desc {
+    color: var(--text-light);
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.cme-form .field {
+    margin-bottom: 14px;
+}
+.cme-form label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+.cme-form input, .cme-form select, .cme-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(13, 17, 23, 0.7);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+.cme-form input:focus, .cme-form select:focus, .cme-form textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+.cme-form .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.cme-form .btn-primary {
+    width: 100%;
+    padding: 11px;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, #2383e2, #6e5ae6);
+    transition: opacity 0.2s, transform 0.1s;
+}
+.cme-form .btn-primary:hover { opacity: 0.9; }
+.cme-form .btn-primary:active { transform: translateY(1px); }
+.cme-form .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cme-hint {
+    font-size: 12px;
+    color: var(--accent-jpy);
+    min-height: 16px;
+    margin-top: 8px;
+}
+
+/* 快照列表 */
+.snapshot-list { display: flex; flex-direction: column; gap: 12px; }
+.snapshot-empty {
+    color: var(--text-light);
+    font-size: 14px;
+    text-align: center;
+    padding: 40px 16px;
+    line-height: 1.7;
+}
+.snapshot-card {
+    background: rgba(13, 17, 23, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+}
+.snapshot-card .sc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.snapshot-card .sc-symbol {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+}
+.snapshot-card .sc-time {
+    font-size: 12px;
+    color: var(--text-light);
+}
+.snapshot-card .sc-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 6px;
+}
+.snapshot-card .sc-row strong { color: var(--text); }
+.snapshot-card .sc-note {
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.6;
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
+}
+.snapshot-card .sc-del {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 15px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+}
+.snapshot-card .sc-del:hover { color: var(--accent-jpy); background: rgba(240, 90, 90, 0.1); }
+
+.cme-sources {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.7;
+}
+.cme-sources a { color: var(--primary); }
+
+/* ============ Top Bar / 比赛倒计时 ============ */
+.cme-topbar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.cme-topbar .tb-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+}
+.cme-topbar .tb-label {
+    font-size: 11px;
+    color: var(--text-light);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.cme-topbar .tb-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+.cme-topbar .tb-value.accent { color: var(--primary); }
+.cme-topbar .tb-value.up { color: #3fb950; }
+.cme-topbar .tb-value.down { color: #f85149; }
+.cme-topbar .tb-sub {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+/* ============ 区块标题分隔 ============ */
+.cme-section {
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+.cme-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cme-section .section-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(88, 166, 255, 0.15);
+    border: 1px solid rgba(88, 166, 255, 0.35);
+    padding: 2px 10px;
+    border-radius: 10px;
+}
+.cme-section p {
+    color: var(--text-light);
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+/* ============ 信号卡片（模块 A） ============ */
+.signal-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+}
+.signal-card .sig-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.signal-card .sig-symbol {
+    font-size: 17px;
+    font-weight: 700;
+}
+.signal-card .sig-bias {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.bias-strong_bullish { background: rgba(63,185,80,0.18); color: #3fb950; border: 1px solid rgba(63,185,80,0.4); }
+.bias-bullish { background: rgba(63,185,80,0.12); color: #7ee787; border: 1px solid rgba(63,185,80,0.3); }
+.bias-strong_bearish { background: rgba(248,81,73,0.18); color: #f85149; border: 1px solid rgba(248,81,73,0.4); }
+.bias-bearish { background: rgba(248,81,73,0.12); color: #ff7b72; border: 1px solid rgba(248,81,73,0.3); }
+.bias-neutral { background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.3); }
+.signal-card .sig-metrics {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 12px;
+}
+.signal-card .sig-metrics strong { color: var(--text); font-size: 15px; }
+.signal-card .sig-factor-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.signal-card .sig-factor {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: rgba(13,17,23,0.6);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+}
+.signal-card .sig-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 700px) { .signal-card .sig-lists { grid-template-columns: 1fr; } }
+.signal-card .sig-list h4 {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.signal-card .sig-list ul { list-style: none; padding: 0; margin: 0; }
+.signal-card .sig-list li {
+    font-size: 13px;
+    color: var(--text);
+    padding-left: 14px;
+    position: relative;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+.signal-card .sig-list li::before { content: '▸'; position: absolute; left: 0; color: var(--primary); }
+
+/* ============ 事件卡片（模块 B） ============ */
+.event-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.event-card .ev-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.event-card .ev-title { font-size: 15px; font-weight: 700; }
+.event-card .ev-meta { font-size: 12px; color: var(--text-light); display: flex; gap: 12px; flex-wrap: wrap; }
+.event-card .ev-actual-row {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+}
+.event-card .ev-note { font-size: 12px; color: var(--text-light); margin-top: 8px; line-height: 1.6; }
+.importance-high { color: #f85149; font-weight: 700; }
+.importance-medium { color: #d29922; font-weight: 700; }
+.importance-low { color: #8b949e; }
+
+.scenario-box {
+    background: rgba(13,17,23,0.5);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.6;
+}
+.scenario-box strong { color: var(--text); }
+
+/* ============ 交易提案（模块 C） ============ */
+.proposal-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.proposal-card.status-approved { border-left-color: #3fb950; }
+.proposal-card.status-rejected { border-left-color: #f85149; opacity: 0.7; }
+.proposal-card .pp-head {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
+}
+.proposal-card .pp-symbol { font-size: 16px; font-weight: 700; }
+.proposal-card .pp-dir { font-size: 12px; font-weight: 700; }
+.proposal-card .pp-thesis { font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 10px; }
+.proposal-card .pp-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; color: var(--text-light); margin-bottom: 12px;
+}
+@media (max-width: 700px) { .proposal-card .pp-grid { grid-template-columns: 1fr; } }
+.proposal-card .pp-grid strong { color: var(--text); }
+.proposal-card .pp-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============ 通用按钮 ============ */
+.cme-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    background: rgba(13,17,23,0.6);
+    color: var(--text);
+    transition: opacity 0.2s, border-color 0.2s;
+}
+.cme-btn:hover { border-color: var(--primary); opacity: 0.9; }
+.cme-btn.primary { background: linear-gradient(135deg, #2383e2, #6e5ae6); border: none; color: #fff; }
+.cme-btn.approve { background: rgba(63,185,80,0.15); border-color: rgba(63,185,80,0.4); color: #3fb950; }
+.cme-btn.reject { background: rgba(248,81,73,0.15); border-color: rgba(248,81,73,0.4); color: #f85149; }
+.cme-btn.danger { background: rgba(248,81,73,0.12); border-color: rgba(248,81,73,0.35); color: #f85149; }
+.cme-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ============ 风险预警 ============ */
+.risk-warning {
+    background: rgba(248,81,73,0.12);
+    border: 1px solid rgba(248,81,73,0.4);
+    color: #ff7b72;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+.risk-ok {
+    font-size: 12px;
+    color: #3fb950;
+    padding: 8px 12px;
+    border: 1px solid rgba(63,185,80,0.3);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+.risk-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.risk-metrics .rm {
+    background: rgba(13,17,23,0.5);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+}
+.risk-metrics .rm .rm-label { font-size: 11px; color: var(--text-light); margin-bottom: 4px; }
+.risk-metrics .rm .rm-value { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ============ Journal ============ */
+.journal-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+.journal-card .jr-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.journal-card .jr-symbol { font-weight: 700; font-size: 14px; }
+.journal-card .jr-pnl { font-weight: 700; font-variant-numeric: tabular-nums; }
+.journal-card .jr-row { color: var(--text-light); font-size: 12px; line-height: 1.6; }
+.journal-card .jr-review { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); color: var(--text); }
+
+/* ============ Tab 导航 ============ */
+.cme-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 24px 0 16px;
+    border-bottom: 1px solid var(--border);
+}
+.cme-tabs .tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+.cme-tabs .tab:hover { color: var(--text); }
+.cme-tabs .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+.cme-note {
+    font-size: 11px;
+    color: var(--text-light);
+    font-style: italic;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cme-hero">
+    <span class="hero-eyebrow">CME GROUP · UNIVERSITY TRADING CHALLENGE</span>
+    <h1>CME小窝</h1>
+    <div class="hero-sub">
+        面向 2026 CME 大学生交易挑战赛的决策支持工作台，用于辅助人工判断与下单。
+    </div>
+    <div class="hero-chips">
+        <a class="hero-chip" href="/cme/symbol/GC" title="黄金期货详情">📊 黄金 GC</a>
+        <a class="hero-chip" href="/cme/symbol/NQ" title="纳指100期货详情">📈 纳指 NQ</a>
+        <a class="hero-chip" href="/cme/symbol/ES" title="标普500期货详情">📈 标普 ES</a>
+        <a class="hero-chip" href="/cme/symbol/6E" title="欧元期货详情">💶 欧元 6E</a>
+        <a class="hero-chip" href="/cme/symbol/6J" title="日元期货详情">💴 日元 6J</a>
+        <a class="hero-chip" href="/cme/symbol/6B" title="英镑期货详情">💷 英镑 6B</a>
+        <a class="hero-chip" href="/cme/symbol/T" title="美债期货详情">🏛️ 美债 ZT/ZF/ZN</a>
+        <a class="hero-chip" href="/cme/symbol/CL" title="原油期货详情">🛢️ 原油 CL</a>
+    </div>
+</div>
+
+<!-- Top Bar：比赛倒计时 / 权益 / P&L / 合约数 -->
+<div class="cme-topbar" id="cme-topbar">
+    <div class="tb-card">
+        <div class="tb-label">比赛倒计时</div>
+        <div class="tb-value accent" id="tb-countdown">—</div>
+        <div class="tb-sub" id="tb-countdown-sub">—</div>
+    </div>
+    <div class="tb-card">
+        <div class="tb-label">账户权益</div>
+        <div class="tb-value" id="tb-equity">—</div>
+        <div class="tb-sub">初始 $1,000,000</div>
+    </div>
+    <div class="tb-card">
+        <div class="tb-label">Daily P&L</div>
+        <div class="tb-value" id="tb-pnl">—</div>
+        <div class="tb-sub">未实现盈亏</div>
+    </div>
+    <div class="tb-card">
+        <div class="tb-label">今日合约</div>
+        <div class="tb-value" id="tb-contracts">—</div>
+        <div class="tb-sub">最低 10 手 / 日</div>
+    </div>
+</div>
+
+<!-- Tab 导航 -->
+<div class="cme-tabs">
+    <button class="tab active" data-tab="tab-snapshot">行情快照</button>
+    <button class="tab" data-tab="tab-macro">Macro Score</button>
+    <button class="tab" data-tab="tab-event">Event Scenario</button>
+    <button class="tab" data-tab="tab-planner">Trade Planner</button>
+    <button class="tab" data-tab="tab-risk">Risk & Ops</button>
+</div>
+
+<!-- ============ Tab 1：行情快照 + CSV 导入 ============ -->
+<div class="tab-pane active" id="tab-snapshot">
+    <div class="cme-grid">
+        <div class="cme-panel">
+            <h2>录入行情快照</h2>
+            <p class="panel-desc">从 Yahoo 财经 / CME 官网查看最新价后，手工填入以下字段。每次保存会生成一条快照记录。</p>
+            <div class="cme-form">
+                <div class="field">
+                    <label for="cme-symbol">品种</label>
+                    <select id="cme-symbol">
+                        <option value="GC=F">黄金期货 GC=F</option>
+                        <option value="NQ=F">纳斯达克100 NQ=F</option>
+                        <option value="ES=F">标普500 ES=F</option>
+                        <option value="6E=F">欧元期货 6E=F</option>
+                        <option value="6J=F">日元期货 6J=F</option>
+                        <option value="6B=F">英镑期货 6B=F</option>
+                        <option value="ZT=F">2年期美债 ZT=F</option>
+                        <option value="ZF=F">5年期美债 ZF=F</option>
+                        <option value="ZN=F">10年期美债 ZN=F</option>
+                        <option value="CL=F">原油 CL=F</option>
+                    </select>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="cme-price">最新价</label>
+                        <input id="cme-price" type="number" step="any" placeholder="如 2650.5">
+                    </div>
+                    <div class="field">
+                        <label for="cme-change">涨跌幅 %（选填）</label>
+                        <input id="cme-change" type="number" step="any" placeholder="如 0.82">
+                    </div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="cme-date">日期</label>
+                        <input id="cme-date" type="date">
+                    </div>
+                    <div class="field">
+                        <label for="cme-time">时间</label>
+                        <input id="cme-time" type="time">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="cme-note">备注 / 判断（选填）</label>
+                    <textarea id="cme-note" rows="2" placeholder="如：非农前黄金偏强，关注 2650 支撑"></textarea>
+                </div>
+                <button id="cme-save" class="btn-primary">保存快照</button>
+                <div id="cme-hint" class="cme-hint"></div>
+            </div>
+
+            <div class="cme-panel cme-import" style="margin-top:16px;">
+                <h2>CSV 批量导入</h2>
+                <p class="panel-desc">
+                    每行一条，字段顺序：<code>symbol,price,change,date,time,note</code>（逗号分隔）。
+                    change/date/time/note 可留空；date 格式 YYYY-MM-DD，time 格式 HH:MM。
+                </p>
+                <textarea id="cme-csv" rows="6" placeholder="GC=F,2650.5,0.82,2026-09-14,21:30,非农前黄金偏强&#10;NQ=F,20800.25,-0.35,2026-09-14,21:30,纳指高位震荡"></textarea>
+                <button id="cme-csv-import" class="btn-primary" style="margin-top:12px;">批量导入</button>
+                <div id="cme-csv-hint" class="cme-hint"></div>
+            </div>
+        </div>
+
+        <div class="cme-panel">
+            <h2>快照记录</h2>
+            <p class="panel-desc">已录入的品种快照，按时间倒序。数据保存到服务器，换设备也不丢。</p>
+            <div id="snapshot-list" class="snapshot-list">
+                <div class="snapshot-empty">还没有快照，先在左侧录入一条试试。</div>
+            </div>
+            <div class="cme-sources">
+                数据来源建议：<br>
+                · <a href="https://finance.yahoo.com" target="_blank" rel="noopener">Yahoo 财经</a>（搜 GC=F / NQ=F 等）<br>
+                · <a href="https://www.cmegroup.com" target="_blank" rel="noopener">CME 官网</a>（各品种报价页）<br>
+                · <a href="https://xoomar.com" target="_blank" rel="noopener">xoomar.com</a>（免费 COT 多空持仓）
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Tab 2：Macro Score（模块 A） ============ -->
+<div class="tab-pane" id="tab-macro">
+    <div class="cme-section">
+        <h2>Macro Score <span class="section-tag">模块 A</span></h2>
+        <p>用简单、透明、可解释的宏观因子，把主观判断转成结构化 Direction / Range / Confidence。不预测精确点位。</p>
+    </div>
+
+    <div class="cme-grid">
+        <div class="cme-panel">
+            <h2>生成新信号</h2>
+            <p class="panel-desc">选择品种、填入现价，勾选各宏观因子状态，系统按可解释权重计算总分与 bias。</p>
+            <div class="cme-form">
+                <div class="field">
+                    <label for="ms-symbol">品种</label>
+                    <select id="ms-symbol"></select>
+                </div>
+                <div class="field">
+                    <label for="ms-price">现价</label>
+                    <input id="ms-price" type="number" step="any" placeholder="如 2650.5">
+                </div>
+                <div id="ms-factors"></div>
+                <div class="field">
+                    <label for="ms-range">区间宽度 %（默认 1.0）</label>
+                    <input id="ms-range" type="number" step="any" value="1.0">
+                </div>
+                <div class="field">
+                    <label for="ms-drivers">核心驱动（每行一条）</label>
+                    <textarea id="ms-drivers" rows="2" placeholder="DXY 走弱&#10;美实际利率下行"></textarea>
+                </div>
+                <div class="field">
+                    <label for="ms-invalidation">失效条件（每行一条）</label>
+                    <textarea id="ms-invalidation" rows="2" placeholder="DXY 反弹 0.6%&#10;US2Y 上行 10bp"></textarea>
+                </div>
+                <button id="ms-save" class="btn-primary">生成信号</button>
+                <div id="ms-hint" class="cme-hint"></div>
+            </div>
+        </div>
+
+        <div class="cme-panel">
+            <h2>信号列表</h2>
+            <p class="panel-desc">已生成的结构化信号，按时间倒序。</p>
+            <div id="signal-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Tab 3：Event Scenario（模块 B） ============ -->
+<div class="tab-pane" id="tab-event">
+    <div class="cme-section">
+        <h2>Event Scenario <span class="section-tag">模块 B</span></h2>
+        <p>重大宏观事件前生成情景树，落地后更新 actual 自动计算 surprise 并匹配情景。</p>
+    </div>
+
+    <div class="cme-grid">
+        <div class="cme-panel">
+            <h2>新增事件</h2>
+            <p class="panel-desc">录入 CPI / NFP / FOMC 等事件，含 consensus 与 previous。</p>
+            <div class="cme-form">
+                <div class="field">
+                    <label for="ev-type">事件类型</label>
+                    <select id="ev-type">
+                        <option value="CPI">CPI</option>
+                        <option value="NFP">NFP 非农</option>
+                        <option value="FOMC">FOMC 利率决议</option>
+                        <option value="Fed Speech">Fed 官员讲话</option>
+                        <option value="ECB">ECB 决议</option>
+                        <option value="BOJ">BOJ 决议</option>
+                        <option value="Retail Sales">零售销售</option>
+                        <option value="Other">其他</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="ev-country">国家/地区</label>
+                    <input id="ev-country" placeholder="US / EU / JP">
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="ev-time">时间（YYYY-MM-DD HH:MM）</label>
+                        <input id="ev-time" placeholder="2026-09-18 20:30">
+                    </div>
+                    <div class="field">
+                        <label for="ev-importance">重要度</label>
+                        <select id="ev-importance">
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="ev-consensus">Consensus（预期）</label>
+                        <input id="ev-consensus" type="number" step="any" placeholder="如 2.4">
+                    </div>
+                    <div class="field">
+                        <label for="ev-previous">Previous（前值）</label>
+                        <input id="ev-previous" type="number" step="any" placeholder="如 2.6">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="ev-note">备注 / 关注点</label>
+                    <textarea id="ev-note" rows="2" placeholder="如：核心 CPI 环比是关键"></textarea>
+                </div>
+                <button id="ev-save" class="btn-primary">保存事件</button>
+                <div id="ev-hint" class="cme-hint"></div>
+            </div>
+        </div>
+
+        <div class="cme-panel">
+            <h2>事件列表</h2>
+            <p class="panel-desc">按时间倒序。事件落地后可填 actual 自动算 surprise。</p>
+            <div id="event-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Tab 4：Trade Planner（模块 C） ============ -->
+<div class="tab-pane" id="tab-planner">
+    <div class="cme-section">
+        <h2>Trade Planner <span class="section-tag">模块 C</span></h2>
+        <p>把研究判断转成可讨论、能否决的交易卡（proposal）。<strong>不会自动下单</strong>，最终由人工在 CQG 执行。</p>
+    </div>
+
+    <div class="cme-grid">
+        <div class="cme-panel">
+            <h2>生成交易卡</h2>
+            <p class="panel-desc">填写交易观点，生成 proposal，等待团队 approve 后再人工下单。</p>
+            <div class="cme-form">
+                <div class="field">
+                    <label for="tp-symbol">品种</label>
+                    <select id="tp-symbol"></select>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="tp-direction">方向</label>
+                        <select id="tp-direction">
+                            <option value="long">Long 做多</option>
+                            <option value="short">Short 做空</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="tp-confidence">置信度 0-100</label>
+                        <input id="tp-confidence" type="number" min="0" max="100" placeholder="72">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="tp-thesis">交易逻辑（thesis）</label>
+                    <textarea id="tp-thesis" rows="3" placeholder="CPI 不及预期 + US2Y 下行 + DXY 走弱"></textarea>
+                </div>
+                <div class="field">
+                    <label for="tp-entry">入场条件</label>
+                    <input id="tp-entry" placeholder="事件后确认 DXY 与 US2Y 同向">
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="tp-stop">止损 / 失效</label>
+                        <input id="tp-stop" placeholder="US2Y +10bp 或 DXY +0.6%">
+                    </div>
+                    <div class="field">
+                        <label for="tp-horizon">持仓周期</label>
+                        <input id="tp-horizon" placeholder="6-48h">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="tp-size">仓位建议（选填）</label>
+                    <input id="tp-size" placeholder="如 2 contracts">
+                </div>
+                <div class="field">
+                    <label for="tp-owner">负责人（选填）</label>
+                    <input id="tp-owner" placeholder="团队成员名">
+                </div>
+                <button id="tp-save" class="btn-primary">生成 proposal</button>
+                <div id="tp-hint" class="cme-hint"></div>
+            </div>
+        </div>
+
+        <div class="cme-panel">
+            <h2>交易提案</h2>
+            <p class="panel-desc">Pending / Approved / Rejected 三态，由人工点击 approve 或 reject。</p>
+            <div id="proposal-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Tab 5：Risk & Ops（模块 D） ============ -->
+<div class="tab-pane" id="tab-risk">
+    <div class="cme-section">
+        <h2>Risk Engine & Ops <span class="section-tag">模块 D</span></h2>
+        <p>账户余额是比赛胜负手。监控 margin / drawdown / concentration / 单日亏损，以及 10 手/日赛制。</p>
+    </div>
+
+    <div class="cme-panel" style="margin-bottom:20px;">
+        <h2>组合风险</h2>
+        <div id="risk-warnings"></div>
+        <div class="risk-metrics" id="risk-metrics"></div>
+        <div class="cme-note">风控红线来自配置文件（可调），正式赛前按 2026 Rules PDF 最终核验。账户权益默认模拟 $100,000，可到后端 risk-config 调整。</div>
+    </div>
+
+    <div class="cme-grid">
+        <div class="cme-panel">
+            <h2>持仓管理</h2>
+            <p class="panel-desc">手工维护当前持仓（合约、数量、均价、现价）。</p>
+            <div class="cme-form">
+                <div class="field">
+                    <label for="pos-symbol">品种</label>
+                    <select id="pos-symbol"></select>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="pos-qty">数量（+多/-空）</label>
+                        <input id="pos-qty" type="number" step="any" placeholder="如 2">
+                    </div>
+                    <div class="field">
+                        <label for="pos-avg">均价</label>
+                        <input id="pos-avg" type="number" step="any">
+                    </div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="pos-mark">现价</label>
+                        <input id="pos-mark" type="number" step="any">
+                    </div>
+                    <div class="field">
+                        <label for="pos-margin">保证金（选填）</label>
+                        <input id="pos-margin" type="number" step="any">
+                    </div>
+                </div>
+                <button id="pos-save" class="btn-primary">添加持仓</button>
+                <div id="pos-hint" class="cme-hint"></div>
+            </div>
+            <div id="position-list" style="margin-top:16px;"></div>
+        </div>
+
+        <div class="cme-panel">
+            <h2>交易日志 Journal</h2>
+            <p class="panel-desc">每笔交易的假设 → 执行 → 结果 → 复盘，赛后沉淀为研究材料。</p>
+            <div class="cme-form">
+                <div class="field">
+                    <label for="jr-symbol">品种</label>
+                    <select id="jr-symbol"></select>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="jr-direction">方向</label>
+                        <select id="jr-direction">
+                            <option value="long">Long</option>
+                            <option value="short">Short</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="jr-qty">数量</label>
+                        <input id="jr-qty" type="number" step="any">
+                    </div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="jr-entry">入场价</label>
+                        <input id="jr-entry" type="number" step="any">
+                    </div>
+                    <div class="field">
+                        <label for="jr-exit">出场价</label>
+                        <input id="jr-exit" type="number" step="any">
+                    </div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="jr-pnl">盈亏 P&L</label>
+                        <input id="jr-pnl" type="number" step="any">
+                    </div>
+                    <div class="field">
+                        <label for="jr-result">假设验证</label>
+                        <input id="jr-result" placeholder="如 正确 / 错误">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="jr-review">复盘（选填）</label>
+                    <textarea id="jr-review" rows="2" placeholder="做对/做错的地方，下次改进"></textarea>
+                </div>
+                <button id="jr-save" class="btn-primary">记录交易</button>
+                <div id="jr-hint" class="cme-hint"></div>
+            </div>
+            <div id="journal-list" style="margin-top:16px;"></div>
+        </div>
+
+        <div class="cme-card" style="margin-top:24px;">
+            <h3 class="cme-card-title">📦 数据备份</h3>
+            <p style="color:var(--muted);font-size:13px;margin:0 0 14px;">
+                比赛数据存在服务器/云端，换浏览器、清缓存都不会丢。这里的导出文件是最后双保险——
+                建议每天收盘后导出一份存到本地。
+            </p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                <button id="bk-export" class="btn-primary">⬇ 导出备份（JSON）</button>
+                <label class="btn-primary" style="cursor:pointer;background:var(--accent);">
+                    ⬆ 导入还原
+                    <input id="bk-import-file" type="file" accept=".json,application/json" style="display:none;">
+                </label>
+                <span id="bk-hint" class="cme-hint" style="flex:1;min-width:200px;"></span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var STORAGE_KEY = 'parite_cme_snapshots';
+    var API = '/api/cme/snapshots';
+
+    var symbolEl = document.getElementById('cme-symbol');
+    var priceEl = document.getElementById('cme-price');
+    var changeEl = document.getElementById('cme-change');
+    var dateEl = document.getElementById('cme-date');
+    var timeEl = document.getElementById('cme-time');
+    var noteEl = document.getElementById('cme-note');
+    var saveBtn = document.getElementById('cme-save');
+    var hintEl = document.getElementById('cme-hint');
+    var listEl = document.getElementById('snapshot-list');
+    var csvEl = document.getElementById('cme-csv');
+    var csvBtn = document.getElementById('cme-csv-import');
+    var csvHintEl = document.getElementById('cme-csv-hint');
+
+    // 默认日期/时间为当前
+    function nowDate() {
+        var d = new Date();
+        var m = ('0' + (d.getMonth() + 1)).slice(-2);
+        var day = ('0' + d.getDate()).slice(-2);
+        return d.getFullYear() + '-' + m + '-' + day;
+    }
+    function nowTime() {
+        var d = new Date();
+        return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    }
+    if (!dateEl.value) dateEl.value = nowDate();
+    if (!timeEl.value) timeEl.value = nowTime();
+
+    function loadLocal() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+    function saveLocal(list) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        } catch (e) { /* 空间不足等，忽略 */ }
+    }
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function render(list) {
+        if (!list.length) {
+            listEl.innerHTML = '<div class="snapshot-empty">还没有快照，先在左侧录入一条试试。</div>';
+            return;
+        }
+        var html = '';
+        list.forEach(function (s) {
+            var change = (s.change !== null && s.change !== undefined && s.change !== '')
+                ? '<span style="color:' + (parseFloat(s.change) >= 0 ? '#3fb950' : '#f85149') + '">' +
+                  (parseFloat(s.change) >= 0 ? '+' : '') + esc(s.change) + '%</span>'
+                : '<span>—</span>';
+            html += '<div class="snapshot-card">' +
+                '<div class="sc-head">' +
+                    '<span class="sc-symbol">' + esc(s.symbol) + '</span>' +
+                    '<div style="display:flex;align-items:center;gap:10px;">' +
+                        '<span class="sc-time">' + esc(s.date) + ' ' + esc(s.time) + '</span>' +
+                        '<button class="sc-del" data-created="' + esc(s.createdAt) + '" title="删除">✕</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="sc-row"><span>最新价 <strong>' + esc(s.price) + '</strong></span><span>涨跌幅 ' + change + '</span></div>' +
+                (s.note ? '<div class="sc-note">' + esc(s.note) + '</div>' : '') +
+                '</div>';
+        });
+        listEl.innerHTML = html;
+
+        listEl.querySelectorAll('.sc-del').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var created = btn.getAttribute('data-created');
+                removeSnapshot(created);
+            });
+        });
+    }
+
+    // 从服务器加载（权威数据源），失败时回退 localStorage
+    function refreshFromServer() {
+        fetch(API, { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) {
+                if (Array.isArray(list)) {
+                    saveLocal(list);
+                    render(list);
+                }
+            })
+            .catch(function () {
+                render(loadLocal());
+            });
+    }
+
+    // 删除快照（服务器 + 本地）
+    function removeSnapshot(created) {
+        fetch(API, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ createdAt: created })
+        }).then(function (r) { return r.json(); }).then(function () {
+            refreshFromServer();
+        }).catch(function () {
+            // 服务器失败则本地删除兜底
+            var cur = loadLocal().filter(function (s) { return String(s.createdAt) !== String(created); });
+            saveLocal(cur);
+            render(cur);
+        });
+    }
+
+    function pushSnapshot(snap, cb) {
+        fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ snapshot: snap })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.success) {
+                refreshFromServer();
+            }
+            if (cb) cb(null, data);
+        }).catch(function (err) {
+            // 服务器失败：本地兜底保存，保证不丢
+            var cur = loadLocal();
+            cur.unshift(snap);
+            saveLocal(cur);
+            render(cur);
+            if (cb) cb(err, null);
+        });
+    }
+
+    saveBtn.addEventListener('click', function () {
+        var price = parseFloat(priceEl.value);
+        if (isNaN(price)) {
+            hintEl.textContent = '请填写有效的「最新价」';
+            priceEl.focus();
+            return;
+        }
+        var change = changeEl.value === '' ? null : parseFloat(changeEl.value);
+        var snap = {
+            symbol: symbolEl.value,
+            price: price,
+            change: change,
+            date: dateEl.value || nowDate(),
+            time: timeEl.value || nowTime(),
+            note: noteEl.value.trim(),
+            createdAt: Date.now()
+        };
+        pushSnapshot(snap, function (err) {
+            if (!err) {
+                hintEl.textContent = '✅ 已保存 ' + snap.symbol + ' @ ' + snap.price;
+            } else {
+                hintEl.textContent = '⚠️ 已存本地（服务器暂不可用）';
+            }
+            priceEl.value = '';
+            changeEl.value = '';
+            noteEl.value = '';
+            setTimeout(function () { hintEl.textContent = ''; }, 2500);
+        });
+    });
+
+    // CSV 批量导入
+    function parseCsv(text) {
+        var rows = text.split(/\r?\n/);
+        var items = [];
+        rows.forEach(function (line) {
+            line = line.trim();
+            if (!line) return;
+            var parts = line.split(',');
+            var symbol = (parts[0] || '').trim();
+            var price = parseFloat((parts[1] || '').trim());
+            if (!symbol || isNaN(price)) return;
+            var changeStr = (parts[2] || '').trim();
+            items.push({
+                symbol: symbol,
+                price: price,
+                change: changeStr === '' ? null : parseFloat(changeStr),
+                date: (parts[3] || '').trim() || nowDate(),
+                time: (parts[4] || '').trim() || nowTime(),
+                note: (parts.slice(5).join(',') || '').trim(),
+                createdAt: Date.now()
+            });
+        });
+        return items;
+    }
+
+    csvBtn.addEventListener('click', function () {
+        var items = parseCsv(csvEl.value);
+        if (!items.length) {
+            csvHintEl.textContent = '未解析到有效数据，请检查格式（每行 symbol,price,...）';
+            return;
+        }
+        csvBtn.disabled = true;
+        fetch(API + '/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ snapshots: items })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.success) {
+                csvHintEl.textContent = '✅ 已导入 ' + data.added + ' 条快照';
+                csvEl.value = '';
+                refreshFromServer();
+            } else {
+                csvHintEl.textContent = '导入失败：' + (data.error || '未知错误');
+            }
+        }).catch(function () {
+            // 服务器失败：本地兜底批量保存
+            var cur = loadLocal();
+            items.forEach(function (s) { cur.unshift(s); });
+            saveLocal(cur);
+            render(cur);
+            csvHintEl.textContent = '⚠️ 已存本地（服务器暂不可用），共 ' + items.length + ' 条';
+            csvEl.value = '';
+        }).finally(function () {
+            csvBtn.disabled = false;
+            setTimeout(function () { csvHintEl.textContent = ''; }, 3000);
+        });
+    });
+
+    // 初始加载：优先服务器
+    refreshFromServer();
+
+    // ============================================================
+    // Tab 切换
+    // ============================================================
+    var tabs = document.querySelectorAll('.cme-tabs .tab');
+    var panes = document.querySelectorAll('.tab-pane');
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            tabs.forEach(function (t) { t.classList.remove('active'); });
+            panes.forEach(function (p) { p.classList.remove('active'); });
+            tab.classList.add('active');
+            var pane = document.getElementById(tab.getAttribute('data-tab'));
+            if (pane) pane.classList.add('active');
+        });
+    });
+
+    // ============================================================
+    // 共享品种列表 + 下拉框填充
+    // ============================================================
+    var CME_SYMBOLS = [
+        { v: 'GC=F', l: '黄金期货 GC=F' },
+        { v: 'NQ=F', l: '纳斯达克100 NQ=F' },
+        { v: 'ES=F', l: '标普500 ES=F' },
+        { v: '6E=F', l: '欧元期货 6E=F' },
+        { v: '6J=F', l: '日元期货 6J=F' },
+        { v: '6B=F', l: '英镑期货 6B=F' },
+        { v: 'ZT=F', l: '2年期美债 ZT=F' },
+        { v: 'ZF=F', l: '5年期美债 ZF=F' },
+        { v: 'ZN=F', l: '10年期美债 ZN=F' },
+        { v: 'CL=F', l: '原油 CL=F' }
+    ];
+    function fillSymbolSelect(sel) {
+        if (!sel) return;
+        CME_SYMBOLS.forEach(function (s) {
+            var opt = document.createElement('option');
+            opt.value = s.v;
+            opt.textContent = s.l;
+            sel.appendChild(opt);
+        });
+    }
+    ['ms-symbol', 'tp-symbol', 'pos-symbol', 'jr-symbol'].forEach(function (id) {
+        fillSymbolSelect(document.getElementById(id));
+    });
+
+    function fmtMoney(n) {
+        var v = Number(n);
+        if (isNaN(v)) return '—';
+        var sign = v < 0 ? '-' : '';
+        return sign + '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    function fmtPct(n) {
+        var v = Number(n);
+        if (isNaN(v)) return '—';
+        return v.toFixed(2) + '%';
+    }
+
+    // ============================================================
+    // Top Bar：倒计时 / 权益 / P&L / 合约
+    // ============================================================
+    function loadTopBar() {
+        fetch('/api/cme/overview', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var comp = data.competition || {};
+                var cd = document.getElementById('tb-countdown');
+                var cds = document.getElementById('tb-countdown-sub');
+                if (cd && cds) {
+                    if (comp.ended) {
+                        cd.textContent = '已结束';
+                        cds.textContent = comp.end;
+                    } else if (comp.started) {
+                        cd.textContent = '进行中';
+                        cds.textContent = '结束 ' + comp.end;
+                    } else {
+                        var start = new Date(comp.start + 'T00:00:00');
+                        var now = new Date();
+                        var days = Math.ceil((start - now) / 86400000);
+                        cd.textContent = days > 0 ? (days + ' 天') : '即将开始';
+                        cds.textContent = '开始 ' + comp.start;
+                    }
+                }
+                var risk = data.risk || {};
+                var eq = document.getElementById('tb-equity');
+                if (eq) eq.textContent = fmtMoney(risk.net_equity);
+                var pnl = document.getElementById('tb-pnl');
+                if (pnl) {
+                    pnl.textContent = fmtMoney(risk.unrealized_pnl);
+                    pnl.className = 'tb-value ' + (risk.unrealized_pnl >= 0 ? 'up' : 'down');
+                }
+                var ct = document.getElementById('tb-contracts');
+                if (ct) ct.textContent = (risk.today_contracts != null ? risk.today_contracts : '—') + ' / ' + (risk.max_contracts_per_day || 10);
+            })
+            .catch(function () { /* 忽略 */ });
+    }
+
+    // ============================================================
+    // 模块 A：Macro Score
+    // ============================================================
+    var msSymbol = document.getElementById('ms-symbol');
+    var msPrice = document.getElementById('ms-price');
+    var msFactors = document.getElementById('ms-factors');
+    var msRange = document.getElementById('ms-range');
+    var msDrivers = document.getElementById('ms-drivers');
+    var msInvalid = document.getElementById('ms-invalidation');
+    var msSave = document.getElementById('ms-save');
+    var msHint = document.getElementById('ms-hint');
+    var signalList = document.getElementById('signal-list');
+    var factorTemplate = [];
+
+    function renderFactorInputs() {
+        msFactors.innerHTML = '';
+        factorTemplate.forEach(function (f) {
+            var wrap = document.createElement('div');
+            wrap.className = 'field';
+            var label = document.createElement('label');
+            label.textContent = f.label + '（权重 ' + f.weight + '）';
+            wrap.appendChild(label);
+            var sel = document.createElement('select');
+            sel.setAttribute('data-key', f.key);
+            f.options.forEach(function (o) {
+                var opt = document.createElement('option');
+                opt.value = o.v;
+                opt.textContent = o.label + ' (' + (o.score >= 0 ? '+' : '') + o.score + ')';
+                sel.appendChild(opt);
+            });
+            wrap.appendChild(sel);
+            msFactors.appendChild(wrap);
+        });
+    }
+
+    function renderSignals(list) {
+        if (!list.length) {
+            signalList.innerHTML = '<div class="snapshot-empty">还没有信号，先在上方生成一条。</div>';
+            return;
+        }
+        var html = '';
+        list.forEach(function (s) {
+            var factorsHtml = (s.factors || []).map(function (f) {
+                return '<span class="sig-factor">' + esc(f.label) + ' ' + esc(f.state_label) + '</span>';
+            }).join('');
+            var drivers = (s.drivers || []).map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('');
+            var inval = (s.invalidation || []).map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('');
+            html += '<div class="signal-card">' +
+                '<div class="sig-head">' +
+                    '<span class="sig-symbol">' + esc(s.symbol) + ' @ ' + esc(s.price) + '</span>' +
+                    '<span class="sig-bias bias-' + esc(s.bias) + '">' + esc(s.bias) + '</span>' +
+                '</div>' +
+                '<div class="sig-metrics">' +
+                    '<span>总分 <strong>' + esc(s.macro_score) + '</strong></span>' +
+                    '<span>置信度 <strong>' + esc(s.confidence) + '</strong></span>' +
+                    '<span>区间 <strong>' + esc(s.range_low) + ' ~ ' + esc(s.range_high) + '</strong></span>' +
+                '</div>' +
+                '<div class="sig-factor-list">' + factorsHtml + '</div>' +
+                (drivers || inval ? '<div class="sig-lists">' +
+                    (drivers ? '<div class="sig-list"><h4>核心驱动</h4><ul>' + drivers + '</ul></div>' : '') +
+                    (inval ? '<div class="sig-list"><h4>失效条件</h4><ul>' + inval + '</ul></div>' : '') +
+                '</div>' : '') +
+                '<div style="margin-top:10px;display:flex;justify-content:flex-end;">' +
+                    '<button class="cme-btn danger" data-del-signal="' + esc(s.timestamp) + '">删除</button>' +
+                '</div>' +
+                '</div>';
+        });
+        signalList.innerHTML = html;
+        signalList.querySelectorAll('[data-del-signal]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cme/signals', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ timestamp: btn.getAttribute('data-del-signal') })
+                }).then(function () { refreshSignals(); });
+            });
+        });
+    }
+
+    function refreshSignals() {
+        fetch('/api/cme/signals', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) { renderSignals(list); })
+            .catch(function () {});
+    }
+
+    function loadFactors() {
+        fetch('/api/cme/factors', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                factorTemplate = data.factors || [];
+                renderFactorInputs();
+            })
+            .catch(function () {});
+    }
+
+    if (msSave) {
+        msSave.addEventListener('click', function () {
+            var price = parseFloat(msPrice.value);
+            if (!msSymbol.value || isNaN(price)) {
+                msHint.textContent = '请填写品种和现价';
+                return;
+            }
+            var factors = [];
+            msFactors.querySelectorAll('select[data-key]').forEach(function (sel) {
+                factors.push({ key: sel.getAttribute('data-key'), state: sel.value });
+            });
+            var drivers = msDrivers.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+            var inval = msInvalid.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+            var rangePct = parseFloat(msRange.value) || 1.0;
+            fetch('/api/cme/signals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol: msSymbol.value, price: price, factors: factors,
+                    drivers: drivers, invalidation: inval, range_pct: rangePct
+                })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    msHint.textContent = '✅ 已生成信号：' + data.signal.bias + '（总分 ' + data.signal.macro_score + '）';
+                    msPrice.value = '';
+                    msDrivers.value = '';
+                    msInvalid.value = '';
+                    refreshSignals();
+                    loadTopBar();
+                } else {
+                    msHint.textContent = '失败：' + (data.error || '未知错误');
+                }
+            }).catch(function () {
+                msHint.textContent = '服务器暂不可用';
+            });
+            setTimeout(function () { msHint.textContent = ''; }, 3000);
+        });
+    }
+
+    // ============================================================
+    // 模块 B：Event Scenario
+    // ============================================================
+    var evType = document.getElementById('ev-type');
+    var evCountry = document.getElementById('ev-country');
+    var evTime = document.getElementById('ev-time');
+    var evImportance = document.getElementById('ev-importance');
+    var evConsensus = document.getElementById('ev-consensus');
+    var evPrevious = document.getElementById('ev-previous');
+    var evNote = document.getElementById('ev-note');
+    var evSave = document.getElementById('ev-save');
+    var evHint = document.getElementById('ev-hint');
+    var eventList = document.getElementById('event-list');
+
+    function renderEvents(list) {
+        if (!list.length) {
+            eventList.innerHTML = '<div class="snapshot-empty">还没有事件，先在左侧新增一个。</div>';
+            return;
+        }
+        var html = '';
+        list.forEach(function (ev) {
+            var surprise = ev.surprise != null
+                ? '<span style="color:' + (parseFloat(ev.surprise) >= 0 ? '#f85149' : '#3fb950') + '">' +
+                  (parseFloat(ev.surprise) >= 0 ? '+' : '') + esc(ev.surprise) + '</span>'
+                : '—';
+            html += '<div class="event-card">' +
+                '<div class="ev-head">' +
+                    '<span class="ev-title">' + esc(ev.event_type) + ' · ' + esc(ev.country || '—') + '</span>' +
+                    '<span class="importance-' + esc(ev.importance || 'low') + '">' + esc(ev.importance || 'low') + '</span>' +
+                '</div>' +
+                '<div class="ev-meta">' +
+                    '<span>🕐 ' + esc(ev.scheduled_at) + '</span>' +
+                    '<span>预期 ' + esc(ev.consensus != null ? ev.consensus : '—') + '</span>' +
+                    '<span>前值 ' + esc(ev.previous != null ? ev.previous : '—') + '</span>' +
+                    '<span>实际 ' + esc(ev.actual != null ? ev.actual : '—') + '</span>' +
+                    '<span>Surprise ' + surprise + '</span>' +
+                '</div>' +
+                (ev.note ? '<div class="ev-note">' + esc(ev.note) + '</div>' : '') +
+                '<div class="ev-actual-row">' +
+                    '<input class="ev-actual-input" data-id="' + esc(ev.id) + '" type="number" step="any" placeholder="填入 actual">' +
+                    '<button class="cme-btn primary" data-update="' + esc(ev.id) + '">更新 actual</button>' +
+                    '<button class="cme-btn danger" data-del="' + esc(ev.id) + '">删除</button>' +
+                '</div>' +
+                '</div>';
+        });
+        eventList.innerHTML = html;
+
+        eventList.querySelectorAll('[data-update]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-update');
+                var input = eventList.querySelector('.ev-actual-input[data-id="' + id + '"]');
+                var val = input ? input.value.trim() : '';
+                fetch('/api/cme/events/' + id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ actual: val === '' ? null : parseFloat(val) })
+                }).then(function () { refreshEvents(); });
+            });
+        });
+        eventList.querySelectorAll('[data-del]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cme/events/' + btn.getAttribute('data-del'), { method: 'DELETE' })
+                    .then(function () { refreshEvents(); });
+            });
+        });
+    }
+
+    function refreshEvents() {
+        fetch('/api/cme/events', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) { renderEvents(list); })
+            .catch(function () {});
+    }
+
+    if (evSave) {
+        evSave.addEventListener('click', function () {
+            if (!evType.value || !evTime.value.trim()) {
+                evHint.textContent = '请填写事件类型和时间';
+                return;
+            }
+            var body = {
+                event_type: evType.value,
+                country: evCountry.value.trim(),
+                scheduled_at: evTime.value.trim(),
+                importance: evImportance.value,
+                consensus: evConsensus.value === '' ? null : parseFloat(evConsensus.value),
+                previous: evPrevious.value === '' ? null : parseFloat(evPrevious.value),
+                note: evNote.value.trim()
+            };
+            fetch('/api/cme/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    evHint.textContent = '✅ 已保存事件';
+                    evCountry.value = '';
+                    evTime.value = '';
+                    evConsensus.value = '';
+                    evPrevious.value = '';
+                    evNote.value = '';
+                    refreshEvents();
+                } else {
+                    evHint.textContent = '失败：' + (data.error || '未知错误');
+                }
+            }).catch(function () { evHint.textContent = '服务器暂不可用'; });
+            setTimeout(function () { evHint.textContent = ''; }, 3000);
+        });
+    }
+
+    // ============================================================
+    // 模块 C：Trade Planner
+    // ============================================================
+    var tpSymbol = document.getElementById('tp-symbol');
+    var tpDirection = document.getElementById('tp-direction');
+    var tpConfidence = document.getElementById('tp-confidence');
+    var tpThesis = document.getElementById('tp-thesis');
+    var tpEntry = document.getElementById('tp-entry');
+    var tpStop = document.getElementById('tp-stop');
+    var tpHorizon = document.getElementById('tp-horizon');
+    var tpSize = document.getElementById('tp-size');
+    var tpOwner = document.getElementById('tp-owner');
+    var tpSave = document.getElementById('tp-save');
+    var tpHint = document.getElementById('tp-hint');
+    var proposalList = document.getElementById('proposal-list');
+
+    function renderProposals(list) {
+        if (!list.length) {
+            proposalList.innerHTML = '<div class="snapshot-empty">还没有交易提案，先在左侧生成一张交易卡。</div>';
+            return;
+        }
+        var html = '';
+        list.forEach(function (p) {
+            var dirColor = p.direction === 'long' ? '#3fb950' : '#f85149';
+            var conf = p.confidence != null ? esc(p.confidence) + ' / 100' : '—';
+            html += '<div class="proposal-card status-' + esc(p.status) + '">' +
+                '<div class="pp-head">' +
+                    '<span class="pp-symbol">' + esc(p.symbol) + ' <span class="pp-dir" style="color:' + dirColor + '">' + esc(p.direction.toUpperCase()) + '</span></span>' +
+                    '<span class="section-tag" style="font-size:11px;">' + esc(p.status) + '</span>' +
+                '</div>' +
+                (p.thesis ? '<div class="pp-thesis">' + esc(p.thesis) + '</div>' : '') +
+                '<div class="pp-grid">' +
+                    '<span>置信度 <strong>' + conf + '</strong></span>' +
+                    '<span>周期 <strong>' + esc(p.horizon || '—') + '</strong></span>' +
+                    '<span>入场 <strong>' + esc(p.entry_condition || '—') + '</strong></span>' +
+                    '<span>止损 <strong>' + esc(p.stop_rule || '—') + '</strong></span>' +
+                    '<span>仓位 <strong>' + esc(p.size_hint || '—') + '</strong></span>' +
+                    '<span>负责人 <strong>' + esc(p.owner || '—') + '</strong></span>' +
+                '</div>' +
+                '<div class="pp-actions">' +
+                    (p.status === 'pending'
+                        ? '<button class="cme-btn approve" data-status="' + esc(p.id) + ':approved">Approve</button>' +
+                          '<button class="cme-btn reject" data-status="' + esc(p.id) + ':rejected">Reject</button>'
+                        : '<button class="cme-btn" data-status="' + esc(p.id) + ':pending">回到 Pending</button>') +
+                    '<button class="cme-btn danger" data-del-prop="' + esc(p.id) + '">删除</button>' +
+                '</div>' +
+                '</div>';
+        });
+        proposalList.innerHTML = html;
+
+        proposalList.querySelectorAll('[data-status]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var parts = btn.getAttribute('data-status').split(':');
+                fetch('/api/cme/proposals/' + parts[0] + '/status', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: parts[1] })
+                }).then(function () { refreshProposals(); });
+            });
+        });
+        proposalList.querySelectorAll('[data-del-prop]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cme/proposals/' + btn.getAttribute('data-del-prop'), { method: 'DELETE' })
+                    .then(function () { refreshProposals(); });
+            });
+        });
+    }
+
+    function refreshProposals() {
+        fetch('/api/cme/proposals', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) { renderProposals(list); })
+            .catch(function () {});
+    }
+
+    if (tpSave) {
+        tpSave.addEventListener('click', function () {
+            if (!tpSymbol.value || !tpDirection.value || !tpThesis.value.trim()) {
+                tpHint.textContent = '请填写品种、方向和交易逻辑';
+                return;
+            }
+            var body = {
+                symbol: tpSymbol.value,
+                direction: tpDirection.value,
+                thesis: tpThesis.value.trim(),
+                entry_condition: tpEntry.value.trim(),
+                stop_rule: tpStop.value.trim(),
+                horizon: tpHorizon.value.trim(),
+                size_hint: tpSize.value.trim(),
+                confidence: tpConfidence.value === '' ? null : parseFloat(tpConfidence.value),
+                owner: tpOwner.value.trim()
+            };
+            fetch('/api/cme/proposals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    tpHint.textContent = '✅ 已生成 proposal（待 approve）';
+                    tpThesis.value = '';
+                    tpEntry.value = '';
+                    tpStop.value = '';
+                    tpHorizon.value = '';
+                    tpSize.value = '';
+                    tpOwner.value = '';
+                    tpConfidence.value = '';
+                    refreshProposals();
+                } else {
+                    tpHint.textContent = '失败：' + (data.error || '未知错误');
+                }
+            }).catch(function () { tpHint.textContent = '服务器暂不可用'; });
+            setTimeout(function () { tpHint.textContent = ''; }, 3000);
+        });
+    }
+
+    // ============================================================
+    // 模块 D：Risk Engine + Ops
+    // ============================================================
+    var riskWarnings = document.getElementById('risk-warnings');
+    var riskMetrics = document.getElementById('risk-metrics');
+    var posSymbol = document.getElementById('pos-symbol');
+    var posQty = document.getElementById('pos-qty');
+    var posAvg = document.getElementById('pos-avg');
+    var posMark = document.getElementById('pos-mark');
+    var posMargin = document.getElementById('pos-margin');
+    var posSave = document.getElementById('pos-save');
+    var posHint = document.getElementById('pos-hint');
+    var positionList = document.getElementById('position-list');
+    var jrSymbol = document.getElementById('jr-symbol');
+    var jrDirection = document.getElementById('jr-direction');
+    var jrQty = document.getElementById('jr-qty');
+    var jrEntry = document.getElementById('jr-entry');
+    var jrExit = document.getElementById('jr-exit');
+    var jrPnl = document.getElementById('jr-pnl');
+    var jrResult = document.getElementById('jr-result');
+    var jrReview = document.getElementById('jr-review');
+    var jrSave = document.getElementById('jr-save');
+    var jrHint = document.getElementById('jr-hint');
+    var journalList = document.getElementById('journal-list');
+
+    function renderRisk(risk) {
+        if (riskWarnings) {
+            var warnings = risk.warnings || [];
+            if (!warnings.length) {
+                riskWarnings.innerHTML = '<div class="risk-ok">✅ 当前组合未触发风控红线。</div>';
+            } else {
+                riskWarnings.innerHTML = warnings.map(function (w) {
+                    return '<div class="risk-warning">⚠️ ' + esc(w) + '</div>';
+                }).join('');
+            }
+        }
+        if (riskMetrics) {
+            riskMetrics.innerHTML =
+                '<div class="rm"><div class="rm-label">账户权益</div><div class="rm-value">' + fmtMoney(risk.net_equity) + '</div></div>' +
+                '<div class="rm"><div class="rm-label">保证金占用</div><div class="rm-value">' + fmtMoney(risk.margin_used) + '</div></div>' +
+                '<div class="rm"><div class="rm-label">保证金利用率</div><div class="rm-value">' + fmtPct(risk.margin_utilization_pct) + '</div></div>' +
+                '<div class="rm"><div class="rm-label">未实现盈亏</div><div class="rm-value" style="color:' + (risk.unrealized_pnl >= 0 ? '#3fb950' : '#f85149') + '">' + fmtMoney(risk.unrealized_pnl) + '</div></div>' +
+                '<div class="rm"><div class="rm-label">总敞口</div><div class="rm-value">' + fmtMoney(risk.gross_exposure) + '</div></div>' +
+                '<div class="rm"><div class="rm-label">集中度</div><div class="rm-value">' + fmtPct(risk.concentration_pct) + '</div></div>';
+        }
+    }
+
+    function renderPositions(list) {
+        if (!list.length) {
+            positionList.innerHTML = '<div class="snapshot-empty">还没有持仓。</div>';
+            return;
+        }
+        var html = '';
+        list.forEach(function (p, i) {
+            html += '<div class="journal-card">' +
+                '<div class="jr-head">' +
+                    '<span class="jr-symbol">' + esc(p.symbol) + '</span>' +
+                    '<button class="cme-btn danger" data-del-pos="' + i + '">平仓/删除</button>' +
+                '</div>' +
+                '<div class="jr-row">' +
+                    '数量 ' + esc(p.qty) + ' · 均价 ' + esc(p.avg_price) + ' · 现价 ' + esc(p.mark_price) +
+                    ' · 保证金 ' + esc(p.margin) + '<br>' +
+                    '开仓时间 ' + esc(p.opened_at || '—') +
+                '</div>' +
+                '</div>';
+        });
+        positionList.innerHTML = html;
+        positionList.querySelectorAll('[data-del-pos]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cme/positions/' + btn.getAttribute('data-del-pos'), { method: 'DELETE' })
+                    .then(function () { refreshRisk(); });
+            });
+        });
+    }
+
+    function renderJournal(list) {
+        if (!list.length) {
+            journalList.innerHTML = '<div class="snapshot-empty">还没有交易记录。</div>';
+            return;
+        }
+        var html = '';
+        list.forEach(function (j) {
+            var pnlColor = (parseFloat(j.pnl) >= 0) ? '#3fb950' : '#f85149';
+            html += '<div class="journal-card">' +
+                '<div class="jr-head">' +
+                    '<span class="jr-symbol">' + esc(j.symbol) + ' ' + esc(j.direction || '') + '</span>' +
+                    '<span class="jr-pnl" style="color:' + pnlColor + '">' + fmtMoney(j.pnl) + '</span>' +
+                    '<button class="cme-btn danger" data-del-jr="' + esc(j.id) + '">删除</button>' +
+                '</div>' +
+                '<div class="jr-row">' +
+                    '入 ' + esc(j.entry_time || '—') + ' @ ' + esc(j.entry_price) + ' → 出 ' + esc(j.exit_time || '—') + ' @ ' + esc(j.exit_price) +
+                    ' · 数量 ' + esc(j.qty) + '<br>' +
+                    '假设验证：' + esc(j.thesis_result || '—') +
+                '</div>' +
+                (j.review ? '<div class="jr-review">' + esc(j.review) + '</div>' : '') +
+                '</div>';
+        });
+        journalList.innerHTML = html;
+        journalList.querySelectorAll('[data-del-jr]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cme/journal/' + btn.getAttribute('data-del-jr'), { method: 'DELETE' })
+                    .then(function () { refreshRisk(); });
+            });
+        });
+    }
+
+    function refreshRisk() {
+        fetch('/api/cme/risk', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (risk) { renderRisk(risk); })
+            .catch(function () {});
+        fetch('/api/cme/positions', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) { renderPositions(list); })
+            .catch(function () {});
+        fetch('/api/cme/journal', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) { renderJournal(list); })
+            .catch(function () {});
+        loadTopBar();
+    }
+
+    if (posSave) {
+        posSave.addEventListener('click', function () {
+            var qty = parseFloat(posQty.value);
+            if (!posSymbol.value || isNaN(qty)) {
+                posHint.textContent = '请填写品种和数量';
+                return;
+            }
+            fetch('/api/cme/positions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol: posSymbol.value,
+                    qty: qty,
+                    avg_price: parseFloat(posAvg.value) || 0,
+                    mark_price: parseFloat(posMark.value) || 0,
+                    margin: posMargin.value === '' ? null : parseFloat(posMargin.value)
+                })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    posHint.textContent = '✅ 已添加持仓';
+                    posQty.value = '';
+                    posAvg.value = '';
+                    posMark.value = '';
+                    posMargin.value = '';
+                    refreshRisk();
+                } else {
+                    posHint.textContent = '失败：' + (data.error || '未知错误');
+                }
+            }).catch(function () { posHint.textContent = '服务器暂不可用'; });
+            setTimeout(function () { posHint.textContent = ''; }, 3000);
+        });
+    }
+
+    if (jrSave) {
+        jrSave.addEventListener('click', function () {
+            if (!jrSymbol.value || !jrDirection.value) {
+                jrHint.textContent = '请填写品种和方向';
+                return;
+            }
+            fetch('/api/cme/journal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol: jrSymbol.value,
+                    direction: jrDirection.value,
+                    qty: jrQty.value === '' ? null : parseFloat(jrQty.value),
+                    entry_price: jrEntry.value === '' ? null : parseFloat(jrEntry.value),
+                    exit_price: jrExit.value === '' ? null : parseFloat(jrExit.value),
+                    pnl: jrPnl.value === '' ? null : parseFloat(jrPnl.value),
+                    thesis_result: jrResult.value.trim(),
+                    review: jrReview.value.trim()
+                })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.success) {
+                    jrHint.textContent = '✅ 已记录交易';
+                    jrQty.value = '';
+                    jrEntry.value = '';
+                    jrExit.value = '';
+                    jrPnl.value = '';
+                    jrResult.value = '';
+                    jrReview.value = '';
+                    refreshRisk();
+                } else {
+                    jrHint.textContent = '失败：' + (data.error || '未知错误');
+                }
+            }).catch(function () { jrHint.textContent = '服务器暂不可用'; });
+            setTimeout(function () { jrHint.textContent = ''; }, 3000);
+        });
+    }
+
+    // ============================================================
+    // 数据备份：导出 / 导入
+    // ============================================================
+    var bkExport = document.getElementById('bk-export');
+    var bkImportFile = document.getElementById('bk-import-file');
+    var bkHint = document.getElementById('bk-hint');
+
+    if (bkExport) {
+        bkExport.addEventListener('click', function () {
+            fetch('/api/cme/export', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (backup) {
+                    var blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    var d = new Date();
+                    var stamp = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+                    a.download = 'parite_cme_backup_' + stamp + '.json';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                    bkHint.textContent = '✅ 备份已下载，请妥善保存';
+                })
+                .catch(function () { bkHint.textContent = '导出失败：服务器暂不可用'; });
+            setTimeout(function () { bkHint.textContent = ''; }, 5000);
+        });
+    }
+
+    if (bkImportFile) {
+        bkImportFile.addEventListener('change', function () {
+            var file = bkImportFile.files && bkImportFile.files[0];
+            if (!file) { return; }
+            if (!confirm('导入会覆盖当前全部数据（快照/信号/事件/计划/持仓/日志），确定继续？')) {
+                bkImportFile.value = '';
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var backup;
+                try { backup = JSON.parse(e.target.result); }
+                catch (err) { bkHint.textContent = '❌ 文件不是有效的 JSON'; return; }
+                fetch('/api/cme/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(backup)
+                }).then(function (r) { return r.json(); }).then(function (data) {
+                    if (data.success) {
+                        var parts = Object.keys(data.restored || {}).map(function (k) {
+                            return k + '×' + data.restored[k];
+                        });
+                        bkHint.textContent = '✅ 已还原：' + (parts.join('、') || '无数据');
+                        loadTopBar();
+                        refreshFromServer();
+                        refreshSignals();
+                        refreshEvents();
+                        refreshProposals();
+                        refreshRisk();
+                    } else {
+                        bkHint.textContent = '❌ ' + (data.error || '导入失败');
+                    }
+                }).catch(function () { bkHint.textContent = '导入失败：服务器暂不可用'; });
+            };
+            reader.readAsText(file);
+            bkImportFile.value = '';
+            setTimeout(function () { bkHint.textContent = ''; }, 8000);
+        });
+    }
+
+    // 初始加载所有模块数据
+    loadTopBar();
+    loadFactors();
+    refreshSignals();
+    refreshEvents();
+    refreshProposals();
+    refreshRisk();
+})();
+</script>
+{% endblock %}

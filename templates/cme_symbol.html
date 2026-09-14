@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}{{ detail.title }} · CME小窝{% endblock %}
+
+{% block head %}
+<style>
+/* ============ CME 品种详情页 ============ */
+.sym-crumbs { font-size: 13px; margin-bottom: 16px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sym-crumbs a { color: var(--primary); text-decoration: none; }
+.sym-crumbs a:hover { text-decoration: underline; }
+.sym-crumbs .sep { color: var(--text-light); }
+.sym-crumbs span:last-child { color: var(--text-light); }
+
+.sym-header {
+    position: relative;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    padding: 28px 30px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background:
+        radial-gradient(ellipse at 15% 0%, rgba(88, 166, 255, 0.18), transparent 55%),
+        radial-gradient(ellipse at 85% 100%, rgba(188, 140, 255, 0.14), transparent 55%),
+        var(--bg-elevated);
+    margin-bottom: 20px;
+}
+.sym-title-row { display: flex; align-items: center; gap: 18px; }
+.sym-emoji { font-size: 42px; line-height: 1; }
+.sym-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+.sym-subtitle { color: var(--primary); font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.sym-codes { color: var(--text-light); font-size: 13px; }
+.sym-quote-btn {
+    flex: 0 0 auto;
+    font-size: 13px; font-weight: 700;
+    color: #0d1117;
+    background: var(--primary);
+    padding: 9px 18px; border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.sym-quote-btn:hover { filter: brightness(1.12); }
+
+.sym-section {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+}
+.sym-section h2 { font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+.sym-section .sec-desc { color: var(--text-light); font-size: 13px; margin-bottom: 14px; line-height: 1.7; }
+
+/* TradingView 容器 */
+.tradingview-widget-container { width: 100%; }
+.tradingview-widget-copyright { font-size: 11px; color: var(--text-light); text-align: right; margin-top: 4px; }
+.tradingview-widget-copyright a { color: var(--text-light); text-decoration: none; }
+.tradingview-widget-copyright .blue-text { color: var(--primary); }
+.sym-tv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.tv-label { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.tv-label .tv-code { color: var(--text-light); font-weight: 400; font-size: 12px; margin-left: 6px; }
+
+/* 介绍 */
+.sym-intro p { color: var(--text); font-size: 14px; line-height: 1.9; margin-bottom: 12px; }
+.sym-intro p:last-child { margin-bottom: 0; }
+
+/* 规格表 */
+.sym-specs { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sym-specs th, .sym-specs td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.sym-specs th { color: var(--text-light); font-weight: 600; width: 170px; white-space: nowrap; }
+.sym-specs tr:last-child th, .sym-specs tr:last-child td { border-bottom: none; }
+
+.sym-hours { margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.25); font-size: 13px; color: var(--text-light); line-height: 1.7; }
+
+/* 现货 / 研报链接 */
+.sym-links { display: flex; flex-direction: column; gap: 10px; }
+.sym-link-item { display: flex; align-items: baseline; gap: 10px; font-size: 14px; flex-wrap: wrap; }
+.sym-link-item a { color: var(--primary); text-decoration: none; font-weight: 600; }
+.sym-link-item a:hover { text-decoration: underline; }
+.sym-link-item .link-desc { color: var(--text-light); font-size: 12px; }
+
+/* 底部品种导航 */
+.sym-nav-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sym-nav-bar .nav-title { font-size: 13px; color: var(--text-light); font-weight: 600; margin-right: 4px; }
+.sym-nav-chip { font-size: 12px; color: var(--text-light); background: rgba(28,33,40,0.6); border: 1px solid var(--border); padding: 4px 12px; border-radius: 12px; text-decoration: none; transition: all .2s; }
+.sym-nav-chip:hover { color: var(--primary); border-color: var(--primary); }
+
+@media (max-width: 720px) {
+    .sym-header { flex-direction: column; }
+    .sym-quote-btn { align-self: flex-start; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cme-symbol-page">
+    <nav class="sym-crumbs">
+        <a href="/cme">← 返回 CME小窝</a>
+        <span class="sep">/</span>
+        <span>{{ detail.title }}</span>
+    </nav>
+
+    <header class="sym-header">
+        <div class="sym-title-row">
+            <span class="sym-emoji">{{ detail.emoji }}</span>
+            <div>
+                <h1>{{ detail.title }}</h1>
+                <p class="sym-subtitle">{{ detail.subtitle }}</p>
+                <p class="sym-codes">{{ detail.codes }}</p>
+            </div>
+        </div>
+        <a class="sym-quote-btn" href="{{ detail.quote_url }}" target="_blank" rel="noopener">查看实时行情 ↗</a>
+    </header>
+
+    <section class="sym-section">
+        <h2>📈 行情概览</h2>
+        {% if detail.is_group %}
+        <div class="sym-tv-grid">
+            {% for m in detail.members %}
+            <div>
+                <div class="tv-label">{{ m.label }} <span class="tv-code">{{ m.codes }}</span></div>
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">数据来源 TradingView</span></a></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                    {"autosize": false, "symbol": "{{ m.tv }}", "interval": "D", "timezone": "Asia/Shanghai", "theme": "dark", "style": "1", "withdateranges": true, "hide_side_toolbar": false, "allow_symbol_change": true, "save_image": true, "height": "380", "width": "100%"}
+                    </script>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">数据来源 TradingView</span></a></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+            {{ detail.tv_config | tojson }}
+            </script>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="sym-section">
+        <h2>📖 详细介绍</h2>
+        <div class="sym-intro">
+            {% for p in detail.intro %}
+            <p>{{ p }}</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="sym-section">
+        <h2>📐 合约规格</h2>
+        {% if detail.is_group %}
+            {% for m in detail.members %}
+            <div class="tv-label" {% if not loop.first %}style="margin-top:16px"{% endif %}>{{ m.label }}</div>
+            <table class="sym-specs">
+                {% for name, value in m.specs %}
+                <tr><th>{{ name }}</th><td>{{ value }}</td></tr>
+                {% endfor %}
+            </table>
+            {% endfor %}
+        {% else %}
+        <table class="sym-specs">
+            {% for name, value in detail.specs %}
+            <tr><th>{{ name }}</th><td>{{ value }}</td></tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        <div class="sym-hours">🕐 交易时间：{{ detail.trading_hours }}</div>
+    </section>
+
+    <section class="sym-section">
+        <h2>💰 {{ detail.spot.title }}</h2>
+        <p class="sec-desc">{{ detail.spot.note }}</p>
+        <div class="sym-links">
+            {% for link in detail.spot.links %}
+            <div class="sym-link-item">
+                <a href="{{ link[1] }}" target="_blank" rel="noopener">{{ link[0] }}</a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="sym-section">
+        <h2>📚 相关研报平台</h2>
+        <div class="sym-links">
+            {% for r in detail.research %}
+            <div class="sym-link-item">
+                <a href="{{ r[1] }}" target="_blank" rel="noopener">{{ r[0] }}</a>
+                <span class="link-desc">{{ r[2] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="sym-section">
+        <h2>🧭 其他品种</h2>
+        <div class="sym-nav-bar">
+            <span class="nav-title">快速切换：</span>
+            {% for p in pages %}
+            <a class="sym-nav-chip" href="/cme/symbol/{{ p.key }}">{{ p.emoji }} {{ p.label }}</a>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

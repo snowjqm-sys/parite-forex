@@ -14,6 +14,9 @@ feedback.json
 admin_config.json
 ai_config.json
 
+# CME 小窝运行时数据（线上走 Upstash Redis，不入库）
+cme_*.json
+
 # 环境变量
 .env
 .env.local

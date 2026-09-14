@@ -5,13 +5,13 @@
 {% block content %}
 <div class="page-header">
     <h1>AI助手配置 <span class="pair-badge">{{ '管理员' if is_admin else '访客' }}</span></h1>
-    <p class="subtitle">配置 OpenAI 兼容接口，启用全站 AI 研究助手</p>
+    <p class="subtitle">配置多个 AI 模型（DeepSeek / GPT / Claude 等），聊天时可随时切换</p>
 </div>
 
 <div class="callout info">
     <div class="callout-title">配置说明 · 共享机制</div>
-    AI 密钥保存在服务器本地的 <code>ai_config.json</code> 文件中。<strong>管理员只需配置一次，所有访问共享链接的用户都能直接使用 AI 助手，无需各自配置。</strong>
-    本平台支持所有 OpenAI 兼容的接口，包括 DeepSeek、OpenAI、Gemini、通义千问、Moonshot 等。
+    AI 密钥保存在服务器端（云端 + 本地双备份）。<strong>管理员只需配置一次，所有访问共享链接的用户都能直接使用 AI 助手，无需各自配置。</strong>
+    支持多模型配置：OpenAI 兼容接口（DeepSeek、GPT、Gemini、通义千问、Moonshot 等）与 Anthropic 原生接口（Claude 系列），可添加多组并在聊天面板随时切换。
     {% if not is_admin %}
     <br><strong style="color:var(--accent-orange)">当前为访客模式，仅可查看，修改配置需管理员登录。</strong>
     <a href="{{ url_for('admin_login') }}" class="link-btn official" style="margin-left:8px;">管理员登录</a>
@@ -20,70 +20,70 @@
     {% endif %}
 </div>
 
-<h2 class="section-title">基本配置</h2>
+<h2 class="section-title">模型配置 <span style="font-size:12px;color:var(--text-dim);font-weight:400;">可添加多个模型，其中一个为默认模型，聊天时可切换</span></h2>
 <div class="card">
-    <div class="feedback-form">
-        <div class="form-row">
-            <label for="ai-base-url">API 地址 (base_url) <span style="color:var(--accent)">*</span></label>
-            <input type="text" id="ai-base-url" placeholder="例如：https://api.deepseek.com/v1">
-        </div>
-        <div class="form-row">
-            <label for="ai-api-key">API 密钥 (api_key)</label>
-            <input type="password" id="ai-api-key" placeholder="sk-...（已配置时会显示脱敏值，留空表示不修改）">
-        </div>
-        <div class="form-row">
-            <label for="ai-model">模型名称 (model) <span style="color:var(--accent)">*</span></label>
-            <input type="text" id="ai-model" placeholder="例如：deepseek-chat">
-        </div>
-        <div class="form-row" style="flex-direction:row; gap:12px; align-items:center;">
-            <button id="ai-save-btn">保存配置</button>
-            <button id="ai-test-btn" type="button" class="green">测试连接</button>
-            <span id="ai-status" class="fb-status"></span>
-        </div>
+    <div id="provider-list" style="display:flex;flex-direction:column;gap:16px;">
+        <div style="color:var(--text-dim);text-align:center;padding:20px;">加载中...</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;margin-top:16px;flex-wrap:wrap;">
+        <button id="ai-add-btn" type="button" class="green">+ 添加模型</button>
+        <button id="ai-save-btn">保存全部配置</button>
+        <button id="ai-test-btn" type="button">测试默认模型</button>
+        <span id="ai-status" class="fb-status"></span>
     </div>
 </div>
 
-<h2 class="section-title">推荐配置示例</h2>
+<h2 class="section-title">快速添加 · 推荐配置示例</h2>
 <div class="grid-2">
     <div class="card">
         <h3>DeepSeek</h3>
         <div class="ref-answer" style="margin-left:0;">
-            <div class="ref-label">推荐配置</div>
+            <div class="ref-label">推荐配置（OpenAI 兼容）</div>
             base_url：<code>https://api.deepseek.com/v1</code><br>
-            model：<code>deepseek-chat</code><br>
+            model：<code>deepseek-chat</code>（可改为 deepseek-v4-pro 等新模型名）<br>
             获取密钥：<a href="https://platform.deepseek.com/" target="_blank" rel="noopener">platform.deepseek.com</a>
         </div>
-        <button class="link-btn official ai-preset" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">填入此配置</button>
+        <button class="link-btn official ai-preset" data-name="DeepSeek" data-type="openai" data-base="https://api.deepseek.com/v1" data-model="deepseek-chat">添加此模型</button>
     </div>
     <div class="card">
-        <h3>OpenAI</h3>
+        <h3>OpenAI GPT</h3>
         <div class="ref-answer" style="margin-left:0;">
-            <div class="ref-label">推荐配置</div>
+            <div class="ref-label">推荐配置（OpenAI 兼容）</div>
             base_url：<code>https://api.openai.com/v1</code><br>
-            model：<code>gpt-4o-mini</code><br>
+            model：<code>gpt-4o-mini</code>（可改为 gpt-5 等新模型名）<br>
             获取密钥：<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a>
         </div>
-        <button class="link-btn official ai-preset" data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">填入此配置</button>
+        <button class="link-btn official ai-preset" data-name="GPT" data-type="openai" data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">添加此模型</button>
+    </div>
+    <div class="card">
+        <h3>Anthropic Claude</h3>
+        <div class="ref-answer" style="margin-left:0;">
+            <div class="ref-label">推荐配置（Anthropic 原生接口）</div>
+            base_url：<code>https://api.anthropic.com/v1</code><br>
+            model：<code>claude-sonnet-4-5</code>（可改为 claude-sonnet-5 等新模型名）<br>
+            获取密钥：<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
+        </div>
+        <button class="link-btn official ai-preset" data-name="Claude" data-type="anthropic" data-base="https://api.anthropic.com/v1" data-model="claude-sonnet-4-5">添加此模型</button>
     </div>
     <div class="card">
         <h3>通义千问</h3>
         <div class="ref-answer" style="margin-left:0;">
-            <div class="ref-label">推荐配置</div>
+            <div class="ref-label">推荐配置（OpenAI 兼容）</div>
             base_url：<code>https://dashscope.aliyuncs.com/compatible-mode/v1</code><br>
             model：<code>qwen-plus</code><br>
             获取密钥：<a href="https://dashscope.console.aliyun.com/" target="_blank" rel="noopener">dashscope.console.aliyun.com</a>
         </div>
-        <button class="link-btn official ai-preset" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-plus">填入此配置</button>
+        <button class="link-btn official ai-preset" data-name="通义千问" data-type="openai" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-plus">添加此模型</button>
     </div>
     <div class="card">
         <h3>Moonshot (Kimi)</h3>
         <div class="ref-answer" style="margin-left:0;">
-            <div class="ref-label">推荐配置</div>
+            <div class="ref-label">推荐配置（OpenAI 兼容）</div>
             base_url：<code>https://api.moonshot.cn/v1</code><br>
             model：<code>moonshot-v1-8k</code><br>
             获取密钥：<a href="https://platform.moonshot.cn/" target="_blank" rel="noopener">platform.moonshot.cn</a>
         </div>
-        <button class="link-btn official ai-preset" data-base="https://api.moonshot.cn/v1" data-model="moonshot-v1-8k">填入此配置</button>
+        <button class="link-btn official ai-preset" data-name="Moonshot" data-type="openai" data-base="https://api.moonshot.cn/v1" data-model="moonshot-v1-8k">添加此模型</button>
     </div>
     <div class="card">
         <h3>Google Gemini</h3>
@@ -93,7 +93,7 @@
             model：<code>gemini-1.5-flash</code><br>
             获取密钥：<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
         </div>
-        <button class="link-btn official ai-preset" data-base="https://generativelanguage.googleapis.com/v1beta/openai" data-model="gemini-1.5-flash">填入此配置</button>
+        <button class="link-btn official ai-preset" data-name="Gemini" data-type="openai" data-base="https://generativelanguage.googleapis.com/v1beta/openai" data-model="gemini-1.5-flash">添加此模型</button>
     </div>
     <div class="card">
         <h3>SiliconFlow</h3>
@@ -103,7 +103,7 @@
             model：<code>Qwen/Qwen2.5-7B-Instruct</code><br>
             获取密钥：<a href="https://cloud.siliconflow.cn/" target="_blank" rel="noopener">cloud.siliconflow.cn</a>
         </div>
-        <button class="link-btn official ai-preset" data-base="https://api.siliconflow.cn/v1" data-model="Qwen/Qwen2.5-7B-Instruct">填入此配置</button>
+        <button class="link-btn official ai-preset" data-name="SiliconFlow" data-type="openai" data-base="https://api.siliconflow.cn/v1" data-model="Qwen/Qwen2.5-7B-Instruct">添加此模型</button>
     </div>
 </div>
 
@@ -188,119 +188,202 @@
 <script>
 const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 
-// 非管理员禁用输入与按钮
+let providers = [];
+let activeId = '';
+
+function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function newProviderId() {
+    return 'new_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+}
+
+function renderProviders() {
+    const list = document.getElementById('provider-list');
+    if (!providers.length) {
+        list.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px;">暂无模型，点击下方「+ 添加模型」或使用推荐示例添加。</div>';
+        return;
+    }
+    list.innerHTML = providers.map((p, i) => `
+        <div class="provider-item" data-idx="${i}" style="border:1px solid var(--border-light);border-radius:10px;padding:14px;">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+                <input type="text" class="p-name" value="${esc(p.name)}" placeholder="显示名称（如 DeepSeek）" style="width:200px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card,#161b22);color:var(--text);">
+                ${p.id === activeId
+                    ? '<span style="font-size:11px;padding:2px 10px;border-radius:10px;background:rgba(63,185,80,0.2);color:#3fb950;font-weight:600;white-space:nowrap;">默认模型</span>'
+                    : '<button type="button" class="p-set-active" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text-light);cursor:pointer;white-space:nowrap;">设为默认</button>'}
+                ${p.has_key ? '<span style="font-size:11px;color:#3fb950;">密钥已配置</span>' : '<span style="font-size:11px;color:var(--accent-orange);">未配置密钥</span>'}
+                <button type="button" class="p-del" style="margin-left:auto;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(248,81,73,0.4);background:none;color:#f85149;cursor:pointer;white-space:nowrap;">删除</button>
+            </div>
+            <div class="feedback-form">
+                <div class="form-row" style="flex-direction:row;gap:12px;align-items:center;">
+                    <label style="margin:0;white-space:nowrap;">接口协议</label>
+                    <select class="p-type" style="max-width:360px;">
+                        <option value="openai" ${p.type !== 'anthropic' ? 'selected' : ''}>OpenAI 兼容（DeepSeek / GPT / 通义 / Gemini 等）</option>
+                        <option value="anthropic" ${p.type === 'anthropic' ? 'selected' : ''}>Anthropic 原生（Claude 系列）</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>API 地址 (base_url) <span style="color:var(--accent)">*</span></label>
+                    <input type="text" class="p-base" value="${esc(p.base_url)}" placeholder="例如：https://api.deepseek.com/v1">
+                </div>
+                <div class="form-row">
+                    <label>API 密钥 (api_key)</label>
+                    <input type="password" class="p-key" value="${esc(p.api_key || '')}" placeholder="${p.has_key ? '已配置（脱敏显示，不修改则保持不变）' : 'sk-... / sk-ant-...'}">
+                </div>
+                <div class="form-row">
+                    <label>模型名称 (model) <span style="color:var(--accent)">*</span></label>
+                    <input type="text" class="p-model" value="${esc(p.model)}" placeholder="例如：deepseek-chat / claude-sonnet-5 / gpt-5">
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    list.querySelectorAll('.p-set-active').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.closest('.provider-item').dataset.idx);
+            activeId = providers[idx].id;
+            renderProviders();
+        });
+    });
+    list.querySelectorAll('.p-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.closest('.provider-item').dataset.idx);
+            const removed = providers.splice(idx, 1)[0];
+            if (removed.id === activeId) activeId = providers.length ? providers[0].id : '';
+            renderProviders();
+        });
+    });
+
+    if (!IS_ADMIN) {
+        list.querySelectorAll('input, select, button').forEach(el => { el.disabled = true; });
+    }
+}
+
+function loadAiConfig() {
+    fetch('/api/ai/config').then(r => r.json()).then(data => {
+        providers = (data.providers || []).map(p => ({...p}));
+        activeId = data.active || '';
+        renderProviders();
+        const status = document.getElementById('ai-status');
+        if (data.has_key) {
+            status.className = 'fb-status success';
+            status.textContent = '默认模型已配置密钥';
+        }
+    }).catch(() => {
+        document.getElementById('provider-list').innerHTML = '<div style="color:var(--accent-orange);text-align:center;padding:20px;">加载配置失败</div>';
+    });
+}
+
+function collectProviders() {
+    return [...document.querySelectorAll('.provider-item')].map((el, i) => ({
+        id: (providers[i] && providers[i].id) || '',
+        name: el.querySelector('.p-name').value.trim(),
+        type: el.querySelector('.p-type').value,
+        base_url: el.querySelector('.p-base').value.trim(),
+        api_key: el.querySelector('.p-key').value.trim(),
+        model: el.querySelector('.p-model').value.trim(),
+    }));
+}
+
 if (!IS_ADMIN) {
-    ['ai-base-url','ai-api-key','ai-model'].forEach(id => {
+    ['ai-add-btn', 'ai-save-btn', 'ai-test-btn'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = true;
     });
     const saveBtn = document.getElementById('ai-save-btn');
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '需管理员登录'; }
-    const testBtn = document.getElementById('ai-test-btn');
-    if (testBtn) { testBtn.disabled = true; }
+    if (saveBtn) saveBtn.textContent = '需管理员登录';
     document.querySelectorAll('.ai-preset').forEach(b => { b.disabled = true; b.style.opacity = 0.5; });
+} else {
+    document.getElementById('ai-add-btn').addEventListener('click', () => {
+        providers.push({id: newProviderId(), name: '', type: 'openai', base_url: '', api_key: '', model: '', has_key: false});
+        renderProviders();
+        document.getElementById('provider-list').lastElementChild.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    });
+
+    document.getElementById('ai-save-btn').addEventListener('click', () => {
+        const status = document.getElementById('ai-status');
+        const list = collectProviders();
+        if (!list.length) {
+            status.className = 'fb-status error';
+            status.textContent = '至少需要一个模型配置';
+            return;
+        }
+        for (const p of list) {
+            if (!p.base_url || !p.model) {
+                status.className = 'fb-status error';
+                status.textContent = `模型「${p.name || '未命名'}」的 API 地址和模型名称不能为空`;
+                return;
+            }
+        }
+        const btn = document.getElementById('ai-save-btn');
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+        fetch('/api/ai/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ providers: list, active: activeId })
+        }).then(r => r.json()).then(data => {
+            if (data.error) {
+                status.className = 'fb-status error';
+                status.textContent = data.error;
+            } else {
+                status.className = 'fb-status success';
+                status.textContent = data.message;
+                loadAiConfig();
+            }
+        }).catch(() => {
+            status.className = 'fb-status error';
+            status.textContent = '保存失败，请稍后重试';
+        }).finally(() => {
+            btn.disabled = false;
+            btn.textContent = '保存全部配置';
+        });
+    });
+
+    document.getElementById('ai-test-btn').addEventListener('click', () => {
+        const status = document.getElementById('ai-status');
+        const btn = document.getElementById('ai-test-btn');
+        btn.disabled = true;
+        btn.textContent = '测试中...';
+        status.className = 'fb-status';
+        status.textContent = '正在测试默认模型...';
+        fetch('/api/ai/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: '你好，请用一句话介绍你自己。', provider: activeId })
+        }).then(r => r.json()).then(data => {
+            if (data.error) {
+                status.className = 'fb-status error';
+                status.textContent = '测试失败：' + data.error;
+            } else {
+                status.className = 'fb-status success';
+                status.textContent = '测试成功：' + (data.answer || '').slice(0, 40);
+            }
+        }).catch(() => {
+            status.className = 'fb-status error';
+            status.textContent = '测试失败，请稍后重试';
+        }).finally(() => {
+            btn.disabled = false;
+            btn.textContent = '测试默认模型';
+        });
+    });
+
+    document.querySelectorAll('.ai-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+            providers.push({
+                id: newProviderId(), name: btn.dataset.name || '', type: btn.dataset.type || 'openai',
+                base_url: btn.dataset.base || '', api_key: '', model: btn.dataset.model || '', has_key: false,
+            });
+            renderProviders();
+            const status = document.getElementById('ai-status');
+            status.className = 'fb-status success';
+            status.textContent = `已添加「${btn.dataset.name}」预设，请输入 API 密钥后保存`;
+            document.getElementById('provider-list').lastElementChild.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        });
+    });
 }
 
-// 加载当前配置
-function loadAiConfig() {
-    fetch('/api/ai/config').then(r => r.json()).then(data => {
-        document.getElementById('ai-base-url').value = data.base_url || '';
-        document.getElementById('ai-api-key').value = data.api_key || '';
-        document.getElementById('ai-model').value = data.model || '';
-        const status = document.getElementById('ai-status');
-        if (data.has_key) {
-            status.className = 'fb-status success';
-            status.textContent = '已配置密钥（如需修改请重新输入）';
-        }
-    }).catch(() => {
-        const status = document.getElementById('ai-status');
-        status.className = 'fb-status error';
-        status.textContent = '加载配置失败';
-    });
-}
-
-// 保存配置
-document.getElementById('ai-save-btn').addEventListener('click', () => {
-    if (!IS_ADMIN) return;
-    const base_url = document.getElementById('ai-base-url').value.trim();
-    const api_key = document.getElementById('ai-api-key').value.trim();
-    const model = document.getElementById('ai-model').value.trim();
-    const status = document.getElementById('ai-status');
-
-    if (!base_url || !model) {
-        status.className = 'fb-status error';
-        status.textContent = 'API 地址和模型名称不能为空';
-        return;
-    }
-
-    const btn = document.getElementById('ai-save-btn');
-    btn.disabled = true;
-    btn.textContent = '保存中...';
-
-    fetch('/api/ai/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base_url, api_key, model })
-    }).then(r => r.json()).then(data => {
-        if (data.error) {
-            status.className = 'fb-status error';
-            status.textContent = data.error;
-        } else {
-            status.className = 'fb-status success';
-            status.textContent = data.message;
-            loadAiConfig();
-        }
-    }).catch(() => {
-        status.className = 'fb-status error';
-        status.textContent = '保存失败，请稍后重试';
-    }).finally(() => {
-        btn.disabled = false;
-        btn.textContent = '保存配置';
-    });
-});
-
-// 测试连接（发送一个简单问题验证）
-document.getElementById('ai-test-btn').addEventListener('click', () => {
-    const status = document.getElementById('ai-status');
-    const btn = document.getElementById('ai-test-btn');
-    btn.disabled = true;
-    btn.textContent = '测试中...';
-    status.className = 'fb-status';
-    status.textContent = '正在测试连接...';
-
-    fetch('/api/ai/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: '你好，请用一句话介绍你自己。' })
-    }).then(r => r.json()).then(data => {
-        if (data.error) {
-            status.className = 'fb-status error';
-            status.textContent = '测试失败：' + data.error;
-        } else {
-            status.className = 'fb-status success';
-            status.textContent = '测试成功：' + (data.answer || '').slice(0, 40);
-        }
-    }).catch(() => {
-        status.className = 'fb-status error';
-        status.textContent = '测试失败，请稍后重试';
-    }).finally(() => {
-        btn.disabled = false;
-        btn.textContent = '测试连接';
-    });
-});
-
-// 预设配置快速填入
-document.querySelectorAll('.ai-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.getElementById('ai-base-url').value = btn.dataset.base;
-        document.getElementById('ai-model').value = btn.dataset.model;
-        const status = document.getElementById('ai-status');
-        status.className = 'fb-status success';
-        status.textContent = '已填入预设，请输入 API 密钥后保存';
-    });
-});
-
-// 页面加载时读取配置
 loadAiConfig();
 
 // ============ 管理员配置 ============

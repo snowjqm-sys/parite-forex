@@ -565,6 +565,31 @@ def futures():
     )
 
 
+@app.route("/cme")
+def cme():
+    """CME 比赛作战室（War Room）— MVP：手工录入快照 + localStorage"""
+    return render_template(
+        "cme.html",
+        active="cme",
+        currency_nav=DATA.CURRENCY_NAV,
+    )
+
+
+@app.route("/cme/symbol/<key>")
+def cme_symbol(key):
+    """CME 品种详情页：介绍 / 行情 / 现货 / 研报平台链接"""
+    detail = DATA.CME_SYMBOL_DETAILS.get(key)
+    if not detail:
+        abort(404)
+    return render_template(
+        "cme_symbol.html",
+        active="cme",
+        currency_nav=DATA.CURRENCY_NAV,
+        detail=detail,
+        pages=DATA.CME_SYMBOL_PAGES,
+    )
+
+
 @app.route("/bond")
 def bond():
     """债券板块：收益率曲线、利差、市场总览"""
@@ -1080,6 +1105,788 @@ def api_list_feedback():
 
 
 # ============================================================
+# CME 小窝：快照持久化 API（本地文件 + 可选客户端密钥隔离）
+# ============================================================
+def _load_cme_snapshots():
+    """读取所有 CME 快照（云端优先，本地兜底）。"""
+    return _cme_load("snapshots", [])
+
+
+def _save_cme_snapshots(snapshots):
+    """写入 CME 快照列表（本地 + 云端双写）。"""
+    _cme_save("snapshots", snapshots)
+
+
+@app.route("/api/cme/snapshots", methods=["GET"])
+def api_cme_get_snapshots():
+    """获取全部 CME 快照。"""
+    snapshots = _load_cme_snapshots()
+    snapshots.sort(key=lambda s: s.get("createdAt", 0), reverse=True)
+    return jsonify(snapshots)
+
+
+@app.route("/api/cme/snapshots", methods=["POST"])
+def api_cme_add_snapshot():
+    """新增单条快照。"""
+    data = request.get_json(silent=True) or {}
+    snap = data.get("snapshot") or data
+    symbol = (snap.get("symbol") or "").strip()
+    price = snap.get("price")
+    if not symbol or price is None:
+        return jsonify({"error": "symbol 和 price 不能为空"}), 400
+    item = {
+        "symbol": symbol,
+        "price": price,
+        "change": snap.get("change"),
+        "date": snap.get("date") or time.strftime("%Y-%m-%d", time.localtime()),
+        "time": snap.get("time") or time.strftime("%H:%M", time.localtime()),
+        "note": (snap.get("note") or "").strip(),
+        "createdAt": int(snap.get("createdAt") or time.time() * 1000),
+    }
+    snapshots = _load_cme_snapshots()
+    snapshots.append(item)
+    _save_cme_snapshots(snapshots)
+    return jsonify({"success": True, "snapshot": item})
+
+
+@app.route("/api/cme/snapshots/batch", methods=["POST"])
+def api_cme_batch_snapshots():
+    """批量导入快照（CSV 解析结果）。"""
+    data = request.get_json(silent=True) or {}
+    items = data.get("snapshots") or []
+    if not isinstance(items, list) or not items:
+        return jsonify({"error": "snapshots 列表不能为空"}), 400
+    snapshots = _load_cme_snapshots()
+    added = 0
+    base_ts = int(time.time() * 1000)
+    for idx, snap in enumerate(items):
+        symbol = (snap.get("symbol") or "").strip()
+        price = snap.get("price")
+        if not symbol or price is None:
+            continue
+        snapshots.append({
+            "symbol": symbol,
+            "price": price,
+            "change": snap.get("change"),
+            "date": snap.get("date") or time.strftime("%Y-%m-%d", time.localtime()),
+            "time": snap.get("time") or time.strftime("%H:%M", time.localtime()),
+            "note": (snap.get("note") or "").strip(),
+            "createdAt": int(snap.get("createdAt") or (base_ts + idx)),
+        })
+        added += 1
+    _save_cme_snapshots(snapshots)
+    return jsonify({"success": True, "added": added})
+
+
+@app.route("/api/cme/snapshots", methods=["DELETE"])
+def api_cme_delete_snapshot():
+    """按 createdAt 删除单条快照。"""
+    data = request.get_json(silent=True) or {}
+    target = data.get("createdAt")
+    if target is None:
+        return jsonify({"error": "缺少 createdAt"}), 400
+    snapshots = _load_cme_snapshots()
+    before = len(snapshots)
+    snapshots = [s for s in snapshots if int(s.get("createdAt", 0)) != int(target)]
+    _save_cme_snapshots(snapshots)
+    return jsonify({"success": True, "removed": before - len(snapshots)})
+
+
+# ============================================================
+# CME 小窝 · 四大模块后端（Macro Score / Event Scenario / Trade Planner / Risk Engine）
+# 数据模型对应任务书第 6 节；API 对应第 7 节。全部落本地 JSON 文件，换浏览器/清缓存不丢。
+# ============================================================
+import uuid as _uuid
+
+
+# ---- 云存储（Upstash Redis REST）：线上部署时数据不丢的权威来源 ----
+# 在 Vercel 环境变量配置 UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN 即启用；
+# 未配置时自动退回本地 JSON 文件（本地开发模式），两套行为完全兼容。
+def _kv_env():
+    """返回 (url, token)；未配置时返回 None。"""
+    url = (os.environ.get("UPSTASH_REDIS_REST_URL") or "").rstrip("/")
+    token = os.environ.get("UPSTASH_REDIS_REST_TOKEN") or ""
+    return (url, token) if url and token else None
+
+
+def _kv_get(key):
+    """从 Upstash 读取并反序列化；任何异常返回 None（调用方自行兜底）。"""
+    try:
+        url, token = _kv_env()
+        req = urllib.request.Request(
+            url + "/get/" + key,
+            headers={"Authorization": "Bearer " + token},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = _json.loads(resp.read().decode("utf-8"))
+        result = (body or {}).get("result")
+        return _json.loads(result) if result is not None else None
+    except Exception:
+        return None
+
+
+def _kv_set(key, value):
+    """把 value 序列化后写入 Upstash；返回是否成功。"""
+    try:
+        url, token = _kv_env()
+        payload = _json.dumps(value, ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(
+            url + "/set/" + key,
+            data=payload,
+            method="POST",
+            headers={"Authorization": "Bearer " + token,
+                     "Content-Type": "text/plain"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            _json.loads(resp.read().decode("utf-8"))
+        return True
+    except Exception:
+        return False
+
+
+# CME 小窝全部数据集合（导出/导入也按此清单）
+_CME_COLLECTIONS = (
+    "snapshots",     # 手工行情快照
+    "signals",       # 模块 A：Macro Score 信号
+    "events",        # 模块 B：经济事件
+    "scenarios",     # 模块 B：事件情景推演
+    "proposals",     # 模块 C：交易计划
+    "positions",     # 模块 D：持仓
+    "journal",       # 模块 D：交易日志
+    "risk_config",   # 模块 D：风控参数
+)
+
+
+def _cme_file_path(name):
+    """返回 CME 模块数据文件路径。"""
+    return os.path.join(_data_dir(), "cme_" + name + ".json")
+
+
+def _cme_load(name, default):
+    """通用读取：云端优先，本地 JSON 文件兜底（也承担首次上云的迁移）。"""
+    if _kv_env():
+        data = _kv_get("parite:cme:" + name)
+        if data is not None:
+            return data
+    path = _cme_file_path(name)
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = _json.load(f)
+        return data if data is not None else default
+    except Exception:
+        return default
+
+
+def _cme_save(name, data):
+    """通用写入：本地文件 + 云端 KV 双写（云端失败不影响本地保存）。"""
+    try:
+        with open(_cme_file_path(name), "w", encoding="utf-8") as f:
+            _json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+    if _kv_env():
+        _kv_set("parite:cme:" + name, data)
+
+
+def _now_ms():
+    return int(time.time() * 1000)
+
+
+def _new_id():
+    return _uuid.uuid4().hex[:12]
+
+
+# ---- 比赛时间（2026 CME University Trading Challenge，10/4 - 10/30）----
+COMPETITION_START = "2026-10-04"
+COMPETITION_END = "2026-10-30"
+
+
+def _competition_info():
+    """返回比赛倒计时 / 状态。"""
+    now = time.strftime("%Y-%m-%d", time.localtime())
+    started = now >= COMPETITION_START
+    ended = now > COMPETITION_END
+    return {
+        "now": now,
+        "start": COMPETITION_START,
+        "end": COMPETITION_END,
+        "started": started,
+        "ended": ended,
+    }
+
+
+# ---- 模块 A：Macro Score 打分引擎 ----
+# 因子权重采用配置化（默认人工可解释权重），第二版再回归优化。
+MACRO_SCORE_FACTORS = [
+    {"key": "dxy", "label": "美元指数 DXY", "weight": 2,
+     "options": [{"v": "down", "score": 2, "label": "走弱"}, {"v": "flat", "score": 0, "label": "震荡"},
+                 {"v": "up", "score": -2, "label": "走强"}]},
+    {"key": "real_yield", "label": "美实际利率", "weight": 2,
+     "options": [{"v": "down", "score": 2, "label": "下行"}, {"v": "flat", "score": 0, "label": "持平"},
+                 {"v": "up", "score": -2, "label": "上行"}]},
+    {"key": "fed_expect", "label": "美联储预期", "weight": 1,
+     "options": [{"v": "dovish", "score": 1, "label": "鸽派"}, {"v": "neutral", "score": 0, "label": "中性"},
+                 {"v": "hawkish", "score": -1, "label": "鹰派"}]},
+    {"key": "risk_sentiment", "label": "风险情绪", "weight": 1,
+     "options": [{"v": "risk_off", "score": 1, "label": "避险"}, {"v": "neutral", "score": 0, "label": "中性"},
+                 {"v": "risk_on", "score": -1, "label": "风险偏好"}]},
+    {"key": "momentum", "label": "动量", "weight": 1,
+     "options": [{"v": "oversold", "score": 1, "label": "超卖"}, {"v": "neutral", "score": 0, "label": "中性"},
+                 {"v": "overbought", "score": -1, "label": "超买"}]},
+]
+
+
+def _score_to_bias(total):
+    if total >= 5:
+        return "strong_bullish"
+    if total >= 2:
+        return "bullish"
+    if total <= -5:
+        return "strong_bearish"
+    if total <= -2:
+        return "bearish"
+    return "neutral"
+
+
+def _build_signal(symbol, price, factors, drivers, invalidation, range_pct=1.0):
+    """根据因子状态计算总分，生成结构化 signal（模块 A 输出）。"""
+    template = {t["key"]: t for t in MACRO_SCORE_FACTORS}
+    total = 0
+    factor_detail = []
+    for f in factors:
+        key = f["key"]
+        state = f.get("state", "flat")
+        defn = template.get(key) or {}
+        weight = defn.get("weight", 0)
+        score = 0
+        label = "中性"
+        for opt in defn.get("options", []):
+            if opt["v"] == state:
+                score = opt["score"]
+                label = opt["label"]
+                break
+        total += score * weight
+        factor_detail.append({"key": key, "label": defn.get("label", key), "state": state,
+                              "state_label": label, "score": score, "weight": weight})
+    bias = _score_to_bias(total)
+    # confidence：信号一致性 + 因子离散度（人工可解释，非概率真值）
+    consistency = min(1.0, abs(total) / 7.0)
+    confidence = int(round(40 + consistency * 50))
+    price = float(price)
+    return {
+        "symbol": symbol,
+        "price": price,
+        "bias": bias,
+        "macro_score": total,
+        "confidence": confidence,
+        "range_low": round(price * (1 - range_pct / 100.0), 4),
+        "range_high": round(price * (1 + range_pct / 100.0), 4),
+        "drivers": drivers or [],
+        "invalidation": invalidation or [],
+        "factors": factor_detail,
+        "model_version": "macro_score_v1",
+        "timestamp": _now_ms(),
+    }
+
+
+def _load_signals():
+    return _cme_load("signals", [])
+
+
+def _save_signals(signals):
+    _cme_save("signals", signals)
+
+
+# ---- 模块 B：Event Scenario 引擎 ----
+def _load_events():
+    return _cme_load("events", [])
+
+
+def _save_events(events):
+    _cme_save("events", events)
+
+
+def _load_scenarios():
+    return _cme_load("scenarios", [])
+
+
+def _save_scenarios(scenarios):
+    _cme_save("scenarios", scenarios)
+
+
+# ---- 模块 C：Trade Planner ----
+def _load_proposals():
+    return _cme_load("proposals", [])
+
+
+def _save_proposals(proposals):
+    _cme_save("proposals", proposals)
+
+
+# ---- 模块 D：Risk Engine ----
+def _load_positions():
+    return _cme_load("positions", [])
+
+
+def _save_positions(positions):
+    _cme_save("positions", positions)
+
+
+def _load_journal():
+    return _cme_load("journal", [])
+
+
+def _save_journal(journal):
+    _cme_save("journal", journal)
+
+
+def _load_risk_config():
+    default = {
+        "account_equity": 100000.0,      # 初始权益（模拟账户）
+        "max_contracts_per_day": 10,     # 每日最大交易次数（比赛规则）
+        "max_concentration_pct": 40.0,   # 单品种集中度红线（%）
+        "max_daily_loss_pct": 2.0,       # 单日亏损红线（%）
+        "margin_pct": 10.0,              # 估算保证金比例（%）
+    }
+    return _cme_load("risk_config", default)
+
+
+def _save_risk_config(cfg):
+    _cme_save("risk_config", cfg)
+
+
+# ============================================================
+# API：/api/cme/overview —— War Room 全局快照
+# ============================================================
+@app.route("/api/cme/overview", methods=["GET"])
+def api_cme_overview():
+    return jsonify({
+        "competition": _competition_info(),
+        "signals_count": len(_load_signals()),
+        "events_count": len(_load_events()),
+        "proposals": _load_proposals(),
+        "positions": _load_positions(),
+        "risk": _compute_risk(),
+    })
+
+
+# ============================================================
+# API：模块 A —— Macro Score / Signals
+# ============================================================
+@app.route("/api/cme/factors", methods=["GET"])
+def api_cme_factors():
+    """返回打分因子模板（供前端渲染打分表单）。"""
+    return jsonify({"factors": MACRO_SCORE_FACTORS})
+
+
+@app.route("/api/cme/signals", methods=["GET"])
+def api_cme_get_signals():
+    """获取全部 signal（按 timestamp 降序）。"""
+    signals = _load_signals()
+    signals.sort(key=lambda s: s.get("timestamp", 0), reverse=True)
+    return jsonify(signals)
+
+
+@app.route("/api/cme/signals", methods=["POST"])
+def api_cme_add_signal():
+    """根据因子状态生成并保存一条 signal（模块 A 输出）。"""
+    data = request.get_json(silent=True) or {}
+    symbol = (data.get("symbol") or "").strip()
+    price = data.get("price")
+    if not symbol or price is None:
+        return jsonify({"error": "symbol 和 price 不能为空"}), 400
+    factors = data.get("factors") or []
+    drivers = data.get("drivers") or []
+    invalidation = data.get("invalidation") or []
+    range_pct = data.get("range_pct") or 1.0
+    signal = _build_signal(symbol, price, factors, drivers, invalidation, range_pct)
+    signals = _load_signals()
+    signals.append(signal)
+    _save_signals(signals)
+    return jsonify({"success": True, "signal": signal})
+
+
+@app.route("/api/cme/signals", methods=["DELETE"])
+def api_cme_delete_signal():
+    data = request.get_json(silent=True) or {}
+    target = data.get("timestamp")
+    if target is None:
+        return jsonify({"error": "缺少 timestamp"}), 400
+    signals = _load_signals()
+    signals = [s for s in signals if int(s.get("timestamp", 0)) != int(target)]
+    _save_signals(signals)
+    return jsonify({"success": True})
+
+
+# ============================================================
+# API：模块 B —— Event Scenario
+# ============================================================
+@app.route("/api/cme/events", methods=["GET"])
+def api_cme_get_events():
+    events = _load_events()
+    events.sort(key=lambda e: e.get("scheduled_at", ""), reverse=True)
+    return jsonify(events)
+
+
+@app.route("/api/cme/events", methods=["POST"])
+def api_cme_add_event():
+    data = request.get_json(silent=True) or {}
+    event_type = (data.get("event_type") or "").strip()
+    scheduled_at = (data.get("scheduled_at") or "").strip()
+    if not event_type or not scheduled_at:
+        return jsonify({"error": "event_type 和 scheduled_at 不能为空"}), 400
+    ev = {
+        "id": _new_id(),
+        "event_type": event_type,
+        "country": (data.get("country") or "").strip(),
+        "scheduled_at": scheduled_at,
+        "consensus": data.get("consensus"),
+        "previous": data.get("previous"),
+        "actual": data.get("actual"),
+        "surprise": data.get("surprise"),
+        "importance": data.get("importance") or "medium",
+        "source_url": (data.get("source_url") or "").strip(),
+        "note": (data.get("note") or "").strip(),
+        "created_at": _now_ms(),
+    }
+    events = _load_events()
+    events.append(ev)
+    _save_events(events)
+    return jsonify({"success": True, "event": ev})
+
+
+@app.route("/api/cme/events/<event_id>", methods=["DELETE"])
+def api_cme_delete_event(event_id):
+    events = _load_events()
+    events = [e for e in events if e.get("id") != event_id]
+    _save_events(events)
+    return jsonify({"success": True})
+
+
+@app.route("/api/cme/events/<event_id>", methods=["PATCH"])
+def api_cme_update_event(event_id):
+    """事件落地后更新 actual，自动计算 surprise。"""
+    data = request.get_json(silent=True) or {}
+    events = _load_events()
+    for ev in events:
+        if ev.get("id") == event_id:
+            if "actual" in data:
+                ev["actual"] = data["actual"]
+                if ev.get("consensus") is not None and data["actual"] is not None:
+                    try:
+                        ev["surprise"] = float(data["actual"]) - float(ev["consensus"])
+                    except (TypeError, ValueError):
+                        ev["surprise"] = None
+            if "note" in data:
+                ev["note"] = data["note"]
+            _save_events(events)
+            return jsonify({"success": True, "event": ev})
+    return jsonify({"error": "事件不存在"}), 404
+
+
+@app.route("/api/cme/events/<event_id>/scenarios", methods=["GET"])
+def api_cme_get_scenarios(event_id):
+    scenarios = [s for s in _load_scenarios() if s.get("event_id") == event_id]
+    return jsonify(scenarios)
+
+
+@app.route("/api/cme/events/<event_id>/scenarios", methods=["POST"])
+def api_cme_add_scenario():
+    """为事件生成/保存 3 情景（hawkish/upside、base、dovish/downside）。"""
+    data = request.get_json(silent=True) or {}
+    event_id = data.get("event_id") or ""
+    events = _load_events()
+    ev = next((e for e in events if e.get("id") == event_id), None)
+    if ev is None:
+        return jsonify({"error": "事件不存在"}), 404
+    scenario_name = (data.get("scenario_name") or "").strip()
+    trigger_rule = (data.get("trigger_rule") or "").strip()
+    transmission = data.get("transmission") or []
+    asset_impacts = data.get("asset_impacts") or []
+    historical_stats = data.get("historical_stats") or {}
+    if not scenario_name:
+        return jsonify({"error": "scenario_name 不能为空"}), 400
+    sc = {
+        "id": _new_id(),
+        "event_id": event_id,
+        "scenario_name": scenario_name,
+        "trigger_rule": trigger_rule,
+        "transmission": transmission,
+        "asset_impacts": asset_impacts,
+        "historical_stats": historical_stats,
+        "created_at": _now_ms(),
+    }
+    scenarios = _load_scenarios()
+    scenarios.append(sc)
+    _save_scenarios(scenarios)
+    return jsonify({"success": True, "scenario": sc})
+
+
+@app.route("/api/cme/events/<event_id>/study", methods=["GET"])
+def api_cme_event_study(event_id):
+    """返回该事件的历史事件研究统计（若有）。"""
+    scenarios = [s for s in _load_scenarios() if s.get("event_id") == event_id]
+    studies = [s.get("historical_stats") for s in scenarios if s.get("historical_stats")]
+    return jsonify({"event_id": event_id, "studies": studies})
+
+
+# ============================================================
+# API：模块 C —— Trade Planner（仅 proposal，人工 approve）
+# ============================================================
+@app.route("/api/cme/proposals", methods=["GET"])
+def api_cme_get_proposals():
+    proposals = _load_proposals()
+    proposals.sort(key=lambda p: p.get("created_at", 0), reverse=True)
+    return jsonify(proposals)
+
+
+@app.route("/api/cme/proposals", methods=["POST"])
+def api_cme_add_proposal():
+    data = request.get_json(silent=True) or {}
+    symbol = (data.get("symbol") or "").strip()
+    direction = (data.get("direction") or "").strip()
+    thesis = (data.get("thesis") or "").strip()
+    if not symbol or not direction:
+        return jsonify({"error": "symbol 和 direction 不能为空"}), 400
+    proposal = {
+        "id": _new_id(),
+        "created_at": _now_ms(),
+        "symbol": symbol,
+        "direction": direction,
+        "thesis": thesis,
+        "entry_condition": (data.get("entry_condition") or "").strip(),
+        "size_hint": data.get("size_hint"),
+        "stop_rule": (data.get("stop_rule") or "").strip(),
+        "horizon": (data.get("horizon") or "").strip(),
+        "confidence": data.get("confidence"),
+        "owner": (data.get("owner") or "").strip(),
+        "status": "pending",
+        "post_trade_note": "",
+    }
+    proposals = _load_proposals()
+    proposals.append(proposal)
+    _save_proposals(proposals)
+    return jsonify({"success": True, "proposal": proposal})
+
+
+@app.route("/api/cme/proposals/<proposal_id>/status", methods=["PATCH"])
+def api_cme_update_proposal_status(proposal_id):
+    """人工 approve / reject（绝不能自动下单）。"""
+    data = request.get_json(silent=True) or {}
+    new_status = (data.get("status") or "").strip()
+    if new_status not in ("pending", "approved", "rejected"):
+        return jsonify({"error": "status 必须是 pending/approved/rejected"}), 400
+    proposals = _load_proposals()
+    for p in proposals:
+        if p.get("id") == proposal_id:
+            p["status"] = new_status
+            if "post_trade_note" in data:
+                p["post_trade_note"] = data["post_trade_note"]
+            _save_proposals(proposals)
+            return jsonify({"success": True, "proposal": p})
+    return jsonify({"error": "proposal 不存在"}), 404
+
+
+@app.route("/api/cme/proposals/<proposal_id>", methods=["DELETE"])
+def api_cme_delete_proposal(proposal_id):
+    proposals = _load_proposals()
+    proposals = [p for p in proposals if p.get("id") != proposal_id]
+    _save_proposals(proposals)
+    return jsonify({"success": True})
+
+
+# ============================================================
+# API：模块 D —— Risk Engine + 赛制运营
+# ============================================================
+def _compute_risk():
+    """汇总组合风险：权益、保证金、盈亏、集中度、drawdown 等。"""
+    cfg = _load_risk_config()
+    positions = _load_positions()
+    equity = float(cfg.get("account_equity", 100000.0))
+    margin_used = 0.0
+    unrealized = 0.0
+    gross_exposure = 0.0
+    for pos in positions:
+        qty = float(pos.get("qty", 0) or 0)
+        avg = float(pos.get("avg_price", 0) or 0)
+        mark = float(pos.get("mark_price", 0) or 0)
+        margin_used += float(pos.get("margin", 0) or (abs(qty) * avg * cfg.get("margin_pct", 10.0) / 100.0))
+        unrealized += qty * (mark - avg)
+        gross_exposure += abs(qty) * mark
+    net_equity = equity + unrealized
+    margin_util = round(margin_used / equity * 100.0, 2) if equity else 0.0
+    # 集中度：最大单品种 exposure 占比
+    conc = 0.0
+    if gross_exposure > 0:
+        conc = round(max((abs(float(p.get("qty", 0)) * float(p.get("mark_price", 0) or 0)) / gross_exposure * 100.0)
+                         for p in positions) if positions else 0.0, 2)
+    # 当日交易次数（用 journal 中今天的记录数估算）
+    today = time.strftime("%Y-%m-%d", time.localtime())
+    today_contracts = sum(1 for j in _load_journal() if (j.get("entry_time") or "").startswith(today))
+    return {
+        "account_equity": equity,
+        "net_equity": round(net_equity, 2),
+        "margin_used": round(margin_used, 2),
+        "margin_utilization_pct": margin_util,
+        "unrealized_pnl": round(unrealized, 2),
+        "gross_exposure": round(gross_exposure, 2),
+        "concentration_pct": conc,
+        "today_contracts": today_contracts,
+        "max_contracts_per_day": cfg.get("max_contracts_per_day", 10),
+        "max_concentration_pct": cfg.get("max_concentration_pct", 40.0),
+        "max_daily_loss_pct": cfg.get("max_daily_loss_pct", 2.0),
+        "warnings": [],
+    }
+
+
+@app.route("/api/cme/risk", methods=["GET"])
+def api_cme_risk():
+    risk = _compute_risk()
+    cfg = _load_risk_config()
+    warnings = []
+    if risk["margin_utilization_pct"] > 80:
+        warnings.append("保证金利用率超过 80%，注意风险")
+    if risk["concentration_pct"] > cfg.get("max_concentration_pct", 40.0):
+        warnings.append("单品种集中度超过红线 %.0f%%" % cfg.get("max_concentration_pct", 40.0))
+    if risk["today_contracts"] >= risk["max_contracts_per_day"]:
+        warnings.append("今日交易次数已达上限 %d/%d" % (risk["today_contracts"], risk["max_contracts_per_day"]))
+    risk["warnings"] = warnings
+    return jsonify(risk)
+
+
+@app.route("/api/cme/risk-config", methods=["GET"])
+def api_cme_get_risk_config():
+    return jsonify(_load_risk_config())
+
+
+@app.route("/api/cme/risk-config", methods=["POST"])
+def api_cme_update_risk_config():
+    data = request.get_json(silent=True) or {}
+    cfg = _load_risk_config()
+    for key in ("account_equity", "max_contracts_per_day", "max_concentration_pct",
+                "max_daily_loss_pct", "margin_pct"):
+        if key in data and data[key] is not None:
+            cfg[key] = data[key]
+    _save_risk_config(cfg)
+    return jsonify({"success": True, "config": cfg})
+
+
+@app.route("/api/cme/positions", methods=["GET"])
+def api_cme_get_positions():
+    return jsonify(_load_positions())
+
+
+@app.route("/api/cme/positions", methods=["POST"])
+def api_cme_add_position():
+    data = request.get_json(silent=True) or {}
+    symbol = (data.get("symbol") or "").strip()
+    qty = data.get("qty")
+    if not symbol or qty is None:
+        return jsonify({"error": "symbol 和 qty 不能为空"}), 400
+    pos = {
+        "symbol": symbol,
+        "qty": float(qty),
+        "avg_price": float(data.get("avg_price") or 0),
+        "mark_price": float(data.get("mark_price") or 0),
+        "unrealized_pnl": float(data.get("unrealized_pnl") or 0),
+        "margin": float(data.get("margin") or 0),
+        "opened_at": data.get("opened_at") or time.strftime("%Y-%m-%d %H:%M", time.localtime()),
+    }
+    positions = _load_positions()
+    positions.append(pos)
+    _save_positions(positions)
+    return jsonify({"success": True, "position": pos})
+
+
+@app.route("/api/cme/positions/<int:index>", methods=["DELETE"])
+def api_cme_delete_position(index):
+    positions = _load_positions()
+    if index < 0 or index >= len(positions):
+        return jsonify({"error": "索引越界"}), 404
+    positions.pop(index)
+    _save_positions(positions)
+    return jsonify({"success": True})
+
+
+@app.route("/api/cme/journal", methods=["GET"])
+def api_cme_get_journal():
+    journal = _load_journal()
+    journal.sort(key=lambda j: j.get("entry_time", ""), reverse=True)
+    return jsonify(journal)
+
+
+@app.route("/api/cme/journal", methods=["POST"])
+def api_cme_add_journal():
+    data = request.get_json(silent=True) or {}
+    journal = _load_journal()
+    entry = {
+        "id": _new_id(),
+        "trade_id": data.get("trade_id") or "",
+        "proposal_id": data.get("proposal_id") or "",
+        "symbol": (data.get("symbol") or "").strip(),
+        "direction": (data.get("direction") or "").strip(),
+        "entry_time": data.get("entry_time") or time.strftime("%Y-%m-%d %H:%M", time.localtime()),
+        "exit_time": data.get("exit_time") or "",
+        "entry_price": data.get("entry_price"),
+        "exit_price": data.get("exit_price"),
+        "qty": data.get("qty"),
+        "pnl": data.get("pnl"),
+        "thesis_result": (data.get("thesis_result") or "").strip(),
+        "error_tags": data.get("error_tags") or [],
+        "review": (data.get("review") or "").strip(),
+    }
+    journal.append(entry)
+    _save_journal(journal)
+    return jsonify({"success": True, "entry": entry})
+
+
+@app.route("/api/cme/journal/<journal_id>", methods=["DELETE"])
+def api_cme_delete_journal(journal_id):
+    journal = _load_journal()
+    journal = [j for j in journal if j.get("id") != journal_id]
+    _save_journal(journal)
+    return jsonify({"success": True})
+
+
+# ============================================================
+# API：备份导出 / 还原导入（双保险：换平台、误删、云端异常都可恢复）
+# ============================================================
+@app.route("/api/cme/export", methods=["GET"])
+def api_cme_export():
+    """导出 CME 小窝全部数据为单个 JSON。"""
+    payload = {}
+    for name in _CME_COLLECTIONS:
+        if name == "risk_config":
+            payload[name] = _load_risk_config()
+        else:
+            payload[name] = _cme_load(name, [])
+    return jsonify({
+        "app": "parite",
+        "module": "cme",
+        "version": 1,
+        "exported_at": _now_ms(),
+        "data": payload,
+    })
+
+
+@app.route("/api/cme/import", methods=["POST"])
+def api_cme_import():
+    """从导出的 JSON 还原全部数据（覆盖写入）。"""
+    data = request.get_json(silent=True) or {}
+    payload = data.get("data") or data.get("export") or {}
+    if not isinstance(payload, dict) or not payload:
+        return jsonify({"error": "导入内容为空或格式不正确"}), 400
+    restored = {}
+    for name in _CME_COLLECTIONS:
+        if name in payload and payload[name]:
+            _cme_save(name, payload[name])
+            restored[name] = len(payload[name]) if isinstance(payload[name], (list, dict)) else 1
+    return jsonify({"success": True, "restored": restored})
+
+
+# ============================================================
 # AI 助手 API（配置管理 + 问答代理）
 # ============================================================
 def _ai_config_path():
@@ -1088,39 +1895,91 @@ def _ai_config_path():
 
 
 def _load_ai_config():
-    """读取 AI 配置。
+    """读取 AI 配置（多模型）。
 
-    优先级：环境变量 > ai_config.json > 默认值。
-    Vercel serverless 上文件系统不持久化，通过环境变量注入密钥。
+    优先级：环境变量 > Upstash 云端 > 本地文件 > 默认值。
+    数据结构：{"active": "<provider_id>", "providers": [{id,name,type,base_url,api_key,model}]}
     """
     import json as _json
-    default = {
+    default_provider = {
+        "id": "default",
+        "name": "DeepSeek",
+        "type": "openai",
         "base_url": "https://api.deepseek.com/v1",
         "api_key": "",
         "model": "deepseek-chat",
     }
-    # 1. 先读本地文件（开发环境）
+    cfg = {"active": "default", "providers": [dict(default_provider)]}
+
+    # 1. 本地文件（开发环境；兼容旧版单模型格式并自动迁移）
     path = _ai_config_path()
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = _json.load(f)
-            merged = dict(default)
-            merged.update(data or {})
+            if isinstance(data.get("providers"), list) and data["providers"]:
+                cfg["active"] = data.get("active", "") or ""
+                cfg["providers"] = data["providers"]
+            else:
+                legacy = dict(default_provider)
+                for k in ("base_url", "api_key", "model"):
+                    if data.get(k):
+                        legacy[k] = data[k]
+                cfg = {"active": "default", "providers": [legacy]}
         except Exception:
-            merged = dict(default)
-    else:
-        merged = dict(default)
-    # 2. 环境变量覆盖（Vercel 生产环境）
+            pass
+
+    # 2. Upstash 云端（Vercel 无状态环境下的持久化层）
+    cloud = _kv_get("parite:ai_config")
+    if isinstance(cloud, dict) and isinstance(cloud.get("providers"), list) and cloud["providers"]:
+        cfg["active"] = cloud.get("active", "") or ""
+        cfg["providers"] = cloud["providers"]
+
+    # 3. 环境变量覆盖（最高优先级，作用于默认模型）
     if os.environ.get("DEEPSEEK_API_KEY"):
-        merged["api_key"] = os.environ["DEEPSEEK_API_KEY"]
+        cfg["providers"][0]["api_key"] = os.environ["DEEPSEEK_API_KEY"]
     if os.environ.get("AI_API_KEY"):
-        merged["api_key"] = os.environ["AI_API_KEY"]
+        cfg["providers"][0]["api_key"] = os.environ["AI_API_KEY"]
     if os.environ.get("AI_BASE_URL"):
-        merged["base_url"] = os.environ["AI_BASE_URL"]
+        cfg["providers"][0]["base_url"] = os.environ["AI_BASE_URL"]
     if os.environ.get("AI_MODEL"):
-        merged["model"] = os.environ["AI_MODEL"]
-    return merged
+        cfg["providers"][0]["model"] = os.environ["AI_MODEL"]
+
+    # 4. 校验 active 指向有效模型
+    if cfg["active"] not in [p.get("id") for p in cfg["providers"]]:
+        cfg["active"] = cfg["providers"][0].get("id", "default")
+    return cfg
+
+
+def _save_ai_config(cfg):
+    import json as _json
+    with open(_ai_config_path(), "w", encoding="utf-8") as f:
+        _json.dump(cfg, f, ensure_ascii=False, indent=2)
+    _kv_set("parite:ai_config", cfg)
+
+
+def _mask_api_key(key):
+    key = key or ""
+    if len(key) > 8:
+        return key[:4] + "*" * (len(key) - 8) + key[-4:]
+    return ("*" * len(key)) if key else ""
+
+
+def _active_provider(cfg):
+    providers = cfg.get("providers") or []
+    if not providers:
+        return None
+    for p in providers:
+        if p.get("id") == cfg.get("active"):
+            return p
+    return providers[0]
+
+
+def _find_provider(cfg, provider_id):
+    for p in cfg.get("providers") or []:
+        if p.get("id") == provider_id:
+            return p
+    return None
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -1164,55 +2023,71 @@ def ai_config():
 
 @app.route("/api/ai/config", methods=["GET"])
 def api_get_ai_config():
-    """读取当前 AI 配置（api_key 脱敏显示）"""
+    """读取 AI 配置列表（api_key 脱敏显示）"""
     cfg = _load_ai_config()
-    api_key = cfg.get("api_key", "") or ""
-    # 脱敏处理：仅保留前4位和后4位，中间用星号代替
-    if len(api_key) > 8:
-        masked = api_key[:4] + "*" * (len(api_key) - 8) + api_key[-4:]
-    elif api_key:
-        masked = "*" * len(api_key)
-    else:
-        masked = ""
+    providers = []
+    for p in cfg.get("providers") or []:
+        providers.append({
+            "id": p.get("id", ""),
+            "name": p.get("name", ""),
+            "type": p.get("type", "openai"),
+            "base_url": p.get("base_url", ""),
+            "api_key": _mask_api_key(p.get("api_key", "")),
+            "model": p.get("model", ""),
+            "has_key": bool(p.get("api_key", "")),
+        })
+    active = _active_provider(cfg)
     return jsonify({
-        "base_url": cfg.get("base_url", ""),
-        "api_key": masked,
-        "model": cfg.get("model", ""),
-        "has_key": bool(api_key),
+        "providers": providers,
+        "active": cfg.get("active", ""),
+        "has_key": bool(active and active.get("api_key")),
     })
 
 
 @app.route("/api/ai/config", methods=["POST"])
 def api_save_ai_config():
-    """保存 AI 配置到 ai_config.json（需要管理员权限）"""
+    """保存多模型 AI 配置（需要管理员权限）"""
     # 管理员密码已设置时，必须登录才能修改
     cfg = _load_admin_config()
     if cfg.get("admin_password") and not _is_admin():
         return jsonify({"error": "需要管理员权限，请先登录", "need_login": True}), 403
 
     data = request.get_json(silent=True) or {}
-    base_url = (data.get("base_url") or "").strip()
-    api_key = (data.get("api_key") or "").strip()
-    model = (data.get("model") or "").strip()
+    providers = data.get("providers")
+    if not isinstance(providers, list) or not providers:
+        return jsonify({"error": "至少需要一个模型配置"}), 400
 
-    if not base_url or not model:
-        return jsonify({"error": "API 地址和模型名称不能为空"}), 400
-
-    # 如果 api_key 全部为星号或为空，则保留原密钥
     existing = _load_ai_config()
-    if api_key and set(api_key) == {"*"}:
-        api_key = existing.get("api_key", "")
-    elif not api_key:
-        api_key = existing.get("api_key", "")
+    existing_map = {p.get("id"): p for p in existing.get("providers") or []}
+    cleaned = []
+    for i, p in enumerate(providers):
+        pid = (p.get("id") or "").strip() or ("model_" + str(i + 1))
+        name = (p.get("name") or "").strip() or pid
+        ptype = (p.get("type") or "openai").strip() or "openai"
+        base_url = (p.get("base_url") or "").strip().rstrip("/")
+        model = (p.get("model") or "").strip()
+        api_key = (p.get("api_key") or "").strip()
+        if not base_url or not model:
+            return jsonify({"error": f"模型「{name}」的 API 地址和模型名称不能为空"}), 400
+        # 密钥留空（含脱敏星号）时保留原密钥
+        if not api_key or set(api_key) == {"*"}:
+            api_key = (existing_map.get(pid) or {}).get("api_key", "")
+        cleaned.append({
+            "id": pid,
+            "name": name,
+            "type": ptype,
+            "base_url": base_url,
+            "api_key": api_key,
+            "model": model,
+        })
 
-    cfg = {
-        "base_url": base_url,
-        "api_key": api_key,
-        "model": model,
-    }
+    active = (data.get("active") or "").strip()
+    if active not in [p["id"] for p in cleaned]:
+        active = cleaned[0]["id"]
+
+    new_cfg = {"active": active, "providers": cleaned}
     try:
-        with open(_ai_config_path(), "w", encoding="utf-8") as f:
-            _json.dump(cfg, f, ensure_ascii=False, indent=2)
+        _save_ai_config(new_cfg)
     except Exception as e:
         return jsonify({"error": f"保存失败：{e}"}), 500
 
@@ -1263,21 +2138,98 @@ def api_mail_test():
     return jsonify({"error": msg}), 200
 
 
+def _call_openai(provider, system_prompt, user_content, temperature=0.3):
+    """调用 OpenAI 兼容的 /chat/completions 接口（DeepSeek / GPT / 通义等）"""
+    import json as _json
+    import urllib.request
+    import urllib.error
+    base_url = (provider.get("base_url") or "https://api.deepseek.com/v1").rstrip("/")
+    url = base_url + "/chat/completions"
+    payload = {
+        "model": provider.get("model", "deepseek-chat"),
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ],
+        "temperature": temperature,
+    }
+    req = urllib.request.Request(
+        url,
+        data=_json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + (provider.get("api_key") or ""),
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = _json.loads(resp.read().decode("utf-8"))
+    return (
+        result.get("choices", [{}])[0]
+        .get("message", {})
+        .get("content", "")
+        .strip()
+    )
+
+
+def _call_anthropic(provider, system_prompt, user_content, temperature=0.3):
+    """调用 Anthropic 原生 /messages 接口（Claude 系列）"""
+    import json as _json
+    import urllib.request
+    import urllib.error
+    base_url = (provider.get("base_url") or "https://api.anthropic.com/v1").rstrip("/")
+    url = base_url + "/messages"
+    payload = {
+        "model": provider.get("model", "claude-sonnet-4-5"),
+        "max_tokens": 4096,
+        "temperature": temperature,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": user_content}],
+    }
+    req = urllib.request.Request(
+        url,
+        data=_json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "x-api-key": provider.get("api_key") or "",
+            "anthropic-version": "2023-06-01",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = _json.loads(resp.read().decode("utf-8"))
+    parts = result.get("content", []) or []
+    return "".join(c.get("text", "") for c in parts if c.get("type") == "text").strip()
+
+
+def _call_provider(provider, system_prompt, user_content, temperature=0.3):
+    """按模型类型分发请求"""
+    ptype = (provider.get("type") or "openai").lower()
+    if ptype == "anthropic":
+        return _call_anthropic(provider, system_prompt, user_content, temperature)
+    return _call_openai(provider, system_prompt, user_content, temperature)
+
+
 @app.route("/api/ai/ask", methods=["POST"])
 def api_ai_ask():
-    """AI 问答代理：调用 OpenAI 兼容的 /chat/completions 接口"""
+    """AI 问答代理：按模型类型调用 OpenAI / Anthropic 接口"""
     import json as _json
     import urllib.request
     import urllib.error
 
     cfg = _load_ai_config()
-    api_key = cfg.get("api_key", "")
-    if not api_key:
-        return jsonify({"error": "请先配置AI API密钥", "need_config": True}), 200
-
     data = request.get_json(silent=True) or {}
     question = (data.get("question") or "").strip()
     context = (data.get("context") or "").strip()
+    provider_id = (data.get("provider") or "").strip()
+
+    provider = _find_provider(cfg, provider_id)
+    if provider is None:
+        provider = _active_provider(cfg)
+    if not provider:
+        return jsonify({"error": "请先配置 AI 模型", "need_config": True}), 200
+    if not (provider.get("api_key") or ""):
+        return jsonify({"error": f"模型「{provider.get('name','')}」未配置 API 密钥，请先前往 AI 配置页面设置", "need_config": True}), 200
 
     if not question and not context:
         return jsonify({"error": "问题不能为空"}), 400
@@ -1298,37 +2250,8 @@ def api_ai_ask():
     else:
         user_content = question
 
-    base_url = cfg.get("base_url", "").rstrip("/")
-    model = cfg.get("model", "deepseek-chat")
-    url = f"{base_url}/chat/completions"
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-        ],
-        "temperature": 0.3,
-    }
-
     try:
-        req = urllib.request.Request(
-            url,
-            data=_json.dumps(payload).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            result = _json.loads(resp.read().decode("utf-8"))
-        answer = (
-            result.get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-            .strip()
-        )
+        answer = _call_provider(provider, system_prompt, user_content)
         if not answer:
             return jsonify({"error": "AI 返回内容为空"}), 200
         return jsonify({"answer": answer})

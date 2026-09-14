@@ -32,6 +32,7 @@
         </li>
         <li><a href="{{ url_for('comparison') }}" class="{% if active == 'comparison' %}active{% endif %}">对比思考</a></li>
         <li><a href="{{ url_for('futures') }}" class="{% if active == 'futures' %}active{% endif %}">期货</a></li>
+        <li><a href="{{ url_for('cme') }}" class="{% if active == 'cme' %}active{% endif %}">CME小窝</a></li>
         <li><a href="{{ url_for('bond') }}" class="{% if active == 'bond' %}active{% endif %}">债券</a></li>
         <li><a href="{{ url_for('credit') }}" class="{% if active == 'credit' %}active{% endif %}">信贷</a></li>
         <li><a href="{{ url_for('explorer') }}" class="{% if active == 'explorer' %}active{% endif %}">数据</a></li>
@@ -118,6 +119,7 @@
                 </div>
             </div>
             <div class="ai-input-area p5-input-area">
+                <select id="ai-provider" class="ai-provider" title="选择模型" style="display:none;flex:0 0 auto;max-width:150px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card,#161b22);color:var(--text);font-size:12px;"></select>
                 <input id="ai-input" class="ai-input p5-input" type="text" placeholder="跟蓝莓说点什么…">
                 <button id="ai-send" class="ai-send p5-send-btn" title="发送" aria-label="发送">
                     <span>SEND</span>
@@ -334,6 +336,18 @@
         configChecked = true;
         fetch('/api/ai/config').then(function (r) { return r.json(); }).then(function (data) {
             hasConfigured = !!data.has_key;
+            var providerSelect = document.getElementById('ai-provider');
+            if (providerSelect && data.providers && data.providers.length > 0) {
+                providerSelect.innerHTML = '';
+                data.providers.forEach(function (p) {
+                    var opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name || p.model || p.id;
+                    providerSelect.appendChild(opt);
+                });
+                providerSelect.value = data.active || '';
+                providerSelect.style.display = (data.providers.length > 1) ? '' : 'none';
+            }
             if (!hasConfigured) {
                 appendBotMsg('检测到尚未配置 AI 密钥，请先前往 ' +
                     '<a href="/ai-config">AI 配置页面</a> 设置 API 密钥后再使用。');
@@ -425,7 +439,11 @@
         fetch('/api/ai/ask', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: question, context: context || '' })
+            body: JSON.stringify({
+                question: question,
+                context: context || '',
+                provider: (document.getElementById('ai-provider') || {}).value || ''
+            })
         }).then(function (r) { return r.json(); }).then(function (data) {
             removeLoading();
             if (data.need_config) {
