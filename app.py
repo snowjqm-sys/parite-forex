@@ -18,11 +18,13 @@ import json as _json
 import smtplib
 import urllib.request
 import urllib.error
+from datetime import datetime
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from flask import Flask, render_template, jsonify, request, abort, session, redirect, url_for
 
 import data as DATA
+import cme_history as CME_HISTORY
 
 # 显式指定模板和静态文件目录，确保 Vercel serverless 环境也能正确找到
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1250,6 +1252,7 @@ _CME_COLLECTIONS = (
     "signals",       # 模块 A：Macro Score 信号
     "events",        # 模块 B：经济事件
     "scenarios",     # 模块 B：事件情景推演
+    "event_config",  # V2：Event 状态机 + Surprise 三情景阈值配置
     "proposals",     # 模块 C：交易计划
     "positions",     # 模块 D：持仓
     "journal",       # 模块 D：交易日志
@@ -1416,6 +1419,376 @@ def _save_scenarios(scenarios):
     _cme_save("scenarios", scenarios)
 
 
+# ---- V2：Event 状态机 + Surprise 三情景（确定性引擎，非 AI）----
+# 状态机只允许顺序推进；actual 落地时由系统自动置为 RELEASED。
+EVENT_STATUS_FLOW = ("SCHEDULED", "PRE_EVENT", "RELEASED", "POST_EVENT", "ARCHIVED")
+
+DEFAULT_EVENT_SCENARIO_CONFIG = {
+    "mode": "fixed_pp",        # 第一版：固定百分点阈值；未来升级 Standardized Surprise（Z-score）
+    "strongPositive": 0.2,     # surprise >= +0.2pp → HOT
+    "neutralUpper": 0.2,       # surprise <  +0.2pp → INLINE
+    "neutralLower": -0.2,      # surprise >  -0.2pp → INLINE
+    "strongNegative": -0.2,    # surprise <= -0.2pp → COOL
+    "zscore_std": None,        # 预留：历史预测误差标准差（surprise_z = surprise / std）
+}
+
+
+def _load_event_config():
+    return _cme_load("event_config", dict(DEFAULT_EVENT_SCENARIO_CONFIG))
+
+
+def _save_event_config(cfg):
+    _cme_save("event_config", cfg)
+
+
+# 事件类型模板：第一版只做 CPI 这一条完整链路；NFP/FOMC 在链路跑通后复制扩展。
+# 每个场景的 transmission / asset_impacts / counter_case / invalidation 均为确定性内容，
+# 数据公布后绝不重新编故事，只冻结并标记触发的情景。
+EVENT_TYPE_DEFS = {
+    "CPI": {
+        "label": "US CPI",
+        "country": "US",
+        "metric": "Headline CPI YoY",
+        "unit": "%",
+        "sourceId": "bloomberg-econ",
+        "transmission_map": [
+            "CPI", "Fed Expectations", "US 2Y Yield", "DXY", "Gold / EUR / NQ",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "HOT CPI",
+                "tag": "HAWKISH SURPRISE",
+                "trigger_rule": "surprise >= +0.2 percentage points",
+                "transmission": [
+                    "Inflation surprise ↑",
+                    "Expected Fed easing ↓",
+                    "US 2Y yield ↑",
+                    "USD ↑ → EUR/USD ↓ / Gold ↓",
+                    "High-duration equity valuation pressure ↑ → Nasdaq ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "Gold", "direction": "down", "label": "↓"},
+                    {"asset": "DXY", "direction": "up", "label": "↑"},
+                    {"asset": "EUR/USD", "direction": "down", "label": "↓"},
+                    {"asset": "Nasdaq", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "市场可能已在 CPI 前定价鹰派，公布后出现 buy-the-news；或核心分项意外温和，削弱整体 surprise 的传导。",
+                "invalidation": ["US 2Y 未上行", "DXY 未走强", "核心 CPI 分项温和"],
+            },
+            {
+                "key": "INLINE",
+                "name": "INLINE",
+                "tag": "MIXED / LIMITED POLICY SURPRISE",
+                "trigger_rule": "surprise 落在 ±0.2 percentage points 之间",
+                "transmission": [
+                    "Macro event itself does not provide a sufficiently large surprise.",
+                    "Price action depends more on positioning, revisions, core CPI components and existing market expectations.",
+                ],
+                "asset_impacts": [
+                    {"asset": "Gold", "direction": "flat", "label": "震荡"},
+                    {"asset": "DXY", "direction": "flat", "label": "震荡"},
+                    {"asset": "EUR/USD", "direction": "flat", "label": "震荡"},
+                    {"asset": "Nasdaq", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使 headline inline，核心分项或季调修正仍可能主导即时反应。",
+                "invalidation": ["US 2Y 出现 >10bp 方向性波动", "DXY 突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "COOL CPI",
+                "tag": "DOVISH SURPRISE",
+                "trigger_rule": "surprise <= -0.2 percentage points",
+                "transmission": [
+                    "Inflation surprise ↓",
+                    "Expected Fed easing ↑",
+                    "US 2Y yield ↓",
+                    "USD ↓ → EUR/USD ↑ / Gold ↑",
+                    "Discount rate ↓ → Nasdaq support ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "Gold", "direction": "up", "label": "↑"},
+                    {"asset": "DXY", "direction": "down", "label": "↓"},
+                    {"asset": "EUR/USD", "direction": "up", "label": "↑"},
+                    {"asset": "Nasdaq", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若通胀预期锚定牢固或核心分项仍强，市场可能对 headline 下修反应平淡。",
+                "invalidation": ["US 2Y 未下行", "DXY 未走弱"],
+            },
+        ],
+    },
+}
+
+
+def _match_scenario(surprise, cfg=None):
+    """根据 surprise 确定性匹配情景 key：HOT / INLINE / COOL；无法计算返回 None。"""
+    cfg = cfg or _load_event_config()
+    try:
+        s = float(surprise)
+    except (TypeError, ValueError):
+        return None
+    if s >= float(cfg.get("strongPositive", 0.2)):
+        return "HOT"
+    if s <= float(cfg.get("strongNegative", -0.2)):
+        return "COOL"
+    return "INLINE"
+
+
+def _generate_event_scenarios(ev):
+    """根据事件类型模板为事件生成 3 个情景（幂等：已存在则跳过）。"""
+    tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper())
+    if not tpl:
+        return []
+    scenarios = _load_scenarios()
+    existing = [s for s in scenarios if s.get("event_id") == ev.get("id")]
+    if existing:
+        return existing
+    created = []
+    for sc_tpl in tpl["scenarios"]:
+        sc = {
+            "id": _new_id(),
+            "event_id": ev["id"],
+            "scenario_key": sc_tpl["key"],
+            "scenario_name": sc_tpl["name"],
+            "tag": sc_tpl["tag"],
+            "trigger_rule": sc_tpl["trigger_rule"],
+            "transmission": list(sc_tpl.get("transmission", [])),
+            "asset_impacts": list(sc_tpl.get("asset_impacts", [])),
+            "counter_case": sc_tpl.get("counter_case", ""),
+            "invalidation": list(sc_tpl.get("invalidation", [])),
+            "triggered": False,
+            "frozen_at": None,
+            "created_at": _now_ms(),
+        }
+        scenarios.append(sc)
+        created.append(sc)
+    _save_scenarios(scenarios)
+    return created
+
+
+def _scenario_summary(event_id):
+    """返回某事件的 3 情景摘要（用于 before_release 冻结）。"""
+    return [{"key": s.get("scenario_key"), "name": s.get("scenario_name"),
+             "tag": s.get("tag"), "trigger_rule": s.get("trigger_rule")}
+            for s in _load_scenarios() if s.get("event_id") == event_id]
+
+
+def _freeze_scenarios(ev, matched_key=None):
+    """数据公布后冻结全部情景；被匹配的情景打上 triggered 标记。"""
+    scenarios = _load_scenarios()
+    frozen = _now_ms()
+    changed = False
+    for sc in scenarios:
+        if sc.get("event_id") != ev.get("id"):
+            continue
+        if not sc.get("frozen_at"):
+            sc["frozen_at"] = frozen
+        sc["triggered"] = bool(sc.get("scenario_key") == matched_key)
+        changed = True
+    if changed:
+        _save_scenarios(scenarios)
+
+
+# ---- 模块 2B：Historical Event Study（确定性统计，非 AI）----
+# 数据源为 cme_history.py 参考数据集（sourceId="reference-dataset"，用于纵向切片演示与验收）。
+# 分钟级收益（5m/30m/1h）数据源明确不可用：一律返回 "30m data unavailable"，绝不伪造。
+STUDY_INSTRUMENTS = ("GC", "DX", "6E", "NQ")
+STUDY_HORIZONS = (
+    ("30m", "return_30m"),
+    ("2h", "return_2h"),
+    ("1d", "return_1d"),
+    ("3d", "return_3d"),
+    ("5d", "return_5d"),
+)
+STUDY_MINUTE_FIELDS = {"return_5m", "return_30m", "return_1h"}
+
+
+def _ev_evidence_level(n):
+    """证据质量分级：n<5 VERY LOW；5-9 LOW；10-19 MEDIUM；>=20 HIGHER。"""
+    if n < 5:
+        return "VERY LOW"
+    if n < 10:
+        return "LOW"
+    if n < 20:
+        return "MEDIUM"
+    return "HIGHER"
+
+
+def _ev_median(values):
+    if not values:
+        return None
+    s = sorted(values)
+    m = len(s)
+    if m % 2 == 1:
+        return s[m // 2]
+    return (s[m // 2 - 1] + s[m // 2]) / 2.0
+
+
+def _ev_quantile(values, q):
+    """线性插值分位数；数据不足时返回 None。"""
+    s = sorted(values)
+    n = len(s)
+    if n == 0:
+        return None
+    pos = (n - 1) * q
+    lo = int(math.floor(pos))
+    hi = int(math.ceil(pos))
+    if lo == hi:
+        return s[lo]
+    return s[lo] + (s[hi] - s[lo]) * (pos - lo)
+
+
+def _ev_stats(values):
+    """对一组历史收益（%）计算描述统计；空样本返回 None。"""
+    n = len(values)
+    if n == 0:
+        return None
+    mean = sum(values) / n
+    med = _ev_median(values)
+    positive = sum(1 for v in values if v > 0)
+    negative = n - positive
+    hit_rate = round(positive / n * 100, 1)
+    return {
+        "n": n,
+        "mean": round(mean, 4),
+        "median": round(med, 4),
+        "positive": positive,
+        "negative": negative,
+        "hit_rate": hit_rate,
+        "q25": round(_ev_quantile(values, 0.25), 4),
+        "q75": round(_ev_quantile(values, 0.75), 4),
+        "min": round(min(values), 4),
+        "max": round(max(values), 4),
+        "evidence": _ev_evidence_level(n),
+    }
+
+
+def _ev_tendency(day_stats):
+    """依据 1d 中位数给出历史倾向标签（描述历史样本，非概率预测）。"""
+    if not day_stats or day_stats.get("median") is None:
+        return "Insufficient data"
+    m = day_stats["median"]
+    if m >= 0.5:
+        return "Bullish"
+    if m >= 0.15:
+        return "Moderately Bullish"
+    if m > -0.15:
+        return "Mixed / Neutral"
+    if m > -0.5:
+        return "Moderately Bearish"
+    return "Bearish"
+
+
+def _study_filter_for_scenario(scenario_key, cfg=None):
+    """根据匹配情景返回历史检索过滤条件（阈值与 DEFAULT_EVENT_SCENARIO_CONFIG 一致）。"""
+    cfg = cfg or _load_event_config()
+    sp = float(cfg.get("strongPositive", 0.2))
+    sn = float(cfg.get("strongNegative", -0.2))
+    if scenario_key == "HOT":
+        return {"operator": ">=", "threshold": sp, "label": "surprise >= +%.1fpp" % sp}
+    if scenario_key == "COOL":
+        return {"operator": "<=", "threshold": sn, "label": "surprise <= -%.1fpp" % abs(sn)}
+    return {"operator": "between", "threshold": None, "label": "-%.1fpp < surprise < +%.1fpp" % (abs(sn), sp)}
+
+
+def _select_history_events(event_type, scenario_key, cfg=None):
+    """从参考数据集筛选符合条件的历史事件；返回 (事件列表, 过滤条件)。"""
+    cfg = cfg or _load_event_config()
+    f = _study_filter_for_scenario(scenario_key, cfg)
+    sp = float(cfg.get("strongPositive", 0.2))
+    sn = float(cfg.get("strongNegative", -0.2))
+    selected = []
+    for ev in CME_HISTORY.MACRO_EVENT_HISTORY:
+        if ev.get("event_type") != event_type:
+            continue
+        try:
+            s = float(ev.get("surprise"))
+        except (TypeError, ValueError):
+            continue
+        if f["operator"] == ">=":
+            if s >= sp:
+                selected.append(ev)
+        elif f["operator"] == "<=":
+            if s <= sn:
+                selected.append(ev)
+        else:
+            if sn < s < sp:
+                selected.append(ev)
+    return selected, f
+
+
+def _compute_event_study(event_id):
+    """模块 2B 核心：确定性计算历史事件研究统计 + Historical Path vs Today。"""
+    events = _load_events()
+    ev = next((e for e in events if e.get("id") == event_id), None)
+    if ev is None:
+        return {"error": "事件不存在"}
+    event_type = (ev.get("event_type") or "").upper()
+    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    if not event_type or not scenario_key:
+        return {"error": "无法确定匹配情景，无法检索历史对照"}
+    selected, filters = _select_history_events(event_type, scenario_key)
+    selected_ids = {e["event_id"] for e in selected}
+    returns_map = {(r["event_id"], r.get("instrument")): r for r in CME_HISTORY.EVENT_ASSET_RETURN
+                   if r.get("event_id") in selected_ids}
+    instruments = {}
+    for inst in STUDY_INSTRUMENTS:
+        horizons = {}
+        inst_name = CME_CONTRACT_SPECS[inst]["name"]
+        for label, field in STUDY_HORIZONS:
+            if field in STUDY_MINUTE_FIELDS:
+                horizons[label] = {"unavailable": True, "reason": "30m data unavailable"}
+                continue
+            values = []
+            for eid in selected_ids:
+                rec = returns_map.get((eid, inst_name))
+                v = rec.get(field) if rec else None
+                if v is not None:
+                    try:
+                        values.append(float(v))
+                    except (TypeError, ValueError):
+                        pass
+            stats = _ev_stats(values)
+            horizons[label] = stats if stats else {"n": 0, "unavailable": True}
+        day_stats = horizons.get("1d")
+        instruments[inst] = {
+            "horizons": horizons,
+            "tendency": _ev_tendency(day_stats),
+            "evidence": _ev_evidence_level((day_stats or {}).get("n", 0)),
+        }
+    # Historical Path vs Today：今日已实现变动来自事件上的 realized_moves（人工记录或快照），缺失则为 None。
+    realized = ev.get("realized_moves") or {}
+    path_vs_today = {}
+    for inst in STUDY_INSTRUMENTS:
+        rows = []
+        for label, _field in STUDY_HORIZONS:
+            h = instruments[inst]["horizons"].get(label) or {}
+            hist_med = h.get("median") if h.get("median") is not None and not h.get("unavailable") else None
+            today_val = None
+            rv = realized.get(inst) or {}
+            if label in rv and rv[label] is not None:
+                try:
+                    today_val = round(float(rv[label]), 4)
+                except (TypeError, ValueError):
+                    today_val = None
+            rows.append({
+                "horizon": label,
+                "historical_median": hist_med,
+                "today": today_val,
+                "unavailable": bool(h.get("unavailable")),
+            })
+        path_vs_today[inst] = rows
+    return {
+        "event_id": event_id,
+        "event_type": event_type,
+        "matched_scenario": scenario_key,
+        "filters": filters,
+        "sample_ids": sorted(selected_ids),
+        "instruments": instruments,
+        "path_vs_today": path_vs_today,
+    }
+
+
 # ---- 模块 C：Trade Planner ----
 def _load_proposals():
     return _cme_load("proposals", [])
@@ -1423,6 +1796,188 @@ def _load_proposals():
 
 def _save_proposals(proposals):
     _cme_save("proposals", proposals)
+
+
+# ---- V2：Trade Proposal 状态机 + Scenario Payoff（确定性引擎，非 AI）----
+# 状态机：DRAFT → REVIEW → APPROVED → EXECUTED → CLOSED → REVIEWED
+# 终态：REJECTED / INVALIDATED / CANCELLED；只有人工能推进状态，系统绝不自动下单。
+TRADE_PROPOSAL_FLOW = ("DRAFT", "REVIEW", "APPROVED", "EXECUTED", "CLOSED", "REVIEWED")
+TRADE_PROPOSAL_TERMINAL = ("REJECTED", "INVALIDATED", "CANCELLED")
+
+# CME 合约规格：用于 Scenario Payoff 的确定性 P&L 计算（AI 不能触碰）。
+CME_CONTRACT_SPECS = {
+    "GC": {"name": "Gold",    "tick_size": 0.1,     "tick_value": 10.0,   "reference_price": 2900.0,  "margin_per_contract": 9000.0},
+    "DX": {"name": "DXY",     "tick_size": 0.005,   "tick_value": 5.0,    "reference_price": 103.0,   "margin_per_contract": 2200.0},
+    "6E": {"name": "EUR/USD", "tick_size": 0.00005, "tick_value": 6.25,   "reference_price": 1.08,    "margin_per_contract": 2750.0},
+    "NQ": {"name": "Nasdaq",  "tick_size": 0.25,    "tick_value": 5.0,    "reference_price": 20500.0, "margin_per_contract": 19800.0},
+}
+CME_CONTRACT_SPECS_BY_NAME = {v["name"].upper(): k for k, v in CME_CONTRACT_SPECS.items()}
+CME_COMMISSION_PER_SIDE = 2.50
+
+# ---- V2.1 §18：Position Sizing Engine（确定性引擎；AI 只能解释，不能发明数字）----
+# 证据质量乘数：把风险上限按历史样本的可靠程度下调（§18：MEDIUM → 6 手降为 4 手）。
+EVIDENCE_MULTIPLIERS = {
+    "HIGHER": 1.00,
+    "MEDIUM": 0.75,
+    "LOW": 0.50,
+    "VERY LOW": 0.25,
+}
+# 市场确认乘数（§6.7）：市场是否在确认该宏观逻辑；NO TRADE 表示不应开仓。
+CONFIRMATION_MULTIPLIERS = {
+    "CONFIRMED": 1.00,
+    "PARTIALLY CONFIRMED": 0.75,
+    "MIXED": 0.50,
+    "DIVERGING": 0.25,
+    "NO TRADE": 0.00,
+}
+# 宏观主题重叠乘数：新方向与现有持仓共享同一宏观逻辑时进一步下调（§18：4 手降为 3 手）。
+CONCENTRATION_OVERLAP_MULTIPLIER = 0.75
+
+# 宏观主题标签：用于确定性识别“新提案 vs 现有持仓”是否押注同一宏观逻辑。
+# 注意：只描述方向性主题归属，不构成任何概率或预测。
+CME_MACRO_THEMES = {
+    "GC": {"long": ("US rates lower", "USD weaker"),
+           "short": ("US rates higher", "USD stronger")},
+    "NQ": {"long": ("US rates lower", "Risk appetite"),
+           "short": ("US rates higher", "Risk aversion")},
+    "DX": {"long": ("USD stronger", "US rates higher"),
+           "short": ("USD weaker", "US rates lower")},
+    "6E": {"long": ("USD weaker", "US rates lower"),
+           "short": ("USD stronger", "US rates higher")},
+}
+
+
+def _resolve_symbol(raw):
+    """接受 ticker（GC/DX/6E/NQ）或显示名（Gold/DXY/EUR/USD/Nasdaq），返回规范 ticker。"""
+    s = (raw or "").strip()
+    if not s:
+        return None
+    s_up = s.upper()
+    if s_up in CME_CONTRACT_SPECS:
+        return s_up
+    return CME_CONTRACT_SPECS_BY_NAME.get(s_up)
+
+
+def _proposal_transitions(current):
+    """返回从当前状态允许迁移到的状态集合（状态机校验）。"""
+    return {
+        "DRAFT": ("REVIEW", "CANCELLED"),
+        "REVIEW": ("APPROVED", "REJECTED", "CANCELLED"),
+        "APPROVED": ("EXECUTED", "INVALIDATED", "CANCELLED"),
+        "EXECUTED": ("CLOSED", "INVALIDATED"),
+        "CLOSED": ("REVIEWED",),
+        "REJECTED": (),
+        "INVALIDATED": (),
+        "CANCELLED": (),
+    }.get(current, ())
+
+
+def _proposal_payoff(event_id, symbol, direction, qty):
+    """确定性计算 Scenario Payoff：从历史研究的 1d q25/median/q75 出发，
+    用 CME 合约规格换算 P&L：price_move ÷ tick_size × tick_value × qty − 佣金。"""
+    spec = CME_CONTRACT_SPECS.get(symbol)
+    if not spec:
+        return None
+    study = _compute_event_study(event_id)
+    if "error" in study:
+        return None
+    inst = (study.get("instruments") or {}).get(symbol) or {}
+    day = (inst.get("horizons") or {}).get("1d") or {}
+    q25, med, q75 = day.get("q25"), day.get("median"), day.get("q75")
+    if q25 is None or med is None or q75 is None:
+        return None
+    try:
+        qty = max(1, int(qty or 1))
+    except (TypeError, ValueError):
+        qty = 1
+    base = float(spec["reference_price"])
+    tick_size = float(spec["tick_size"])
+    tick_value = float(spec["tick_value"])
+    commission_total = CME_COMMISSION_PER_SIDE * 2 * qty
+    sign = -1 if direction == "short" else 1
+
+    def net_pnl(move_pct):
+        gross = move_pct / 100.0 * base / tick_size * tick_value * qty
+        return round(gross * sign - commission_total, 2)
+
+    return {
+        "symbol": symbol,
+        "code": symbol,
+        "name": spec.get("name", symbol),
+        "qty": qty,
+        "direction": direction,
+        "tick_size": tick_size,
+        "tick_value": tick_value,
+        "reference_price": base,
+        "commission_per_side": CME_COMMISSION_PER_SIDE,
+        "commission_total": round(commission_total, 2),
+        "bear": {"move_pct": q25, "pnl": net_pnl(q25)},
+        "base": {"move_pct": med, "pnl": net_pnl(med)},
+        "bull": {"move_pct": q75, "pnl": net_pnl(q75)},
+    }
+
+
+def _proposal_default_fields(ev, study, symbol, direction, qty):
+    """基于已冻结的事件研究生成确定性默认内容（thesis / 五问 / invalidation / origin）。"""
+    inst = (study.get("instruments") or {}).get(symbol) or {}
+    day = (inst.get("horizons") or {}).get("1d") or {}
+    med = day.get("median")
+    hit = day.get("hit_rate")
+    n = day.get("n") or 0
+    evidence = day.get("evidence") or "N/A"
+    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    scenario_label = scenario_key or "—"
+    surprise = ev.get("surprise")
+    actual = ev.get("actual")
+    consensus = ev.get("consensus")
+    previous = ev.get("previous")
+    # 从事件类型模板取匹配情景的 invalidation 作为基准
+    tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper())
+    invalidation_base = []
+    if tpl:
+        for sc in tpl.get("scenarios", []):
+            if sc.get("key") == scenario_key:
+                invalidation_base = list(sc.get("invalidation") or [])
+                break
+    inv_str = "; ".join(invalidation_base) if invalidation_base else "Price action diverges from the matched scenario path."
+    thesis = (
+        "US CPI actual {a}% vs consensus {c}% (surprise {s}pp) matched {scenario}. "
+        "Historical {sym} 1D path after {n} comparable events: median {med}%, hit rate {hit}% ({ev} evidence). "
+        "Proposed {dir} {q} contract(s) toward the historical median path."
+    ).format(a=actual, c=consensus, s=surprise, scenario=scenario_label, sym=symbol,
+             n=n, med=med if med is not None else "n/a", hit=hit if hit is not None else "n/a",
+             ev=evidence, dir=direction, q=qty)
+    return {
+        "origin": {
+            "event_id": ev.get("id"),
+            "event_type": ev.get("event_type"),
+            "scenario": scenario_label,
+            "surprise": surprise,
+        },
+        "thesis": thesis,
+        "five_questions": {
+            "why": ("After {n} comparable {scenario} events, {sym} 1D median {med}% "
+                    "with {hit}% hit rate ({ev} evidence).").format(
+                        n=n, scenario=scenario_label, sym=symbol, med=med, hit=hit, ev=evidence),
+            "why_now": ("Event released at {t}; entering the immediate post-release window "
+                        "before the move is fully priced.").format(t=ev.get("scheduled_at") or "—"),
+            "proves_wrong": ("{inv}").format(inv=inv_str),
+            "max_loss": ("Stop out if loss exceeds the 1D Q25 range for {q} contract(s) "
+                         "plus commissions.").format(q=qty),
+            "reassess_at": ("Reassess at the 1D horizon mark; time-stop if not working."),
+        },
+        "invalidation": {
+            "price_stop": ("Close if {sym} price moves against entry beyond the 1D Q25/Q75 "
+                           "range.").format(sym=symbol),
+            "macro_invalidation": inv_str,
+            "time_stop": "No overnight hold beyond the 1D reassessment window.",
+        },
+        "event_data": {
+            "actual": actual, "consensus": consensus, "previous": previous,
+            "surprise": surprise, "scenario": scenario_label,
+            "hist_1d_median": med, "hist_1d_hit_rate": hit, "hist_1d_n": n,
+        },
+    }
 
 
 # ---- 模块 D：Risk Engine ----
@@ -1444,13 +1999,24 @@ def _save_journal(journal):
 
 def _load_risk_config():
     default = {
-        "account_equity": 100000.0,      # 初始权益（模拟账户）
-        "max_contracts_per_day": 10,     # 每日最大交易次数（比赛规则）
+        "account_equity": 1000000.0,     # 初始权益（CME 2026 模拟账户 $1,000,000）
+        "max_contracts_per_day": 10,     # 每日最低/上限成交 10 张合约（比赛规则）
         "max_concentration_pct": 40.0,   # 单品种集中度红线（%）
-        "max_daily_loss_pct": 2.0,       # 单日亏损红线（%）
+        "max_daily_loss_pct": 20.0,      # 单日亏损锁定红线（CME 官方 20%）
         "margin_pct": 10.0,              # 估算保证金比例（%）
+        "competition_open": True,        # 赛程是否进行中（可人工开关）
+        "final_day_liquidation": False,  # 是否为最后一日清仓窗口
+        "contract_near_expiry": False,   # 合约是否临近到期
+        "competition_timezone": "America/Chicago",  # CME 交易日时区
+        "trading_date": None,            # 人工指定当前比赛交易日（None 时按时区推导）
+        "risk_budget_pct": 0.30,         # 单笔交易风险预算（占权益 %，V2.1 §18）
+        "default_stop_pct": 0.50,        # 无历史止损参考时的默认止损距离（%）
+        "slippage_ticks": 0.0,           # 滑点缓冲（tick 数，计入每手风险）
+        "sizing_multipliers": {},        # 仓位乘数覆盖（§6.2「不要硬编码」）
     }
-    return _cme_load("risk_config", default)
+    merged = dict(default)
+    merged.update(_cme_load("risk_config", {}) or {})
+    return merged
 
 
 def _save_risk_config(cfg):
@@ -1526,6 +2092,21 @@ def api_cme_delete_signal():
 @app.route("/api/cme/events", methods=["GET"])
 def api_cme_get_events():
     events = _load_events()
+    scenarios = _load_scenarios()
+    for ev in events:
+        ev_scenarios = [s for s in scenarios if s.get("event_id") == ev.get("id")]
+        if not ev_scenarios:
+            ev_scenarios = _generate_event_scenarios(ev)   # 老数据回填：自动生成三情景
+        ev["scenarios"] = ev_scenarios
+        tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper())
+        if not ev.get("status"):
+            ev["status"] = "SCHEDULED"
+        if tpl and not ev.get("metric"):
+            ev["metric"] = tpl["metric"]
+        if tpl and not ev.get("unit"):
+            ev["unit"] = tpl["unit"]
+        if tpl and not ev.get("sourceId"):
+            ev["sourceId"] = tpl["sourceId"]
     events.sort(key=lambda e: e.get("scheduled_at", ""), reverse=True)
     return jsonify(events)
 
@@ -1537,10 +2118,15 @@ def api_cme_add_event():
     scheduled_at = (data.get("scheduled_at") or "").strip()
     if not event_type or not scheduled_at:
         return jsonify({"error": "event_type 和 scheduled_at 不能为空"}), 400
+    tpl = EVENT_TYPE_DEFS.get(event_type.upper())
     ev = {
         "id": _new_id(),
         "event_type": event_type,
-        "country": (data.get("country") or "").strip(),
+        "status": "SCHEDULED",                       # V2 状态机起点
+        "country": (data.get("country") or (tpl or {}).get("country") or "").strip(),
+        "metric": (data.get("metric") or (tpl or {}).get("metric") or "").strip(),
+        "unit": (data.get("unit") or (tpl or {}).get("unit") or "%").strip(),
+        "sourceId": (data.get("sourceId") or (tpl or {}).get("sourceId") or "").strip(),
         "scheduled_at": scheduled_at,
         "consensus": data.get("consensus"),
         "previous": data.get("previous"),
@@ -1554,6 +2140,8 @@ def api_cme_add_event():
     events = _load_events()
     events.append(ev)
     _save_events(events)
+    generated = _generate_event_scenarios(ev)
+    ev["scenarios"] = generated
     return jsonify({"success": True, "event": ev})
 
 
@@ -1562,28 +2150,85 @@ def api_cme_delete_event(event_id):
     events = _load_events()
     events = [e for e in events if e.get("id") != event_id]
     _save_events(events)
+    scenarios = _load_scenarios()
+    scenarios = [s for s in scenarios if s.get("event_id") != event_id]
+    _save_scenarios(scenarios)
     return jsonify({"success": True})
 
 
 @app.route("/api/cme/events/<event_id>", methods=["PATCH"])
 def api_cme_update_event(event_id):
-    """事件落地后更新 actual，自动计算 surprise。"""
+    """事件落地后更新 actual：
+    1) 计算 surprise；2) 确定性匹配情景；3) 冻结全部情景（不重写）；4) 状态推进 RELEASED。"""
     data = request.get_json(silent=True) or {}
     events = _load_events()
     for ev in events:
         if ev.get("id") == event_id:
-            if "actual" in data:
+            if "consensus" in data or "previous" in data:
+                if ev.get("status") not in ("SCHEDULED", "PRE_EVENT"):
+                    return jsonify({"error": "事件已发布，consensus/previous 不可修改"}), 400
+                try:
+                    if "consensus" in data and data["consensus"] is not None:
+                        ev["consensus"] = float(data["consensus"])
+                    if "previous" in data and data["previous"] is not None:
+                        ev["previous"] = float(data["previous"])
+                except (TypeError, ValueError):
+                    return jsonify({"error": "consensus/previous 必须为数字"}), 400
+            if "actual" in data and data["actual"] is not None:
                 ev["actual"] = data["actual"]
-                if ev.get("consensus") is not None and data["actual"] is not None:
+                if ev.get("consensus") is not None:
                     try:
-                        ev["surprise"] = float(data["actual"]) - float(ev["consensus"])
+                        ev["surprise"] = round(float(data["actual"]) - float(ev["consensus"]), 4)
                     except (TypeError, ValueError):
                         ev["surprise"] = None
+                matched = _match_scenario(ev.get("surprise"))
+                ev["matched_scenario"] = matched
+                ev["status"] = "RELEASED" if ev.get("status") not in ("ARCHIVED",) else ev.get("status")
+                _freeze_scenarios(ev, matched)
             if "note" in data:
                 ev["note"] = data["note"]
+            if "realized_moves" in data and isinstance(data["realized_moves"], dict):
+                ev["realized_moves"] = data["realized_moves"]
+            if "status" in data and data["status"]:
+                allowed = EVENT_STATUS_FLOW
+                new_status = str(data["status"]).upper()
+                if new_status not in allowed:
+                    return jsonify({"error": f"状态必须为 {', '.join(allowed)}"}), 400
+                ev["status"] = new_status
             _save_events(events)
+            ev["scenarios"] = [s for s in _load_scenarios() if s.get("event_id") == ev.get("id")]
             return jsonify({"success": True, "event": ev})
     return jsonify({"error": "事件不存在"}), 404
+
+
+# ---- V2：Event Scenario Config（阈值可配置，预留 Z-score）----
+@app.route("/api/cme/event-config", methods=["GET"])
+def api_cme_get_event_config():
+    return jsonify({"config": _load_event_config()})
+
+
+@app.route("/api/cme/event-config", methods=["POST"])
+def api_cme_set_event_config():
+    data = request.get_json(silent=True) or {}
+    cfg = data.get("config") or {}
+    current = _load_event_config()
+    try:
+        if "strongPositive" in cfg:
+            current["strongPositive"] = float(cfg["strongPositive"])
+        if "strongNegative" in cfg:
+            current["strongNegative"] = float(cfg["strongNegative"])
+        if "neutralUpper" in cfg:
+            current["neutralUpper"] = float(cfg["neutralUpper"])
+        if "neutralLower" in cfg:
+            current["neutralLower"] = float(cfg["neutralLower"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "阈值必须为数字"}), 400
+    if "mode" in cfg:
+        current["mode"] = str(cfg["mode"])
+    if "zscore_std" in cfg:
+        current["zscore_std"] = cfg["zscore_std"]
+    _save_event_config(current)
+    return jsonify({"success": True, "config": current})
 
 
 @app.route("/api/cme/events/<event_id>/scenarios", methods=["GET"])
@@ -1626,14 +2271,15 @@ def api_cme_add_scenario():
 
 @app.route("/api/cme/events/<event_id>/study", methods=["GET"])
 def api_cme_event_study(event_id):
-    """返回该事件的历史事件研究统计（若有）。"""
-    scenarios = [s for s in _load_scenarios() if s.get("event_id") == event_id]
-    studies = [s.get("historical_stats") for s in scenarios if s.get("historical_stats")]
-    return jsonify({"event_id": event_id, "studies": studies})
+    """返回该事件的历史事件研究统计（模块 2B，确定性计算，非 AI）。"""
+    study = _compute_event_study(event_id)
+    if "error" in study:
+        return jsonify(study), 404
+    return jsonify({"event_id": event_id, "study": study})
 
 
 # ============================================================
-# API：模块 C —— Trade Planner（仅 proposal，人工 approve）
+# API：模块 C —— Trade Planner（V2：状态机 + 五问 + Invalidation + Scenario Payoff）
 # ============================================================
 @app.route("/api/cme/proposals", methods=["GET"])
 def api_cme_get_proposals():
@@ -1644,67 +2290,818 @@ def api_cme_get_proposals():
 
 @app.route("/api/cme/proposals", methods=["POST"])
 def api_cme_add_proposal():
+    """V2：基于已冻结事件研究创建提案。thesis / 五问 / invalidation / payoff
+    全部由结构化数据确定性生成，AI 不能编造；允许人工覆盖文本字段。"""
     data = request.get_json(silent=True) or {}
+    event_id = (data.get("event_id") or "").strip()
     symbol = (data.get("symbol") or "").strip()
     direction = (data.get("direction") or "").strip()
-    thesis = (data.get("thesis") or "").strip()
-    if not symbol or not direction:
-        return jsonify({"error": "symbol 和 direction 不能为空"}), 400
+    if not event_id or not symbol or not direction:
+        return jsonify({"error": "event_id / symbol / direction 不能为空"}), 400
+    if direction not in ("long", "short"):
+        return jsonify({"error": "direction 必须是 long 或 short"}), 400
+    symbol = _resolve_symbol(symbol)
+    if not symbol:
+        return jsonify({"error": "不支持的合约品种"}), 400
+    events = _load_events()
+    ev = next((e for e in events if e.get("id") == event_id), None)
+    if ev is None:
+        return jsonify({"error": "事件不存在"}), 404
+    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    if ev.get("status") not in ("RELEASED", "POST_EVENT") or not scenario_key:
+        return jsonify({"error": "事件尚未发布/匹配情景，无法创建提案"}), 400
+    study = _compute_event_study(event_id)
+    if "error" in study:
+        return jsonify({"error": study["error"]}), 400
+    inst = (study.get("instruments") or {}).get(symbol) or {}
+    day = (inst.get("horizons") or {}).get("1d") or {}
+    if not day.get("n") or day.get("median") is None:
+        return jsonify({"error": "该品种缺少 1D 历史研究数据，无法创建提案"}), 400
+    try:
+        qty = max(1, int(data.get("qty", 1)))
+    except (TypeError, ValueError):
+        qty = 1
+    defaults = _proposal_default_fields(ev, study, symbol, direction, qty)
+    five_questions = dict(defaults["five_questions"])
+    fq = data.get("five_questions")
+    if isinstance(fq, dict):
+        for k in five_questions:
+            if (fq.get(k) or "").strip():
+                five_questions[k] = fq[k].strip()
+    invalidation = dict(defaults["invalidation"])
+    inv = data.get("invalidation")
+    if isinstance(inv, dict):
+        for k in invalidation:
+            if (inv.get(k) or "").strip():
+                invalidation[k] = inv[k].strip()
     proposal = {
         "id": _new_id(),
         "created_at": _now_ms(),
+        "updated_at": _now_ms(),
+        "status": "DRAFT",
+        "event_id": event_id,
         "symbol": symbol,
         "direction": direction,
-        "thesis": thesis,
-        "entry_condition": (data.get("entry_condition") or "").strip(),
-        "size_hint": data.get("size_hint"),
-        "stop_rule": (data.get("stop_rule") or "").strip(),
-        "horizon": (data.get("horizon") or "").strip(),
-        "confidence": data.get("confidence"),
-        "owner": (data.get("owner") or "").strip(),
-        "status": "pending",
+        "qty": qty,
+        "origin": dict(defaults["origin"]),
+        "thesis": (data.get("thesis") or "").strip() or defaults["thesis"],
+        "five_questions": five_questions,
+        "invalidation": invalidation,
+        "scenario_payoff": _proposal_payoff(event_id, symbol, direction, qty),
+        "event_data": dict(defaults["event_data"]),
+        "risk_check": None,
         "post_trade_note": "",
+        "review": None,
     }
     proposals = _load_proposals()
     proposals.append(proposal)
     _save_proposals(proposals)
-    return jsonify({"success": True, "proposal": proposal})
+    return jsonify({"success": True, "proposal": proposal}), 201
+
+
+@app.route("/api/cme/proposals/<proposal_id>", methods=["PATCH"])
+def api_cme_update_proposal(proposal_id):
+    """V2：仅 DRAFT / REVIEW 状态可编辑文本字段与 qty（qty 变更会重算 payoff）。"""
+    data = request.get_json(silent=True) or {}
+    proposals = _load_proposals()
+    for p in proposals:
+        if p.get("id") != proposal_id:
+            continue
+        if p.get("status") not in ("DRAFT", "REVIEW"):
+            return jsonify({"error": "仅 DRAFT / REVIEW 状态下可编辑提案"}), 400
+        if "qty" in data:
+            try:
+                new_qty = max(1, int(data["qty"]))
+            except (TypeError, ValueError):
+                return jsonify({"error": "qty 必须是正整数"}), 400
+            p["qty"] = new_qty
+            p["scenario_payoff"] = _proposal_payoff(p.get("event_id"), p.get("symbol"), p.get("direction"), new_qty)
+        if (data.get("thesis") or "").strip():
+            p["thesis"] = data["thesis"].strip()
+        if isinstance(data.get("five_questions"), dict):
+            fq = p.setdefault("five_questions", {})
+            for k, v in data["five_questions"].items():
+                if (v or "").strip():
+                    fq[k] = v.strip()
+        if isinstance(data.get("invalidation"), dict):
+            inv = p.setdefault("invalidation", {})
+            for k, v in data["invalidation"].items():
+                if (v or "").strip():
+                    inv[k] = v.strip()
+        p["updated_at"] = _now_ms()
+        _save_proposals(proposals)
+        return jsonify({"success": True, "proposal": p})
+    return jsonify({"error": "proposal 不存在"}), 404
 
 
 @app.route("/api/cme/proposals/<proposal_id>/status", methods=["PATCH"])
 def api_cme_update_proposal_status(proposal_id):
-    """人工 approve / reject（绝不能自动下单）。"""
+    """V2：严格状态机校验；只有人工能推进状态，系统绝不自动下单。
+    APPROVED 前强制五问填全，且 Risk Check 不得为 BLOCK。"""
     data = request.get_json(silent=True) or {}
     new_status = (data.get("status") or "").strip()
-    if new_status not in ("pending", "approved", "rejected"):
-        return jsonify({"error": "status 必须是 pending/approved/rejected"}), 400
+    if new_status not in TRADE_PROPOSAL_FLOW + TRADE_PROPOSAL_TERMINAL:
+        return jsonify({"error": "非法状态：%s" % new_status}), 400
     proposals = _load_proposals()
     for p in proposals:
-        if p.get("id") == proposal_id:
-            p["status"] = new_status
-            if "post_trade_note" in data:
-                p["post_trade_note"] = data["post_trade_note"]
+        if p.get("id") != proposal_id:
+            continue
+        current = p.get("status", "DRAFT")
+        if new_status == current and "post_trade_note" in data:
+            p["post_trade_note"] = (data["post_trade_note"] or "").strip()
+            p["updated_at"] = _now_ms()
             _save_proposals(proposals)
             return jsonify({"success": True, "proposal": p})
+        if new_status not in _proposal_transitions(current):
+            return jsonify({"error": "状态机不允许从 %s 迁移到 %s" % (current, new_status)}), 400
+        if new_status == "APPROVED":
+            fq = p.get("five_questions") or {}
+            missing = [k for k in ("why", "why_now", "proves_wrong", "max_loss", "reassess_at")
+                       if not (fq.get(k) or "").strip()]
+            if missing:
+                return jsonify({"error": "五个问题未填全，不能 APPROVE：%s" % ", ".join(missing)}), 400
+            rc = p.get("risk_check") or {}
+            if rc.get("result") == "BLOCK":
+                return jsonify({"error": "Risk Check 结果为 BLOCK，不能 APPROVE"}), 400
+        p["status"] = new_status
+        p["updated_at"] = _now_ms()
+        if new_status in TRADE_PROPOSAL_FLOW[3:] + TRADE_PROPOSAL_TERMINAL:
+            p["status_at"] = _now_ms()
+        if "post_trade_note" in data:
+            p["post_trade_note"] = data["post_trade_note"]
+        _save_proposals(proposals)
+        return jsonify({"success": True, "proposal": p})
     return jsonify({"error": "proposal 不存在"}), 404
+
+
+@app.route("/api/cme/proposals/<proposal_id>/risk-check", methods=["POST"])
+def api_cme_proposal_risk_check(proposal_id):
+    """SEND TO RISK CHECK：提案 → Risk Engine → PASS / WARN / BLOCK + 逐项检查。"""
+    proposals = _load_proposals()
+    p = next((x for x in proposals if x.get("id") == proposal_id), None)
+    if p is None:
+        return jsonify({"error": "proposal 不存在"}), 404
+    if p.get("status") not in ("DRAFT", "REVIEW"):
+        return jsonify({"error": "仅 DRAFT / REVIEW 状态可发起 Risk Check"}), 400
+    checks = _pre_trade_checks(p)
+    result = "PASS"
+    for c in checks:
+        if c["status"] == "BLOCK":
+            result = "BLOCK"
+            break
+        if c["status"] == "WARN" and result == "PASS":
+            result = "WARN"
+    p["risk_check"] = {"result": result, "checks": checks, "checked_at": _now_ms()}
+    p["updated_at"] = _now_ms()
+    _save_proposals(proposals)
+    return jsonify({"success": True, "risk_check": p["risk_check"]})
 
 
 @app.route("/api/cme/proposals/<proposal_id>", methods=["DELETE"])
 def api_cme_delete_proposal(proposal_id):
     proposals = _load_proposals()
-    proposals = [p for p in proposals if p.get("id") != proposal_id]
+    p = next((x for x in proposals if x.get("id") == proposal_id), None)
+    if p is None:
+        return jsonify({"error": "proposal 不存在"}), 404
+    if p.get("status") not in ("DRAFT", "REVIEW", "REJECTED", "INVALIDATED", "CANCELLED"):
+        return jsonify({"error": "EXECUTED / CLOSED 状态的提案不可删除，请用状态机推进"}), 400
+    proposals = [x for x in proposals if x.get("id") != proposal_id]
     _save_proposals(proposals)
     return jsonify({"success": True})
+
+
+# ============================================================
+# 模块 D：Risk Engine + 赛制运营
+# ============================================================
+# 交易日推导：CME 赛制禁止按本地午夜重置，须按 America/Chicago 或人工指定 trading_date。
+try:
+    from zoneinfo import ZoneInfo
+    _CME_ZONE = ZoneInfo("America/Chicago")
+except Exception:
+    _CME_ZONE = None
+
+
+def _num(v, nd=2):
+    try:
+        return format(float(v), ",.{}f".format(nd))
+    except (TypeError, ValueError):
+        return "n/a"
+
+
+def _current_trading_date(cfg=None):
+    cfg = cfg or _load_risk_config()
+    if cfg.get("trading_date"):
+        return str(cfg["trading_date"])[:10]
+    if _CME_ZONE is not None:
+        return datetime.now(_CME_ZONE).strftime("%Y-%m-%d")
+    return time.strftime("%Y-%m-%d", time.localtime())
+
+
+def _daily_pnl_stats(cfg=None):
+    """按 Trading Day 统计：当日已实现 PnL、佣金、成交合约数。
+    Contracts Today 按实际成交 qty 计数，Entry + Exit 都计入（不足限额按赛制罚 $1,000）。"""
+    cfg = cfg or _load_risk_config()
+    trading_date = _current_trading_date(cfg)
+    realized = 0.0
+    fees = 0.0
+    contracts = 0
+    for j in _load_journal():
+        if not (j.get("entry_time") or "").startswith(trading_date):
+            continue
+        try:
+            realized += float(j.get("pnl") or 0)
+        except (TypeError, ValueError):
+            pass
+        try:
+            qty = float(j.get("qty") or 0)
+        except (TypeError, ValueError):
+            qty = 0
+        if qty > 0:
+            fees += qty * CME_COMMISSION_PER_SIDE * 2
+            contracts += int(qty)
+    unrealized = 0.0
+    for pos in _load_positions():
+        try:
+            unrealized += float(pos.get("qty") or 0) * (float(pos.get("mark_price") or 0) - float(pos.get("avg_price") or 0))
+        except (TypeError, ValueError):
+            pass
+    daily_pnl = round(realized + unrealized, 2)
+    return {
+        "trading_date": trading_date,
+        "realized_pnl_today": round(realized, 2),
+        "fees_today": round(fees, 2),
+        "unrealized_pnl": round(unrealized, 2),
+        "daily_pnl": daily_pnl,
+        "today_contracts": contracts,
+    }
+
+
+def _risk_band(daily_loss_pct):
+    """内部风险带（规格书 5.3）：
+    0-8 SAFE / 8-12 CAUTION / 12-16 REDUCE RISK / 16-18 HIGH RISK /
+    18-20 CRITICAL / >=20 OFFICIAL LOCK RISK。"""
+    if daily_loss_pct < 8:
+        return "SAFE"
+    if daily_loss_pct < 12:
+        return "CAUTION"
+    if daily_loss_pct < 16:
+        return "REDUCE RISK"
+    if daily_loss_pct < 18:
+        return "HIGH RISK"
+    if daily_loss_pct < 20:
+        return "CRITICAL"
+    return "OFFICIAL LOCK RISK"
+
+
+def _pre_trade_checks(proposal):
+    """SEND TO RISK CHECK —— 下单前的 10 项确定性检查（非 AI）。
+    返回 [{name, status: PASS|WARN|BLOCK, message}]；任一 BLOCK → 整体 BLOCK。"""
+    cfg = _load_risk_config()
+    stats = _daily_pnl_stats(cfg)
+    checks = []
+    symbol = proposal.get("symbol")
+    try:
+        qty = max(1, int(proposal.get("qty") or 1))
+    except (TypeError, ValueError):
+        qty = 1
+    spec = CME_CONTRACT_SPECS.get(symbol)
+    payoff = proposal.get("scenario_payoff") or {}
+    risk = _compute_risk()
+    equity = float(cfg.get("account_equity", 1000000.0))
+    net_equity = float(risk.get("net_equity") or equity)
+
+    # 1. Competition currently open?
+    if cfg.get("competition_open", True):
+        checks.append({"name": "Competition Status", "status": "PASS", "message": "Competition window is open."})
+    else:
+        checks.append({"name": "Competition Status", "status": "BLOCK", "message": "Competition is closed; no new entries allowed."})
+
+    # 2. Final-day liquidation window?
+    if cfg.get("final_day_liquidation"):
+        checks.append({"name": "Final-Day Liquidation", "status": "BLOCK", "message": "Final-day liquidation window: close only, no new entries."})
+    else:
+        checks.append({"name": "Final-Day Liquidation", "status": "PASS", "message": "Not in final-day liquidation window."})
+
+    # 3. Contract near expiry?
+    if cfg.get("contract_near_expiry"):
+        checks.append({"name": "Contract Expiry", "status": "WARN", "message": "Contract near expiry; rollover risk."})
+    else:
+        checks.append({"name": "Contract Expiry", "status": "PASS", "message": "Contract is not near expiry."})
+
+    # 4. Margin sufficient after proposed trade?
+    if spec:
+        add_margin = float(spec.get("margin_per_contract", 0)) * qty
+        total_margin = float(risk.get("margin_used") or 0) + add_margin
+        if total_margin >= net_equity:
+            checks.append({"name": "Margin Sufficiency", "status": "BLOCK",
+                           "message": "Margin after trade $%s >= net equity $%s." % (_num(total_margin), _num(net_equity))})
+        else:
+            checks.append({"name": "Margin Sufficiency", "status": "PASS",
+                           "message": "Margin after trade $%s within net equity $%s." % (_num(total_margin), _num(net_equity))})
+    else:
+        checks.append({"name": "Margin Sufficiency", "status": "WARN", "message": "Unknown contract spec; margin not validated."})
+
+    # 5. Estimated worst-case trade loss acceptable?
+    bear = payoff.get("bear") or {}
+    bear_pnl = bear.get("pnl")
+    if bear_pnl is not None:
+        loss_ratio = abs(float(bear_pnl)) / net_equity * 100.0 if net_equity else 100.0
+        if loss_ratio > 5:
+            checks.append({"name": "Worst-Case Loss", "status": "WARN",
+                           "message": "Bear-case loss $%s is %.1f%% of net equity." % (_num(bear_pnl), loss_ratio)})
+        else:
+            checks.append({"name": "Worst-Case Loss", "status": "PASS",
+                           "message": "Bear-case loss $%s (%.1f%% of net equity) acceptable." % (_num(bear_pnl), loss_ratio)})
+    else:
+        checks.append({"name": "Worst-Case Loss", "status": "WARN", "message": "No bear-case P&L computed."})
+
+    # 6. Daily loss buffer sufficient?
+    max_loss_pct = float(cfg.get("max_daily_loss_pct", 20.0))
+    daily_loss_pct = max(0.0, -stats["daily_pnl"]) / equity * 100.0 if equity else 0.0
+    buffer_pct = max_loss_pct - daily_loss_pct
+    if buffer_pct <= 0:
+        checks.append({"name": "Daily Loss Buffer", "status": "BLOCK",
+                       "message": "Daily loss already at/over the %.0f%% official lock line." % max_loss_pct})
+    elif buffer_pct < 4:
+        checks.append({"name": "Daily Loss Buffer", "status": "WARN",
+                       "message": "Only %.1f%% loss buffer left before the %.0f%% lock." % (buffer_pct, max_loss_pct)})
+    else:
+        checks.append({"name": "Daily Loss Buffer", "status": "PASS",
+                       "message": "%.1f%% of daily loss buffer remaining." % buffer_pct})
+
+    # 7. Commission included?
+    if payoff.get("commission_total"):
+        checks.append({"name": "Commission", "status": "PASS",
+                       "message": "Commissions $%s deducted in scenario payoff." % _num(payoff["commission_total"])})
+    else:
+        checks.append({"name": "Commission", "status": "WARN", "message": "Commission not reflected in payoff."})
+
+    # 8. Portfolio concentration?
+    conc_after = float(risk.get("concentration_pct") or 0)
+    if conc_after > float(cfg.get("max_concentration_pct", 40.0)):
+        checks.append({"name": "Concentration", "status": "WARN",
+                       "message": "Single-symbol concentration %.1f%% exceeds %.0f%% limit." % (conc_after, cfg.get("max_concentration_pct", 40.0))})
+    else:
+        checks.append({"name": "Concentration", "status": "PASS",
+                       "message": "Concentration %.1f%% within limit." % conc_after})
+
+    # 9. Existing correlated exposure?
+    same = [p for p in _load_positions() if p.get("symbol") == symbol]
+    if same:
+        checks.append({"name": "Correlated Exposure", "status": "WARN",
+                       "message": "Already holding %d open position(s) in %s." % (len(same), symbol)})
+    else:
+        checks.append({"name": "Correlated Exposure", "status": "PASS", "message": "No existing exposure in %s." % symbol})
+
+    # 10. Contracts-today status?
+    max_day = int(cfg.get("max_contracts_per_day", 10))
+    after = stats["today_contracts"] + qty
+    if after > max_day:
+        checks.append({"name": "Contracts Today", "status": "BLOCK",
+                       "message": "Contracts today %d + %d > limit %d; $1,000 penalty rule applies." % (stats["today_contracts"], qty, max_day)})
+    elif after == max_day:
+        checks.append({"name": "Contracts Today", "status": "WARN",
+                       "message": "Contracts today will hit the %d/day limit." % max_day})
+    else:
+        checks.append({"name": "Contracts Today", "status": "PASS",
+                       "message": "Contracts today %d/%d after this fill." % (after, max_day)})
+
+    return checks
+
+
+# ---- V2.1 §6 / §18：Position Sizing Engine（确定性引擎；AI 只能解释结果，不能发明数字）----
+def _position_direction(pos):
+    """从持仓 qty 的符号推断方向（正 = long，负 = short）。"""
+    try:
+        q = float(pos.get("qty") or 0)
+    except (TypeError, ValueError):
+        q = 0.0
+    return "short" if q < 0 else "long"
+
+
+def _macro_themes(symbol, direction):
+    """返回某品种/方向归属的宏观主题集合；持仓可用 macro_themes 字段显式覆盖。"""
+    key = _resolve_symbol(symbol) or (symbol or "")
+    spec = CME_MACRO_THEMES.get(key) or {}
+    dirn = "short" if str(direction or "").lower() in ("short", "sell", "s") else "long"
+    return set(spec.get(dirn) or ())
+
+
+def _sizing_multiplier_map(cfg, key, base):
+    """读取可覆盖的乘数表（§6.2：所有 multiplier 必须可配置，不得硬编码）。"""
+    out = dict(base)
+    overrides = (cfg.get("sizing_multipliers") or {}).get(key) or {}
+    if isinstance(overrides, dict):
+        for k, v in overrides.items():
+            try:
+                out[str(k).strip().upper()] = float(v)
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+def _compute_position_sizing(symbol, direction="long", entry_price=None, stop_price=None,
+                             stop_pct=None, event_id=None, evidence=None, confirmation=None,
+                             qty=None, proposal=None, cfg=None):
+    """V2.1 §6 / §18 Position Sizing Engine（确定性；AI 只负责用通俗语言解释这些数字）。
+
+    计算链：
+      Risk Budget（权益 × risk_budget_pct）
+      → Risk per Contract（Price Distance ÷ Tick Size × Tick Value + Commission + Slippage）
+      → Risk-Based Max（向下取整）
+      → Evidence-Adjusted Max（× EVIDENCE_MULTIPLIERS）
+      → Concentration-Adjusted Max（宏观主题重叠时 × CONCENTRATION_OVERLAP_MULTIPLIER）
+      → Final Max = MIN(Concentration-Adjusted, Margin-Based, Daily-Loss-Based, Contract-Limit)
+      → Suggested Working Range
+    """
+    cfg = cfg or _load_risk_config()
+    proposal = proposal or {}
+    raw_symbol = symbol or proposal.get("symbol")
+    code = _resolve_symbol(raw_symbol) or (raw_symbol or "")
+    spec = CME_CONTRACT_SPECS.get(code)
+    if not spec:
+        return {"ok": False, "error": "未知合约：%s" % (raw_symbol or "—"),
+                "supported": sorted(CME_CONTRACT_SPECS.keys())}
+    dirn = direction or proposal.get("direction") or "long"
+    dirn = "short" if str(dirn).strip().lower() in ("short", "sell", "s") else "long"
+
+    risk = _compute_risk()
+    stats = _daily_pnl_stats(cfg)
+    equity = float(cfg.get("account_equity", 1000000.0) or 0.0)
+    net_equity = float(risk.get("net_equity") or equity)
+    risk_budget_pct = float(cfg.get("risk_budget_pct", 0.30) or 0.0)
+    risk_budget_usd = round(equity * risk_budget_pct / 100.0, 2)
+
+    tick_size = float(spec["tick_size"]) or 0.0000001
+    tick_value = float(spec["tick_value"])
+    margin_per_contract = float(spec.get("margin_per_contract") or 0.0)
+    # 合约乘数（来自合约规格，非 AI 生成，§6.14）：每 1.0 价格变动对应的美元价值。
+    contract_multiplier = round(tick_value / tick_size, 6) if tick_size else 0.0
+
+    # 1) 入场价：显式传入 > 同品种持仓最新 mark > 合约参考价
+    try:
+        entry = float(entry_price) if entry_price not in (None, "") else None
+    except (TypeError, ValueError):
+        entry = None
+    if not entry:
+        marks = []
+        for p in _load_positions():
+            if _resolve_symbol(p.get("symbol")) == code:
+                try:
+                    m = float(p.get("mark_price") or 0)
+                except (TypeError, ValueError):
+                    m = 0.0
+                if m:
+                    marks.append(m)
+        entry = marks[-1] if marks else float(spec["reference_price"])
+
+    # 2) 止损距离：显式止损价 > 显式止损百分比 > 历史研究反向四分位 > 配置默认值
+    stop_source = "configured default stop percentage"
+    stop_used = None
+    try:
+        sp = float(stop_price) if stop_price not in (None, "") else None
+    except (TypeError, ValueError):
+        sp = None
+    if sp:
+        stop_used = sp
+        stop_distance = abs(entry - sp)
+        stop_source = "explicit stop price"
+    else:
+        spct = None
+        try:
+            spct = float(stop_pct) if stop_pct not in (None, "") else None
+        except (TypeError, ValueError):
+            spct = None
+        if spct is not None:
+            stop_source = "explicit stop percentage"
+        elif event_id:
+            study = _compute_event_study(event_id)
+            inst = (study.get("instruments") or {}).get(code) or {}
+            day = (inst.get("horizons") or {}).get("1d") or {}
+            q = day.get("q25") if dirn == "long" else day.get("q75")
+            try:
+                spct = abs(float(q)) if q is not None else None
+            except (TypeError, ValueError):
+                spct = None
+            if spct is not None:
+                stop_source = "historical 1D adverse quartile"
+        if spct is None:
+            spct = float(cfg.get("default_stop_pct", 0.50) or 0.50)
+        stop_distance = abs(entry) * float(spct) / 100.0
+        stop_used = round(entry - stop_distance, 6) if dirn == "long" else round(entry + stop_distance, 6)
+    stop_distance_pct = round(stop_distance / abs(entry) * 100.0, 4) if entry else 0.0
+
+    # 3) 每手风险 = 价格距离 ÷ Tick Size × Tick Value + 往返佣金 + 滑点缓冲（§6.3）
+    slippage_ticks = float(cfg.get("slippage_ticks", 0.0) or 0.0)
+    slippage_buffer = round(slippage_ticks * tick_value, 2)
+    commission_round_trip = round(CME_COMMISSION_PER_SIDE * 2, 2)
+    risk_per_contract = round(stop_distance / tick_size * tick_value + commission_round_trip + slippage_buffer, 2)
+
+    # 4) Risk-Based Max（向下取整，§6.4）
+    if risk_per_contract > 0:
+        risk_based_max = max(0, int(math.floor(risk_budget_usd / risk_per_contract)))
+    else:
+        risk_based_max = max(0, int(cfg.get("max_contracts_per_day", 10) or 10))
+
+    # 5) Evidence-Adjusted Max（§6.6）
+    ev_map = _sizing_multiplier_map(cfg, "evidence", EVIDENCE_MULTIPLIERS)
+    ev_level = (evidence or "").strip().upper() if isinstance(evidence, str) else ""
+    ev_source = "manual"
+    if not ev_level and event_id:
+        study = _compute_event_study(event_id)
+        inst = (study.get("instruments") or {}).get(code) or {}
+        day = (inst.get("horizons") or {}).get("1d") or {}
+        ev_level = str(day.get("evidence") or "").strip().upper()
+        ev_source = "historical event study"
+    if not ev_level:
+        ev_level = "MEDIUM"
+        ev_source = "default (no historical sample provided)"
+    ev_mult = float(ev_map.get(ev_level, ev_map.get("MEDIUM", 0.75)))
+    evidence_adjusted_max = max(0, int(math.floor(risk_based_max * ev_mult)))
+
+    # 6) 市场确认乘数（§6.7）——仅作因子披露，不重复扣减 Final Max（§18 验收口径）
+    conf_map = _sizing_multiplier_map(cfg, "confirmation", CONFIRMATION_MULTIPLIERS)
+    conf_status = (confirmation or proposal.get("market_confirmation") or "").strip().upper()
+    if not conf_status:
+        conf_status = "UNSPECIFIED"
+        conf_mult = 1.00
+    else:
+        conf_mult = float(conf_map.get(conf_status, 1.00))
+
+    # 7) Concentration-Adjusted Max（§6.10：宏观主题重叠）
+    try:
+        overlap_mult = float((cfg.get("sizing_multipliers") or {}).get("concentration_overlap",
+                                                                     CONCENTRATION_OVERLAP_MULTIPLIER))
+    except (TypeError, ValueError):
+        overlap_mult = CONCENTRATION_OVERLAP_MULTIPLIER
+    new_themes = _macro_themes(code, dirn)
+    overlap_rows = []
+    for p in _load_positions():
+        p_themes = set(p.get("macro_themes") or []) or _macro_themes(p.get("symbol"), _position_direction(p))
+        shared = sorted(new_themes & p_themes)
+        if shared:
+            overlap_rows.append({"symbol": p.get("symbol"), "direction": _position_direction(p),
+                                 "shared_themes": shared})
+    if overlap_rows:
+        concentration_adjusted_max = max(0, int(math.floor(evidence_adjusted_max * overlap_mult)))
+        concentration_status = "CAUTION"
+    else:
+        concentration_adjusted_max = evidence_adjusted_max
+        concentration_status = "PASS"
+
+    # 8) Margin-Based Max（§6.8）
+    headroom = float(risk.get("headroom") or 0.0)
+    if margin_per_contract > 0:
+        margin_based_max = max(0, int(math.floor(max(0.0, headroom) / margin_per_contract)))
+    else:
+        margin_based_max = concentration_adjusted_max
+
+    # 9) Daily-Loss-Based Max（§6.9）
+    max_daily_loss_pct = float(cfg.get("max_daily_loss_pct", 20.0) or 20.0)
+    daily_loss_limit_usd = round(equity * max_daily_loss_pct / 100.0, 2)
+    daily_loss_used = round(max(0.0, -float(stats.get("daily_pnl") or 0.0)), 2)
+    daily_loss_remaining = round(max(0.0, daily_loss_limit_usd - daily_loss_used), 2)
+    if risk_per_contract > 0:
+        daily_loss_based_max = max(0, int(math.floor(daily_loss_remaining / risk_per_contract)))
+    else:
+        daily_loss_based_max = concentration_adjusted_max
+
+    # 10) Contract-Limit Max（赛制每日 10 张上限）
+    max_day = int(cfg.get("max_contracts_per_day", 10) or 10)
+    contract_limit_max = max(0, max_day - int(stats.get("today_contracts") or 0))
+
+    # 11) Final Max = MIN(所有上限)（§6.11）
+    caps = (
+        ("Concentration-Adjusted Max", concentration_adjusted_max),
+        ("Margin-Based Max", margin_based_max),
+        ("Daily-Loss-Based Max", daily_loss_based_max),
+        ("Contract-Limit Max", contract_limit_max),
+    )
+    final_max = max(0, min(v for _, v in caps))
+    binding = next((n for n, v in caps if v == final_max), caps[0][0])
+
+    # 12) Suggested Working Range：上限为 Final Max，下限为其 2/3（§6.12 案例：Final 3 → 2–3）
+    if final_max <= 0:
+        range_low = range_high = 0
+    else:
+        range_high = final_max
+        range_low = max(1, int(math.ceil(final_max * 2.0 / 3.0)))
+        if range_low > range_high:
+            range_low = range_high
+    suggested_label = "%d" % range_high if range_low == range_high else "%d–%d" % (range_low, range_high)
+
+    # 13) 当前选中手数 + 预估亏损 / 账户影响
+    try:
+        selected_qty = int(qty if qty not in (None, "") else (proposal.get("qty") or 0))
+    except (TypeError, ValueError):
+        selected_qty = 0
+    loss_qtys = sorted({q for q in (range_low, range_high, final_max, risk_based_max) if q and q > 0})
+    estimated_loss = [{"qty": q, "loss": round(-q * risk_per_contract, 2)} for q in loss_qtys]
+    ref_qty = selected_qty if selected_qty > 0 else range_high
+    account_impact_pct = round(ref_qty * risk_per_contract / equity * 100.0, 4) if equity else 0.0
+
+    margin_required = round(ref_qty * margin_per_contract, 2)
+    if net_equity and margin_required >= net_equity:
+        margin_status = "BLOCK"
+    elif net_equity and margin_required / net_equity * 100.0 > 80:
+        margin_status = "CAUTION"
+    else:
+        margin_status = "PASS"
+
+    if overlap_rows:
+        why_not_more = ("The risk budget alone would allow up to %d contract(s), but the portfolio already "
+                        "holds exposure to the same macro theme (%s), so the engine reduced the suggested size."
+                        % (risk_based_max, ", ".join(sorted({t for r in overlap_rows for t in r["shared_themes"]}))))
+    elif final_max < risk_based_max:
+        why_not_more = ("The risk budget alone would allow up to %d contract(s); the %s reduced it to %d."
+                        % (risk_based_max, binding, final_max))
+    else:
+        why_not_more = ("The risk budget allows up to %d contract(s), and no other limit reduced it further."
+                        % risk_based_max)
+
+    warnings = []
+    if overlap_rows:
+        warnings.append("Existing portfolio is already exposed to the same macro thesis (%s)."
+                        % ", ".join(sorted({t for r in overlap_rows for t in r["shared_themes"]})))
+    if final_max <= 0:
+        warnings.append("No position size is permitted under the current risk limits.")
+    elif final_max < evidence_adjusted_max:
+        warnings.append("Suggested size is capped below the evidence-adjusted maximum by %s." % binding)
+    if conf_status == "NO TRADE":
+        warnings.append("Market confirmation status is NO TRADE.")
+    if margin_status == "BLOCK":
+        warnings.append("Margin required would exceed net equity.")
+    if selected_qty > final_max:
+        warnings.append("Selected quantity %d exceeds the Final Maximum of %d contract(s)."
+                        % (selected_qty, final_max))
+
+    # 14) What-if 每手基准值（§6.15）：全部与手数线性相关，前端滑块可即时换算。
+    notional_per_contract = round(entry * contract_multiplier, 2)
+    scenario_per_contract = None
+    if event_id:
+        sp = _proposal_payoff(event_id, code, dirn, 1)
+        if sp:
+            scenario_per_contract = {
+                "bear": sp["bear"]["pnl"],
+                "base": sp["base"]["pnl"],
+                "bull": sp["bull"]["pnl"],
+            }
+    what_if = {
+        "stop_risk_per_contract": round(-risk_per_contract, 2),
+        "margin_per_contract": margin_per_contract,
+        "commission_per_contract": commission_round_trip,
+        "notional_per_contract": notional_per_contract,
+        "scenario_per_contract": scenario_per_contract,
+    }
+
+    return {
+        "ok": True,
+        "symbol": code,
+        "name": spec.get("name", code),
+        "direction": dirn,
+        "contract": {
+            "tick_size": tick_size,
+            "tick_value": tick_value,
+            "contract_multiplier": contract_multiplier,
+            "reference_price": float(spec["reference_price"]),
+            "margin_per_contract": margin_per_contract,
+            "commission_per_side": CME_COMMISSION_PER_SIDE,
+            "commission_round_trip": commission_round_trip,
+            "slippage_ticks": slippage_ticks,
+            "slippage_buffer": slippage_buffer,
+        },
+        "account": {
+            "account_equity": equity,
+            "net_equity": round(net_equity, 2),
+            "risk_budget_pct": risk_budget_pct,
+            "risk_budget_usd": risk_budget_usd,
+            "max_daily_loss_pct": max_daily_loss_pct,
+            "daily_loss_limit_usd": daily_loss_limit_usd,
+            "daily_loss_used_usd": daily_loss_used,
+            "daily_loss_remaining_usd": daily_loss_remaining,
+            "margin_used": float(risk.get("margin_used") or 0.0),
+            "headroom": round(headroom, 2),
+        },
+        "levels": {
+            "entry": entry,
+            "stop": stop_used,
+            "stop_distance": round(stop_distance, 6),
+            "stop_distance_pct": stop_distance_pct,
+            "stop_source": stop_source,
+            "risk_per_contract": risk_per_contract,
+        },
+        "evidence": {"level": ev_level, "multiplier": ev_mult,
+                     "adjusted_max": evidence_adjusted_max, "source": ev_source},
+        "confirmation": {"status": conf_status, "multiplier": conf_mult,
+                         "adjusted_max": int(math.floor(evidence_adjusted_max * conf_mult)),
+                         "applied_to_final": False},
+        "concentration": {"status": concentration_status, "overlap_multiplier": overlap_mult,
+                          "overlaps": overlap_rows,
+                          "adjusted_max": concentration_adjusted_max,
+                          "limit_pct": float(cfg.get("max_concentration_pct", 40.0) or 40.0)},
+        "limits": {
+            "risk_based_max": risk_based_max,
+            "evidence_adjusted_max": evidence_adjusted_max,
+            "concentration_adjusted_max": concentration_adjusted_max,
+            "margin_based_max": margin_based_max,
+            "daily_loss_based_max": daily_loss_based_max,
+            "contract_limit_max": contract_limit_max,
+            "final_max": final_max,
+            "binding_constraint": binding,
+        },
+        "suggested": {"low": range_low, "high": range_high, "label": suggested_label},
+        "selected_qty": selected_qty,
+        "selected_in_range": bool(selected_qty and range_low <= selected_qty <= range_high),
+        "selected_exceeds_final_max": bool(selected_qty > final_max),
+        "estimated_loss": estimated_loss,
+        "account_impact_pct": account_impact_pct,
+        "margin_required": margin_required,
+        "margin_status": margin_status,
+        "what_if": what_if,
+        "warnings": warnings,
+        "simple_view": {
+            "question": "How much should we consider trading?",
+            "suggested_label": ("%s %s" % (suggested_label, code)) if final_max > 0 else "No position",
+            "why_not_more": why_not_more,
+            "max_risk_limit": "%d %s" % (risk_based_max, code),
+            "max_risk_limit_note": "Maximum risk-based size is a risk ceiling, not a recommendation to use full size.",
+            "estimated_loss": estimated_loss,
+            "account_impact": ("%d contract(s) would risk approximately %.3f%% of current equity."
+                               % (ref_qty, account_impact_pct)) if ref_qty else "n/a",
+            "margin": margin_status,
+            "portfolio_concentration": concentration_status,
+        },
+        "professional": {
+            "account_equity": equity,
+            "risk_budget_pct": risk_budget_pct,
+            "risk_budget_usd": risk_budget_usd,
+            "entry": entry,
+            "stop": stop_used,
+            "stop_distance": round(stop_distance, 6),
+            "tick_size": tick_size,
+            "tick_value": tick_value,
+            "contract_multiplier": contract_multiplier,
+            "risk_per_contract": risk_per_contract,
+            "commission": commission_round_trip,
+            "slippage_buffer": slippage_buffer,
+            "margin_per_contract": margin_per_contract,
+            "risk_based_max": risk_based_max,
+            "margin_based_max": margin_based_max,
+            "daily_loss_based_max": daily_loss_based_max,
+            "concentration_adjusted_max": concentration_adjusted_max,
+            "contract_limit_max": contract_limit_max,
+            "evidence_multiplier": ev_mult,
+            "confirmation_multiplier": conf_mult,
+            "final_max": final_max,
+            "suggested_range": suggested_label,
+        },
+        "source_ids": {"event_id": event_id or proposal.get("event_id"),
+                       "proposal_id": proposal.get("id")},
+        "computed_at": _now_ms(),
+    }
+
+
+@app.route("/api/cme/position-sizing", methods=["GET", "POST"])
+def api_cme_position_sizing():
+    """V2.1 §6/§18 Position Sizing Engine 端点（确定性输出，供 UI 与 AI 引用）。"""
+    data = request.get_json(silent=True) or {} if request.method == "POST" else request.args.to_dict()
+    proposal_id = (data.get("proposal_id") or "").strip()
+    proposal = None
+    if proposal_id:
+        proposal = next((p for p in _load_proposals() if p.get("id") == proposal_id), None)
+        if proposal is None:
+            return jsonify({"ok": False, "error": "proposal 不存在"}), 404
+    symbol = (data.get("symbol") or "").strip() or (proposal or {}).get("symbol")
+    if not symbol:
+        return jsonify({"ok": False, "error": "symbol 不能为空"}), 400
+    ev_id = (data.get("event_id") or "").strip()
+    if not ev_id and proposal:
+        origin = proposal.get("origin")
+        if isinstance(origin, dict):
+            ev_id = (origin.get("event_id") or "").strip()
+    result = _compute_position_sizing(
+        symbol=symbol,
+        direction=data.get("direction") or (proposal or {}).get("direction"),
+        entry_price=data.get("entry_price"),
+        stop_price=data.get("stop_price"),
+        stop_pct=data.get("stop_pct"),
+        event_id=ev_id,
+        evidence=data.get("evidence"),
+        confirmation=data.get("confirmation") or (proposal or {}).get("market_confirmation"),
+        qty=data.get("qty") or (proposal or {}).get("qty"),
+        proposal=proposal,
+    )
+    return jsonify(result), (200 if result.get("ok") else 400)
 
 
 # ============================================================
 # API：模块 D —— Risk Engine + 赛制运营
 # ============================================================
 def _compute_risk():
-    """汇总组合风险：权益、保证金、盈亏、集中度、drawdown 等。"""
+    """汇总组合风险：权益、保证金、盈亏、集中度、当日 PnL、风险带、赛制状态。"""
     cfg = _load_risk_config()
     positions = _load_positions()
-    equity = float(cfg.get("account_equity", 100000.0))
+    equity = float(cfg.get("account_equity", 1000000.0))
     margin_used = 0.0
     unrealized = 0.0
     gross_exposure = 0.0
@@ -1719,24 +3116,34 @@ def _compute_risk():
     margin_util = round(margin_used / equity * 100.0, 2) if equity else 0.0
     # 集中度：最大单品种 exposure 占比
     conc = 0.0
-    if gross_exposure > 0:
+    if positions and gross_exposure > 0:
         conc = round(max((abs(float(p.get("qty", 0)) * float(p.get("mark_price", 0) or 0)) / gross_exposure * 100.0)
-                         for p in positions) if positions else 0.0, 2)
-    # 当日交易次数（用 journal 中今天的记录数估算）
-    today = time.strftime("%Y-%m-%d", time.localtime())
-    today_contracts = sum(1 for j in _load_journal() if (j.get("entry_time") or "").startswith(today))
+                         for p in positions), 2)
+    stats = _daily_pnl_stats(cfg)
+    daily_loss_pct = round(max(0.0, -stats["daily_pnl"]) / equity * 100.0, 2) if equity else 0.0
     return {
         "account_equity": equity,
         "net_equity": round(net_equity, 2),
         "margin_used": round(margin_used, 2),
         "margin_utilization_pct": margin_util,
+        "headroom": round(net_equity - margin_used, 2),
         "unrealized_pnl": round(unrealized, 2),
         "gross_exposure": round(gross_exposure, 2),
         "concentration_pct": conc,
-        "today_contracts": today_contracts,
+        "daily_pnl": stats["daily_pnl"],
+        "realized_pnl_today": stats["realized_pnl_today"],
+        "fees_today": stats["fees_today"],
+        "daily_loss_pct": daily_loss_pct,
+        "risk_band": _risk_band(daily_loss_pct),
+        "today_contracts": stats["today_contracts"],
+        "trading_date": stats["trading_date"],
         "max_contracts_per_day": cfg.get("max_contracts_per_day", 10),
         "max_concentration_pct": cfg.get("max_concentration_pct", 40.0),
-        "max_daily_loss_pct": cfg.get("max_daily_loss_pct", 2.0),
+        "max_daily_loss_pct": cfg.get("max_daily_loss_pct", 20.0),
+        "competition_open": cfg.get("competition_open", True),
+        "final_day_liquidation": cfg.get("final_day_liquidation", False),
+        "contract_near_expiry": cfg.get("contract_near_expiry", False),
+        "competition_timezone": cfg.get("competition_timezone", "America/Chicago"),
         "warnings": [],
     }
 
@@ -1744,14 +3151,27 @@ def _compute_risk():
 @app.route("/api/cme/risk", methods=["GET"])
 def api_cme_risk():
     risk = _compute_risk()
-    cfg = _load_risk_config()
     warnings = []
+    if not risk["competition_open"]:
+        warnings.append("赛程未开始或已结束，禁止新开仓")
+    if risk["final_day_liquidation"]:
+        warnings.append("最后交易日清仓窗口：仅允许平仓")
     if risk["margin_utilization_pct"] > 80:
-        warnings.append("保证金利用率超过 80%，注意风险")
-    if risk["concentration_pct"] > cfg.get("max_concentration_pct", 40.0):
-        warnings.append("单品种集中度超过红线 %.0f%%" % cfg.get("max_concentration_pct", 40.0))
+        warnings.append("保证金利用率超过 80%")
+    if risk["concentration_pct"] > risk["max_concentration_pct"]:
+        warnings.append("单品种集中度超过红线 %.0f%%" % risk["max_concentration_pct"])
+    if risk["risk_band"] == "OFFICIAL LOCK RISK":
+        warnings.append("单日亏损已达 %.0f%% 官方锁定线：当日禁止新开仓" % risk["max_daily_loss_pct"])
+    elif risk["risk_band"] == "CRITICAL":
+        warnings.append("单日亏损 18-20%：高风险区，仅允许对冲/平仓")
+    elif risk["risk_band"] == "HIGH RISK":
+        warnings.append("单日亏损 16-18%：禁止加仓")
+    elif risk["risk_band"] == "REDUCE RISK":
+        warnings.append("单日亏损 12-16%：建议降低仓位")
+    elif risk["risk_band"] == "CAUTION":
+        warnings.append("单日亏损 8-12%：保持谨慎")
     if risk["today_contracts"] >= risk["max_contracts_per_day"]:
-        warnings.append("今日交易次数已达上限 %d/%d" % (risk["today_contracts"], risk["max_contracts_per_day"]))
+        warnings.append("今日合约数已达上限 %d/%d" % (risk["today_contracts"], risk["max_contracts_per_day"]))
     risk["warnings"] = warnings
     return jsonify(risk)
 
@@ -1765,10 +3185,26 @@ def api_cme_get_risk_config():
 def api_cme_update_risk_config():
     data = request.get_json(silent=True) or {}
     cfg = _load_risk_config()
-    for key in ("account_equity", "max_contracts_per_day", "max_concentration_pct",
-                "max_daily_loss_pct", "margin_pct"):
-        if key in data and data[key] is not None:
-            cfg[key] = data[key]
+
+    def _to_bool(v):
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.strip().lower() in ("1", "true", "yes", "on")
+        return bool(v)
+
+    for key, cast in (
+        ("account_equity", float), ("max_contracts_per_day", int),
+        ("max_concentration_pct", float), ("max_daily_loss_pct", float),
+        ("margin_pct", float), ("competition_open", _to_bool),
+        ("final_day_liquidation", _to_bool), ("contract_near_expiry", _to_bool),
+        ("competition_timezone", str), ("trading_date", str),
+    ):
+        if key in data and data[key] is not None and data[key] != "":
+            try:
+                cfg[key] = cast(data[key])
+            except (TypeError, ValueError):
+                return jsonify({"error": "字段 %s 的值非法" % key}), 400
     _save_risk_config(cfg)
     return jsonify({"success": True, "config": cfg})
 
@@ -2264,6 +3700,598 @@ def api_ai_ask():
         return jsonify({"error": f"AI 接口返回错误：{err_msg}"}), 200
     except Exception as e:
         return jsonify({"error": f"请求失败：{e}"}), 200
+
+
+# ============================================================
+# 阶段 5 —— AI RESEARCH ANALYST（Context Builder + 结构化研究回答）
+# 架构：User Question → Context Builder → Provider → 固定 JSON 结构
+# AI 只解释确定性数据，绝不编造数字、绝不决定手数（MODULE 5 / V2.1 §12 §13）
+# ============================================================
+CME_AI_STALE_MS = 36 * 3600 * 1000          # 快照/信号超过 36 小时视为过期
+CME_AI_MISSING = "Missing: %s"
+
+# V2.1 §13 的 7 段固定结构
+CME_AI_SECTION_KEYS = (
+    "simple_view",
+    "why",
+    "market_confirmation",
+    "suggested_direction",
+    "position_size_context",
+    "main_risk",
+    "what_to_watch",
+)
+# V2 MODULE 5 §6.2 的附加字段（用于快捷按钮的支撑/反方/失效条件渲染）
+CME_AI_EXTRA_KEYS = (
+    "base_view", "supporting_factors", "counter_factors",
+    "historical_context", "invalidation", "what_to_watch_next",
+    "evidence_quality", "missing_data",
+)
+
+CME_AI_SYSTEM_PROMPT = """你是 Parité CME Mode 的 AI 研究分析师，服务于 2026 CME 大学生交易挑战赛的决策支持工作台。
+
+【受众规则 AUDIENCE RULE】
+读者是「聪明但可能刚接触期货」的人。使用专业金融逻辑，但语言必须新手可读。
+能用简单说法时不要用术语；必须使用术语时：先给出术语，紧接着用一句大白话解释。
+永远解释因果链条（例如 CPI → Fed → 利率 → 美元 → 黄金），不要只罗列指标名称。
+
+【仓位规则 POSITION SIZING RULE（最高优先级）】
+绝对禁止自行发明、猜测或独立决定交易手数（quantity）。
+仓位数字只能引用上下文 <CONTEXT> 中「确定性仓位引擎」给出的结果。
+讨论仓位时必须清楚区分四件事：
+1) 风险上限（risk-based maximum / Final Max）
+2) 建议工作区间（Calculated Working Range）
+3) 当前选择手数（selected quantity）
+4) 预估下行（estimated loss）
+绝对不得把「允许的最大手数」描述成「建议满仓」。
+若上下文缺少仓位数据，对应段落必须写 Missing，且不得给出任何手数。
+
+【数据规则 DATA RULE】
+所有数字必须逐字来自 <CONTEXT>，不得外推、估算、凑整或编造。
+上下文中标记为 unavailable / n=0 / null / 缺失 的数据，一律视为缺失，
+必须在对应段落写明 `Missing: 字段名`，绝不自行补齐。
+禁止编造：当前价格、Consensus、Actual、概率、historical hit rate、CME margin、quantity。
+
+【措辞禁令 WORDING RULE】
+禁止出现「AI recommends」「AI 建议买入/卖出/加仓」等表述。
+涉及仓位时只能使用术语：Parite Risk-Based Size（风险预算允许的上限，是风险天花板，不等于建议满仓）、
+Calculated Working Range（建议工作区间）。最终手数由人工决定。
+
+【任务定位 TASK】
+你最有价值的四件事：Explain（解释当前 Bias 为何如此）、Challenge（指出该观点可能错在哪里）、
+Connect（把宏观链条串起来）、Summarize（把一堆数据压缩成 30 秒能读完的 Brief）。
+
+【输出格式 OUTPUT FORMAT】
+只输出一个 JSON 对象。不要 markdown 代码围栏，不要任何解释性前后缀。键固定如下：
+{
+  "base_view": "STRONG_BULLISH | MILD_BULLISH | NEUTRAL | MILD_BEARISH | STRONG_BEARISH | NO_VIEW",
+  "simple_view": "3-5 句：当前客观处境 + 需要人工判断的核心问题",
+  "why": "支撑当前判断的结构化证据，必须引用 <CONTEXT> 中的具体数字",
+  "market_confirmation": "市场确认状态及其含义，引用上下文中的确认等级",
+  "suggested_direction": "方向倾向及其依据（描述，不是指令）",
+  "position_size_context": "用通俗语言解释仓位引擎给出的风险上限与建议工作区间，并给出具体数字；缺失则写 Missing",
+  "main_risk": "当前最主要的风险与失效条件",
+  "what_to_watch": "接下来最应该盯住的具体观察点",
+  "supporting_factors": ["支持因素1", "支持因素2"],
+  "counter_factors": ["反方/可能出错的因素1", "反方/可能出错的因素2"],
+  "historical_context": "历史事件研究的对照结论（引用样本量与统计量）",
+  "invalidation": ["失效条件1", "失效条件2"],
+  "what_to_watch_next": ["观察点1", "观察点2"],
+  "evidence_quality": "HIGHER | MEDIUM | LOW | VERY LOW",
+  "missing_data": ["缺失字段1", "缺失字段2"]
+}
+simple_view/why/market_confirmation/suggested_direction/position_size_context/main_risk/what_to_watch
+必须是中文字符串（不可为 null、不可为数组）。数组字段若无内容请用空数组 []。"""
+
+
+def _cme_ai_age_ms(ts):
+    try:
+        ts = int(ts or 0)
+    except (TypeError, ValueError):
+        return None
+    if ts <= 0:
+        return None
+    return max(0, _now_ms() - ts)
+
+
+def _cme_ai_fmt_age(age_ms):
+    if age_ms is None:
+        return "unknown"
+    hours = age_ms / 3600000.0
+    if hours < 1:
+        return "%d 分钟前" % int(round(age_ms / 60000.0))
+    if hours < 48:
+        return "%.1f 小时前" % hours
+    return "%.1f 天前" % (hours / 24.0)
+
+
+def _cme_ai_data_freshness():
+    """数据新鲜度审计：任何一处缺失/过期都会被显式标注，供 AI 输出 Missing。"""
+    snaps = _load_cme_snapshots()
+    signals = _load_signals()
+    events = _load_events()
+    proposals = _load_proposals()
+    snap_ts = max([int(s.get("createdAt") or 0) for s in snaps] or [0])
+    sig_ts = max([int(s.get("timestamp") or 0) for s in signals] or [0])
+    ev_ts = max([int(e.get("created_at") or 0) for e in events] or [0])
+    prop_ts = max([int(p.get("created_at") or 0) for p in proposals] or [0])
+    snap_age = _cme_ai_age_ms(snap_ts)
+    sig_age = _cme_ai_age_ms(sig_ts)
+    stale = []
+    if not snaps:
+        stale.append("Market Snapshot（无快照记录）")
+    elif snap_age is not None and snap_age > CME_AI_STALE_MS:
+        stale.append("Market Snapshot（%s）" % _cme_ai_fmt_age(snap_age))
+    if not signals:
+        stale.append("Macro Signal（无打分记录）")
+    elif sig_age is not None and sig_age > CME_AI_STALE_MS:
+        stale.append("Macro Signal（%s）" % _cme_ai_fmt_age(sig_age))
+    return {
+        "now": time.strftime("%Y-%m-%d %H:%M", time.localtime()),
+        "snapshot_count": len(snaps),
+        "snapshot_latest": _cme_ai_fmt_age(snap_age),
+        "signal_count": len(signals),
+        "signal_latest": _cme_ai_fmt_age(sig_age),
+        "event_count": len(events),
+        "event_latest": _cme_ai_fmt_age(_cme_ai_age_ms(ev_ts)),
+        "proposal_count": len(proposals),
+        "proposal_latest": _cme_ai_fmt_age(_cme_ai_age_ms(prop_ts)),
+        "stale_items": stale,
+    }
+
+
+def _cme_ai_market_snapshot():
+    """最新一条快照 + 最新一条宏观信号（逐品种），全部来自既有确定性数据。"""
+    by_symbol = {}
+    for s in sorted(_load_cme_snapshots(), key=lambda x: int(x.get("createdAt") or 0)):
+        code = _resolve_symbol(s.get("symbol") or "") or (s.get("symbol") or "")
+        by_symbol[code] = s
+    sig_by_symbol = {}
+    for s in sorted(_load_signals(), key=lambda x: int(x.get("timestamp") or 0)):
+        code = _resolve_symbol(s.get("symbol") or "") or (s.get("symbol") or "")
+        sig_by_symbol[code] = s
+    rows = []
+    for code, spec in CME_CONTRACT_SPECS.items():
+        snap = by_symbol.get(code) or {}
+        sig = sig_by_symbol.get(code) or {}
+        rows.append({
+            "symbol": code,
+            "name": spec["name"],
+            "price": snap.get("price"),
+            "change_1d": snap.get("change"),
+            "as_of": ("%s %s" % (snap.get("date"), snap.get("time"))) if snap.get("date") else None,
+            "macro_score": sig.get("macro_score"),
+            "bias": sig.get("bias"),
+            "confidence": sig.get("confidence"),
+            "range_low": sig.get("range_low"),
+            "range_high": sig.get("range_high"),
+            "signal_drivers": sig.get("drivers") or [],
+            "signal_invalidation": sig.get("invalidation") or [],
+        })
+    return rows
+
+
+def _cme_ai_pick_event(event_id=None):
+    """优先选指定事件；否则取最近已发布且已匹配情景的事件；再否则取最近的待发布事件。"""
+    events = _load_events()
+    if not events:
+        return None
+    if event_id:
+        hit = next((e for e in events if e.get("id") == event_id), None)
+        if hit is not None:
+            return hit
+    released = [e for e in events
+                if e.get("status") in ("RELEASED", "POST_EVENT")
+                and (e.get("matched_scenario") or _match_scenario(e.get("surprise")))]
+    if released:
+        released.sort(key=lambda e: str(e.get("scheduled_at") or ""), reverse=True)
+        return released[0]
+    upcoming = [e for e in events if e.get("status") == "SCHEDULED"]
+    if upcoming:
+        upcoming.sort(key=lambda e: str(e.get("scheduled_at") or ""))
+        return upcoming[0]
+    events.sort(key=lambda e: str(e.get("scheduled_at") or ""), reverse=True)
+    return events[0]
+
+
+def _cme_ai_event_block(ev):
+    """当前事件摘要（含模板补全，与 /api/cme/events 口径一致）。"""
+    if not ev:
+        return None
+    tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper()) or {}
+    return {
+        "event_id": ev.get("id"),
+        "event_type": ev.get("event_type"),
+        "status": ev.get("status") or "SCHEDULED",
+        "country": ev.get("country") or tpl.get("country") or "",
+        "metric": ev.get("metric") or tpl.get("metric") or "",
+        "unit": ev.get("unit") or tpl.get("unit") or "",
+        "scheduled_at": ev.get("scheduled_at"),
+        "consensus": ev.get("consensus"),
+        "previous": ev.get("previous"),
+        "actual": ev.get("actual"),
+        "surprise": ev.get("surprise"),
+        "importance": ev.get("importance"),
+        "note": ev.get("note"),
+        "source_url": ev.get("source_url"),
+        "matched_scenario": ev.get("matched_scenario") or _match_scenario(ev.get("surprise")),
+        "released": ev.get("status") in ("RELEASED", "POST_EVENT"),
+    }
+
+
+def _cme_ai_scenario_block(ev):
+    """匹配情景 + 三情景全文（触发规则 / 传导链 / 资产影响 / 反方 / 失效条件）。"""
+    if not ev:
+        return None
+    scenarios = [s for s in _load_scenarios() if s.get("event_id") == ev.get("id")]
+    if not scenarios:
+        scenarios = _generate_event_scenarios(ev)
+    matched = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    return {
+        "matched_key": matched,
+        "frozen": any(s.get("frozen_at") for s in scenarios),
+        "scenarios": [{
+            "key": s.get("scenario_key"),
+            "name": s.get("scenario_name"),
+            "tag": s.get("tag"),
+            "trigger_rule": s.get("trigger_rule"),
+            "transmission": s.get("transmission") or [],
+            "asset_impacts": s.get("asset_impacts") or [],
+            "counter_case": s.get("counter_case"),
+            "invalidation": s.get("invalidation") or [],
+            "triggered": bool(s.get("triggered")),
+        } for s in scenarios],
+    }
+
+
+def _cme_ai_study_block(ev, symbols):
+    """历史事件研究（确定性统计）摘要；分钟级数据源不可用会被显式标注。"""
+    if not ev:
+        return None
+    study = _compute_event_study(ev.get("id"))
+    if not study or study.get("error"):
+        return {"available": False, "reason": (study or {}).get("error") or "无匹配情景，无法检索历史对照"}
+    codes = [c for c in (symbols or list(STUDY_INSTRUMENTS)) if c in CME_CONTRACT_SPECS]
+    instruments = {}
+    for code in codes:
+        inst = (study.get("instruments") or {}).get(code) or {}
+        hz = inst.get("horizons") or {}
+
+        def _hz(label):
+            h = hz.get(label)
+            if not h or h.get("unavailable") or h.get("n", 0) == 0:
+                return {"unavailable": True, "reason": (h or {}).get("reason") or "no sample"}
+            return {"n": h.get("n"), "median": h.get("median"), "mean": h.get("mean"),
+                    "hit_rate": h.get("hit_rate"), "q25": h.get("q25"), "q75": h.get("q75"),
+                    "min": h.get("min"), "max": h.get("max"), "evidence": h.get("evidence")}
+
+        instruments[code] = {
+            "name": CME_CONTRACT_SPECS[code]["name"],
+            "tendency_1d": inst.get("tendency"),
+            "evidence": inst.get("evidence"),
+            "return_30m": _hz("30m"),
+            "return_2h": _hz("2h"),
+            "return_1d": _hz("1d"),
+            "return_3d": _hz("3d"),
+            "return_5d": _hz("5d"),
+            "path_vs_today": (study.get("path_vs_today") or {}).get(code) or [],
+        }
+    return {
+        "available": True,
+        "event_type": study.get("event_type"),
+        "matched_scenario": study.get("matched_scenario"),
+        "filter": study.get("filters"),
+        "sample_size": len(study.get("sample_ids") or []),
+        "instruments": instruments,
+    }
+
+
+def _cme_ai_sizing_block(proposal=None, symbol=None, direction=None, qty=None, event_id=None):
+    """确定性仓位引擎结果（AI 唯一被允许引用的仓位数字来源）。"""
+    code = _resolve_symbol(symbol or "") or (proposal or {}).get("symbol")
+    if not code:
+        return {"available": False, "reason": CME_AI_MISSING % "position sizing（未指定品种）"}
+    res = _compute_position_sizing(
+        symbol=code,
+        direction=direction or (proposal or {}).get("direction") or "long",
+        event_id=event_id or (proposal or {}).get("event_id"),
+        evidence=None,
+        confirmation=(proposal or {}).get("market_confirmation"),
+        qty=qty or (proposal or {}).get("qty"),
+        proposal=proposal,
+    )
+    if not res.get("ok"):
+        return {"available": False, "reason": CME_AI_MISSING % "position sizing（%s）" % (res.get("error") or "计算失败")}
+    return {
+        "available": True,
+        "symbol": res.get("symbol"),
+        "name": res.get("name"),
+        "direction": res.get("direction"),
+        "contract": res.get("contract"),
+        "levels": res.get("levels"),
+        "evidence": res.get("evidence"),
+        "confirmation": res.get("confirmation"),
+        "concentration": res.get("concentration"),
+        "limits": res.get("limits"),
+        "suggested": res.get("suggested"),
+        "selected_qty": res.get("selected_qty"),
+        "selected_in_range": res.get("selected_in_range"),
+        "selected_exceeds_final_max": res.get("selected_exceeds_final_max"),
+        "estimated_loss": res.get("estimated_loss"),
+        "account_impact_pct": res.get("account_impact_pct"),
+        "margin_required": res.get("margin_required"),
+        "margin_status": res.get("margin_status"),
+        "account": res.get("account"),
+        "warnings": res.get("warnings") or [],
+    }
+
+
+def _cme_ai_portfolio_block():
+    """组合状态 + 持仓 + 赛制（Risk Engine 确定性输出）。"""
+    risk = _compute_risk()
+    positions = _load_positions()
+    return {
+        "risk": risk,
+        "positions": [{
+            "symbol": p.get("symbol"),
+            "name": (CME_CONTRACT_SPECS.get(_resolve_symbol(p.get("symbol") or "") or "") or {}).get("name"),
+            "direction": p.get("direction"),
+            "qty": p.get("qty"),
+            "avg_price": p.get("avg_price"),
+            "mark_price": p.get("mark_price"),
+            "margin": p.get("margin"),
+            "note": p.get("note"),
+        } for p in positions],
+        "competition": _competition_info(),
+    }
+
+
+def _cme_ai_proposal_block(proposal):
+    if not proposal:
+        return None
+    return {
+        "proposal_id": proposal.get("id"),
+        "status": proposal.get("status"),
+        "symbol": proposal.get("symbol"),
+        "direction": proposal.get("direction"),
+        "qty": proposal.get("qty"),
+        "market_confirmation": proposal.get("market_confirmation"),
+        "thesis": proposal.get("thesis"),
+        "five_questions": proposal.get("five_questions"),
+        "invalidation": proposal.get("invalidation"),
+        "scenario_payoff": proposal.get("scenario_payoff"),
+        "event_data": proposal.get("event_data"),
+        "origin": proposal.get("origin"),
+        "risk_check": proposal.get("risk_check"),
+        "post_trade_note": proposal.get("post_trade_note"),
+        "review": proposal.get("review"),
+    }
+
+
+def _cme_build_ai_context(question, symbol=None, proposal_id=None, event_id=None, qty=None):
+    """Context Builder：把确定性数据整理成 AI 只能「解释」不能「发明」的上下文。"""
+    proposals = _load_proposals()
+    proposal = None
+    if proposal_id:
+        proposal = next((p for p in proposals if p.get("id") == proposal_id), None)
+    focus = _resolve_symbol(symbol or "") or (proposal or {}).get("symbol")
+    ev = _cme_ai_pick_event(event_id or (proposal or {}).get("event_id"))
+    study_symbols = [focus] if focus in STUDY_INSTRUMENTS else list(STUDY_INSTRUMENTS)
+
+    market = _cme_ai_market_snapshot()
+    focus_market = next((m for m in market if m.get("symbol") == focus), None)
+    scenario = _cme_ai_scenario_block(ev)
+    study = _cme_ai_study_block(ev, study_symbols)
+    portfolio = _cme_ai_portfolio_block()
+    sizing = _cme_ai_sizing_block(proposal=proposal, symbol=focus, qty=qty,
+                                 event_id=(ev or {}).get("id"))
+
+    missing = []
+    if not proposal_id:
+        missing.append("trade proposal（未选择提案，无法给出提案级判断）")
+    elif proposal is None:
+        missing.append("trade proposal（提案 %s 不存在）" % proposal_id)
+    if focus_market is None and not focus:
+        missing.append("focus instrument（未指定品种）")
+    if focus and focus_market and focus_market.get("price") is None:
+        missing.append("Market Snapshot price for %s" % focus)
+    if ev is None:
+        missing.append("current event（无事件记录）")
+    elif not (ev.get("status") in ("RELEASED", "POST_EVENT")):
+        missing.append("event actual/surprise（事件尚未发布）")
+    elif ev.get("surprise") is None:
+        missing.append("event surprise")
+    if study and not study.get("available"):
+        missing.append("historical event study（%s）" % study.get("reason"))
+    if study and study.get("available"):
+        for code in study_symbols:
+            h = ((study.get("instruments") or {}).get(code) or {}).get("return_1d") or {}
+            if h.get("unavailable"):
+                missing.append("historical 1d sample for %s" % code)
+    if sizing and not sizing.get("available"):
+        missing.append(sizing.get("reason") or (CME_AI_MISSING % "position sizing"))
+    if not portfolio.get("positions"):
+        missing.append("open positions（当前无持仓）")
+    missing.extend(portfolio["risk"].get("warnings") or [])
+
+    context = {
+        "question": question,
+        "focus_instrument": focus or None,
+        "focus_market": focus_market,
+        "market_snapshot": market,
+        "current_event": _cme_ai_event_block(ev),
+        "matched_scenario": scenario,
+        "historical_event_study": study,
+        "portfolio_state": {
+            "account": {
+                "account_equity": portfolio["risk"].get("account_equity"),
+                "net_equity": portfolio["risk"].get("net_equity"),
+                "margin_used": portfolio["risk"].get("margin_used"),
+                "margin_utilization_pct": portfolio["risk"].get("margin_utilization_pct"),
+                "headroom": portfolio["risk"].get("headroom"),
+                "unrealized_pnl": portfolio["risk"].get("unrealized_pnl"),
+                "gross_exposure": portfolio["risk"].get("gross_exposure"),
+                "concentration_pct": portfolio["risk"].get("concentration_pct"),
+                "daily_pnl": portfolio["risk"].get("daily_pnl"),
+                "daily_loss_pct": portfolio["risk"].get("daily_loss_pct"),
+                "risk_band": portfolio["risk"].get("risk_band"),
+                "today_contracts": portfolio["risk"].get("today_contracts"),
+                "max_contracts_per_day": portfolio["risk"].get("max_contracts_per_day"),
+                "max_concentration_pct": portfolio["risk"].get("max_concentration_pct"),
+                "max_daily_loss_pct": portfolio["risk"].get("max_daily_loss_pct"),
+                "competition_open": portfolio["risk"].get("competition_open"),
+                "final_day_liquidation": portfolio["risk"].get("final_day_liquidation"),
+                "contract_near_expiry": portfolio["risk"].get("contract_near_expiry"),
+            },
+            "competition": portfolio["competition"],
+        },
+        "open_positions": portfolio["positions"],
+        "trade_proposal": _cme_ai_proposal_block(proposal),
+        "position_sizing": sizing,
+        "data_freshness": _cme_ai_data_freshness(),
+        "missing": missing,
+    }
+    return context, missing
+
+
+def _cme_ai_extract_json(text):
+    """从模型输出中稳健地抽取 JSON 对象（容忍代码围栏与前后缀文字）。"""
+    import json as _json
+    if not text:
+        return None
+    raw = text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw
+        if raw.rstrip().endswith("```"):
+            raw = raw.rstrip()[:-3]
+        raw = raw.strip()
+        if raw.lower().startswith("json"):
+            raw = raw[4:].strip()
+    try:
+        return _json.loads(raw)
+    except Exception:
+        pass
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start != -1 and end > start:
+        try:
+            return _json.loads(raw[start:end + 1])
+        except Exception:
+            return None
+    return None
+
+
+def _cme_ai_normalize_answer(parsed, raw_text):
+    """把模型输出规范成固定结构；缺字段一律留空并计入 missing，不由服务端编造。"""
+    parsed = parsed if isinstance(parsed, dict) else {}
+    answer = {}
+    for key in CME_AI_SECTION_KEYS:
+        val = parsed.get(key)
+        if isinstance(val, list):
+            val = " ".join(str(v) for v in val)
+        answer[key] = (str(val).strip() if val not in (None, "") else "")
+    for key in ("base_view", "historical_context", "evidence_quality"):
+        val = parsed.get(key)
+        answer[key] = (str(val).strip() if val not in (None, "") else "")
+    for key in ("supporting_factors", "counter_factors", "invalidation",
+                "what_to_watch_next", "missing_data"):
+        val = parsed.get(key)
+        if isinstance(val, str):
+            val = [val] if val.strip() else []
+        elif not isinstance(val, list):
+            val = []
+        answer[key] = [str(v).strip() for v in val if str(v).strip()]
+    if not any(answer.get(k) for k in CME_AI_SECTION_KEYS):
+        answer["simple_view"] = raw_text or ""
+    return answer
+
+
+@app.route("/api/cme/ai-research", methods=["POST"])
+def api_cme_ai_research():
+    """CME AI 研究分析师：Context Builder → Provider → 固定结构化输出。
+
+    请求体：{question, symbol?, proposal_id?, event_id?, qty?, provider?}
+    返回体：{ok, provider, answer{7 段 + 附加字段}, context_meta, missing[], parsed, raw_text, generated_at}
+    """
+    import json as _json
+    import urllib.request
+    import urllib.error
+
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "问题不能为空"}), 400
+
+    cfg = _load_ai_config()
+    provider = _find_provider(cfg, (data.get("provider") or "").strip()) or _active_provider(cfg)
+    if not provider:
+        return jsonify({"error": "请先配置 AI 模型", "need_config": True}), 200
+    if not (provider.get("api_key") or ""):
+        return jsonify({"error": "模型「%s」未配置 API 密钥，请先前往 AI 配置页面设置"
+                                 % provider.get("name", ""), "need_config": True}), 200
+
+    context, missing = _cme_build_ai_context(
+        question,
+        symbol=data.get("symbol"),
+        proposal_id=data.get("proposal_id"),
+        event_id=data.get("event_id"),
+        qty=data.get("qty"),
+    )
+
+    user_content = (
+        "<QUESTION>\n%s\n</QUESTION>\n\n"
+        "<CONTEXT>\n%s\n</CONTEXT>\n\n"
+        "请严格按系统提示的 JSON 结构输出。只引用 <CONTEXT> 中的数字；"
+        "上下文 missing 列表中的项目必须在相应段落写成 `Missing: 项目名`，不要自行补齐。"
+        % (question, _json.dumps(context, ensure_ascii=False, default=str))
+    )
+
+    try:
+        raw_text = _call_provider(provider, CME_AI_SYSTEM_PROMPT, user_content, temperature=0.2)
+    except urllib.error.HTTPError as e:
+        try:
+            body = e.read().decode("utf-8", errors="ignore")
+            msg = _json.loads(body).get("error", {}).get("message", body)
+        except Exception:
+            msg = "HTTP %s" % e.code
+        return jsonify({"error": "AI 接口返回错误：%s" % msg}), 200
+    except Exception as e:
+        return jsonify({"error": "请求失败：%s" % e}), 200
+
+    if not raw_text:
+        return jsonify({"error": "AI 返回内容为空"}), 200
+
+    parsed = _cme_ai_extract_json(raw_text)
+    answer = _cme_ai_normalize_answer(parsed, raw_text)
+    merged_missing = []
+    for item in (answer.get("missing_data") or []):
+        if item not in merged_missing:
+            merged_missing.append(item)
+    if parsed is None:
+        merged_missing.append("structured JSON output（模型未按格式返回，已回退为纯文本）")
+
+    return jsonify({
+        "ok": True,
+        "provider": {
+            "id": provider.get("id"),
+            "name": provider.get("name"),
+            "model": provider.get("model"),
+        },
+        "answer": answer,
+        "context_meta": {
+            "focus_instrument": context.get("focus_instrument"),
+            "event_id": (context.get("current_event") or {}).get("event_id"),
+            "matched_scenario": (context.get("matched_scenario") or {}).get("matched_key"),
+            "sample_size": (context.get("historical_event_study") or {}).get("sample_size"),
+            "sizing_available": bool((context.get("position_sizing") or {}).get("available")),
+            "suggested_label": ((context.get("position_sizing") or {}).get("suggested") or {}).get("label"),
+            "final_max": ((context.get("position_sizing") or {}).get("limits") or {}).get("final_max"),
+            "data_freshness": context.get("data_freshness"),
+        },
+        "missing": merged_missing,
+        "parsed": parsed is not None,
+        "raw_text": raw_text,
+        "generated_at": _now_ms(),
+    })
 
 
 # ============================================================

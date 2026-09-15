@@ -405,6 +405,158 @@
 }
 .scenario-box strong { color: var(--text); }
 
+/* ============ V2：Event Impact & Scenario Lab ============ */
+.event-detail {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 18px;
+}
+.event-detail .evd-head {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
+}
+.event-detail .evd-title { font-size: 17px; font-weight: 800; }
+.event-detail .evd-sub { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+.status-chip {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--text-light);
+    background: rgba(13,17,23,0.6);
+}
+.status-chip.status-SCHEDULED { color: #8b949e; }
+.status-chip.status-PRE_EVENT { color: #d29922; border-color: rgba(210,153,34,0.5); }
+.status-chip.status-RELEASED { color: #3fb950; border-color: rgba(63,185,80,0.5); }
+.status-chip.status-POST_EVENT { color: #2383e2; border-color: rgba(35,131,226,0.5); }
+.status-chip.status-ARCHIVED { color: #8b949e; opacity: 0.6; }
+.evd-countdown {
+    font-size: 12px; color: var(--text-light);
+    background: rgba(13,17,23,0.5);
+    border: 1px dashed var(--border);
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 10px;
+}
+.evd-countdown b { color: #d29922; font-size: 13px; }
+.evd-facts {
+    display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-light);
+    margin-bottom: 14px;
+}
+.evd-facts b { color: var(--text); font-size: 13px; }
+.evd-facts .fact { background: rgba(13,17,23,0.5); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+.scenario-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px;
+}
+@media (max-width: 1000px) { .scenario-grid { grid-template-columns: 1fr; } }
+.scenario-card {
+    border-radius: 10px; padding: 14px; background: rgba(13,17,23,0.5);
+    border: 1px solid var(--border); position: relative;
+}
+.scenario-card .sc-name { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+.scenario-card .sc-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 2px 8px; border-radius: 999px; margin-bottom: 10px;
+}
+.scenario-card .sc-rule { font-size: 11px; color: var(--text-light); margin-bottom: 10px; }
+.scenario-card .sc-block { font-size: 12px; color: var(--text-light); line-height: 1.6; margin-bottom: 8px; }
+.scenario-card .sc-block b { color: var(--text); }
+.scenario-card .sc-block ul { margin: 4px 0 0; padding-left: 16px; }
+.scenario-card .sc-assets { display: flex; gap: 6px; flex-wrap: wrap; }
+.scenario-card .sc-assets span {
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    border: 1px solid var(--border); background: rgba(13,17,23,0.6);
+}
+.scenario-card .sc-invalid { font-size: 11px; color: #f0883e; }
+.scenario-card.sc-hot { border-color: rgba(248,81,73,0.45); }
+.scenario-card.sc-hot .sc-name { color: #f85149; }
+.scenario-card.sc-hot .sc-tag { background: rgba(248,81,73,0.15); color: #f85149; }
+.scenario-card.sc-inline { border-color: rgba(210,153,34,0.4); }
+.scenario-card.sc-inline .sc-name { color: #d29922; }
+.scenario-card.sc-inline .sc-tag { background: rgba(210,153,34,0.15); color: #d29922; }
+.scenario-card.sc-cool { border-color: rgba(63,185,80,0.45); }
+.scenario-card.sc-cool .sc-name { color: #3fb950; }
+.scenario-card.sc-cool .sc-tag { background: rgba(63,185,80,0.15); color: #3fb950; }
+.scenario-card.sc-triggered { outline: 2px solid #f0883e; outline-offset: 1px; }
+.scenario-card .sc-frozen { font-size: 10px; color: var(--text-light); opacity: 0.7; margin-top: 8px; }
+.release-banner {
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;
+    font-size: 13px; font-weight: 600; line-height: 1.6;
+    background: rgba(240,136,62,0.12); border: 1px solid rgba(240,136,62,0.5); color: #f0883e;
+}
+.release-banner b { color: #ffd9a8; }
+.evd-actual-row {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    padding-top: 12px; border-top: 1px dashed var(--border);
+}
+.evd-actual-row input {
+    width: 120px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: rgba(13,17,23,0.6); color: var(--text);
+}
+.study-stub {
+    font-size: 12px; color: var(--text-light); margin-top: 12px;
+    background: rgba(13,17,23,0.4); border: 1px dashed var(--border);
+    border-radius: 8px; padding: 10px 12px;
+}
+.study-panel {
+    margin-top: 12px;
+    background: rgba(13,17,23,0.5);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+}
+.study-loading { font-size: 12px; color: var(--text-light); }
+.study-head {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+}
+.study-title { font-size: 14px; font-weight: 700; }
+.study-filter { font-size: 12px; color: var(--text-light); }
+.study-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.study-tab {
+    padding: 6px 12px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+    background: rgba(13,17,23,0.6); color: var(--text-light);
+}
+.study-tab.active {
+    background: linear-gradient(135deg, #2383e2, #6e5ae6); color: #fff; border-color: transparent;
+}
+.study-inst-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-size: 12px; margin-bottom: 10px;
+}
+.study-inst-head b { font-size: 15px; }
+.study-tendency { color: #e3b341; }
+.study-evidence { color: var(--text-light); }
+.study-n { color: var(--text-light); }
+.study-hz-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.study-hz {
+    padding: 4px 10px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+    background: transparent; color: var(--text-light);
+}
+.study-hz.active {
+    background: rgba(35,131,226,0.2); border-color: rgba(35,131,226,0.6); color: #58a6ff;
+}
+.study-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+@media (max-width: 700px) { .study-grid { grid-template-columns: 1fr 1fr; } }
+.sg-item {
+    background: rgba(13,17,23,0.6); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+}
+.sg-item span { display: block; font-size: 11px; color: var(--text-light); margin-bottom: 4px; }
+.sg-item b { font-size: 13px; color: var(--text); }
+.study-note { font-size: 11px; color: var(--text-light); font-style: italic; margin-bottom: 10px; }
+.study-empty { font-size: 12px; color: var(--text-light); padding: 10px 0; }
+.path-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.path-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.path-table th, .path-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.path-table th { color: var(--text-light); font-weight: 600; }
+.path-today { display: flex; gap: 6px; align-items: center; }
+.path-today-input {
+    width: 110px; padding: 4px 8px; border-radius: 6px;
+    border: 1px solid var(--border); background: rgba(13,17,23,0.6);
+    color: var(--text); font-size: 12px;
+}
+.path-save { padding: 4px 10px; font-size: 11px; }
+
 /* ============ 交易提案（模块 C） ============ */
 .proposal-card {
     background: var(--bg-elevated);
@@ -428,6 +580,58 @@
 @media (max-width: 700px) { .proposal-card .pp-grid { grid-template-columns: 1fr; } }
 .proposal-card .pp-grid strong { color: var(--text); }
 .proposal-card .pp-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.proposal-card .pp-origin { font-size: 12px; color: var(--text-light); margin-bottom: 10px; }
+.proposal-card .pp-origin b { color: var(--text); }
+.proposal-card .pp-block { font-size: 12px; margin-bottom: 10px; }
+.proposal-card .pp-block > b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-light); margin-bottom: 6px; }
+.proposal-card .pp-fq > div,
+.proposal-card .pp-inv > div { color: var(--text-light); line-height: 1.6; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+.proposal-card .pp-fq > div:last-child,
+.proposal-card .pp-inv > div:last-child { border-bottom: none; }
+.proposal-card .pp-fq span,
+.proposal-card .pp-inv span { display: inline-block; min-width: 132px; color: var(--primary); font-weight: 600; }
+.proposal-card .pp-payoff { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.proposal-card .pp-payoff-head,
+.proposal-card .pp-payoff-row {
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; padding: 7px 10px; font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+.proposal-card .pp-payoff-head { background: rgba(13,17,23,0.6); color: var(--text-light); font-weight: 600; }
+.proposal-card .pp-payoff-row { border-top: 1px solid var(--border); }
+.proposal-card .pp-note { font-size: 12px; color: var(--text); background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.proposal-card .pp-note-edit { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.proposal-card .pp-note-edit textarea {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(13,17,23,0.6); color: var(--text); font-size: 12px; resize: vertical;
+}
+.prop-status { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); letter-spacing: 0.4px; }
+.prop-status.ps-DRAFT { color: var(--text-light); }
+.prop-status.ps-REVIEW { color: #e3b341; border-color: rgba(227,179,65,0.4); background: rgba(227,179,65,0.12); }
+.prop-status.ps-APPROVED { color: #58a6ff; border-color: rgba(88,166,255,0.4); background: rgba(88,166,255,0.12); }
+.prop-status.ps-EXECUTED { color: #3fb950; border-color: rgba(63,185,80,0.4); background: rgba(63,185,80,0.12); }
+.prop-status.ps-CLOSED { color: #3fb950; border-color: rgba(63,185,80,0.4); background: rgba(63,185,80,0.12); }
+.prop-status.ps-REVIEWED { color: var(--primary); border-color: rgba(110,90,230,0.4); background: rgba(110,90,230,0.12); }
+.prop-status.ps-REJECTED,
+.prop-status.ps-INVALIDATED,
+.prop-status.ps-CANCELLED { color: #f85149; border-color: rgba(248,81,73,0.4); background: rgba(248,81,73,0.12); }
+.proposal-card.status-EXECUTED { border-left-color: #3fb950; }
+.proposal-card.status-CLOSED { border-left-color: #3fb950; }
+.proposal-card.status-REVIEWED { border-left-color: #6e5ae6; }
+.proposal-card.status-REJECTED,
+.proposal-card.status-INVALIDATED,
+.proposal-card.status-CANCELLED { border-left-color: #f85149; opacity: 0.75; }
+.proposal-card .pp-riskc { border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; border: 1px solid var(--border); }
+.proposal-card .pp-riskc.rc-pass { background: rgba(63,185,80,0.08); border-color: rgba(63,185,80,0.3); }
+.proposal-card .pp-riskc.rc-warn { background: rgba(227,179,65,0.08); border-color: rgba(227,179,65,0.35); }
+.proposal-card .pp-riskc.rc-block { background: rgba(248,81,73,0.1); border-color: rgba(248,81,73,0.4); }
+.proposal-card .pp-rc-head { font-weight: 700; margin-bottom: 8px; letter-spacing: 0.4px; }
+.proposal-card .pc-row { padding: 5px 0; border-top: 1px dashed var(--border); }
+.proposal-card .pc-name { font-weight: 600; color: var(--text); margin-right: 8px; }
+.proposal-card .pc-status { font-weight: 700; font-size: 11px; }
+.proposal-card .pc-row.chk-pass .pc-status { color: #3fb950; }
+.proposal-card .pc-row.chk-warn .pc-status { color: #e3b341; }
+.proposal-card .pc-row.chk-block .pc-status { color: #f85149; }
+.proposal-card .pc-msg { color: var(--text-light); line-height: 1.5; }
 
 /* ============ 通用按钮 ============ */
 .cme-btn {
@@ -480,6 +684,14 @@
 }
 .risk-metrics .rm .rm-label { font-size: 11px; color: var(--text-light); margin-bottom: 4px; }
 .risk-metrics .rm .rm-value { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.risk-metrics .rm.rm-band { grid-column: 1 / -1; border-left: 3px solid var(--primary); }
+.risk-metrics .rm.rm-band.rb-safe { border-left-color: #3fb950; }
+.risk-metrics .rm.rm-band.rb-caution { border-left-color: #e3b341; }
+.risk-metrics .rm.rm-band.rb-reduce { border-left-color: #f0883e; }
+.risk-metrics .rm.rm-band.rb-high { border-left-color: #f85149; }
+.risk-metrics .rm.rm-band.rb-critical { border-left-color: #ff5c5c; }
+.risk-metrics .rm.rm-band.rb-lock { border-left-color: #ff0000; background: rgba(248,81,73,0.12); }
+.risk-metrics .rm.rm-band .rm-value { font-size: 20px; letter-spacing: 0.6px; }
 
 /* ============ Journal ============ */
 .journal-card {
@@ -527,6 +739,162 @@
     margin-top: 8px;
     line-height: 1.5;
 }
+
+/* ============ Position Sizing（V2.1 §6） ============ */
+.ps-simple {
+    background: rgba(13,17,23,0.5);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+.ps-simple h3 { font-size: 14px; margin: 0 0 10px; }
+.ps-answer-label {
+    font-size: 10.5px;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 4px;
+}
+.ps-answer {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 6px;
+}
+.ps-list { list-style: none; padding: 0; margin: 10px 0 0; }
+.ps-list li { font-size: 12.5px; line-height: 1.7; display: flex; gap: 10px; }
+.ps-list li .ps-k { color: var(--text-light); min-width: 176px; flex-shrink: 0; }
+.ps-note { font-size: 11px; color: var(--text-light); font-style: italic; }
+.ps-limits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+.ps-limits .pl {
+    background: rgba(13,17,23,0.4);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+}
+.ps-limits .pl .pl-label { font-size: 10.5px; color: var(--text-light); margin-bottom: 3px; }
+.ps-limits .pl .pl-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ps-limits .pl.binding { border-color: var(--primary); background: rgba(88,166,255,0.08); }
+.ps-whatif { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.ps-whatif input[type="range"] { width: 100%; accent-color: var(--primary); margin-top: 6px; }
+.ps-wi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+.ps-wi {
+    background: rgba(13,17,23,0.4);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+}
+.ps-wi .ps-wi-label { font-size: 10.5px; color: var(--text-light); margin-bottom: 3px; }
+.ps-wi .ps-wi-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ps-override { display: none; margin-top: 14px; }
+.ps-override.show { display: block; }
+.ps-pro { margin-top: 16px; }
+.ps-pro summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-light); }
+.ps-pro summary:hover { color: var(--text); }
+.ps-pro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 4px 20px;
+    margin-top: 12px;
+    font-size: 12px;
+}
+.ps-pro-grid .pg { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--border); padding: 5px 0; }
+.ps-pro-grid .pg .pg-k { color: var(--text-light); }
+.ps-pro-grid .pg .pg-v { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+
+/* ============ AI 研究分析师（MODULE 5 / V2.1 §12-13） ============ */
+.ai-quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+.ai-quick button {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(28, 33, 40, 0.6);
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.ai-quick button:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(88, 166, 255, 0.10);
+}
+.ai-quick button:disabled { opacity: 0.5; cursor: not-allowed; }
+.ai-meta { font-size: 11.5px; font-weight: 500; color: var(--text-light); margin-left: 8px; }
+.ai-result { margin-top: 12px; }
+.ai-empty { color: var(--text-light); font-size: 13px; padding: 26px 0; text-align: center; }
+.ai-seg {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background: rgba(13, 17, 23, 0.35);
+}
+.ai-seg .ai-seg-head {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+}
+.ai-seg .ai-seg-body { font-size: 13.5px; line-height: 1.75; white-space: pre-wrap; }
+.ai-seg.risk { border-left-color: #f0883e; }
+.ai-seg.risk .ai-seg-head { color: #f0883e; }
+.ai-seg.watch { border-left-color: #bc8cff; }
+.ai-seg.watch .ai-seg-head { color: #bc8cff; }
+.ai-seg ul { margin: 0; padding-left: 18px; }
+.ai-seg li { font-size: 13.5px; line-height: 1.7; margin-bottom: 5px; }
+.ai-seg .ai-missing { color: #f0883e; font-style: italic; }
+.ai-badges { margin-bottom: 12px; }
+.ai-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    margin: 0 6px 6px 0;
+}
+.ai-badge b { color: var(--text); font-variant-numeric: tabular-nums; }
+.ai-ctxbox {
+    font-size: 11.5px;
+    color: var(--text-light);
+    margin-top: 12px;
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+    line-height: 1.9;
+}
+.ai-pro { margin-top: 14px; }
+.ai-pro summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-light); }
+.ai-pro summary:hover { color: var(--text); }
+.ai-raw { white-space: pre-wrap; font-size: 12.5px; line-height: 1.75; color: var(--text-light); margin-top: 10px; }
+.ai-history { margin-top: 8px; }
+.ai-hist-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.ai-hist-item:hover { border-color: var(--primary); }
+.ai-hist-item .ah-q { font-size: 13px; font-weight: 600; }
+.ai-hist-item .ah-t { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+.ai-hist-empty { color: var(--text-light); font-size: 12.5px; }
 </style>
 {% endblock %}
 
@@ -580,6 +948,7 @@
     <button class="tab" data-tab="tab-event">Event Scenario</button>
     <button class="tab" data-tab="tab-planner">Trade Planner</button>
     <button class="tab" data-tab="tab-risk">Risk & Ops</button>
+    <button class="tab" data-tab="tab-ai">AI 分析师</button>
 </div>
 
 <!-- ============ Tab 1：行情快照 + CSV 导入 ============ -->
@@ -706,22 +1075,22 @@
     </div>
 </div>
 
-<!-- ============ Tab 3：Event Scenario（模块 B） ============ -->
+<!-- ============ Tab 3：Event Impact & Scenario Lab（模块 B · V2） ============ -->
 <div class="tab-pane" id="tab-event">
     <div class="cme-section">
-        <h2>Event Scenario <span class="section-tag">模块 B</span></h2>
-        <p>重大宏观事件前生成情景树，落地后更新 actual 自动计算 surprise 并匹配情景。</p>
+        <h2>Event Impact <span class="section-tag">模块 B</span></h2>
+        <p>WAR ROOM 事件中心：Upcoming → 三情景 → Actual 落地 → 自动 Match Scenario。数据发布后全部内容冻结，只标记触发情景，绝不事后重写叙事。</p>
     </div>
 
     <div class="cme-grid">
         <div class="cme-panel">
             <h2>新增事件</h2>
-            <p class="panel-desc">录入 CPI / NFP / FOMC 等事件，含 consensus 与 previous。</p>
+            <p class="panel-desc">录入 CPI / NFP / FOMC 等事件。CPI 会自动生成 HOT / INLINE / COOL 三情景。</p>
             <div class="cme-form">
                 <div class="field">
                     <label for="ev-type">事件类型</label>
                     <select id="ev-type">
-                        <option value="CPI">CPI</option>
+                        <option value="CPI">CPI 通胀</option>
                         <option value="NFP">NFP 非农</option>
                         <option value="FOMC">FOMC 利率决议</option>
                         <option value="Fed Speech">Fed 官员讲话</option>
@@ -732,19 +1101,19 @@
                     </select>
                 </div>
                 <div class="field">
-                    <label for="ev-country">国家/地区</label>
-                    <input id="ev-country" placeholder="US / EU / JP">
+                    <label for="ev-time">发布时刻（YYYY-MM-DD HH:MM，美国中部）</label>
+                    <input id="ev-time" placeholder="2026-09-18 07:30">
                 </div>
                 <div class="row2">
                     <div class="field">
-                        <label for="ev-time">时间（YYYY-MM-DD HH:MM）</label>
-                        <input id="ev-time" placeholder="2026-09-18 20:30">
+                        <label for="ev-metric">指标（Metric）</label>
+                        <input id="ev-metric" placeholder="默认：Headline CPI YoY">
                     </div>
                     <div class="field">
                         <label for="ev-importance">重要度</label>
                         <select id="ev-importance">
-                            <option value="high">High</option>
-                            <option value="medium" selected>Medium</option>
+                            <option value="high" selected>High</option>
+                            <option value="medium">Medium</option>
                             <option value="low">Low</option>
                         </select>
                     </div>
@@ -760,17 +1129,21 @@
                     </div>
                 </div>
                 <div class="field">
+                    <label for="ev-source">数据源 ID / 链接</label>
+                    <input id="ev-source" placeholder="bloomberg-econ 或新闻链接">
+                </div>
+                <div class="field">
                     <label for="ev-note">备注 / 关注点</label>
                     <textarea id="ev-note" rows="2" placeholder="如：核心 CPI 环比是关键"></textarea>
                 </div>
-                <button id="ev-save" class="btn-primary">保存事件</button>
+                <button id="ev-save" class="btn-primary">保存事件（生成三情景）</button>
                 <div id="ev-hint" class="cme-hint"></div>
             </div>
         </div>
 
         <div class="cme-panel">
-            <h2>事件列表</h2>
-            <p class="panel-desc">按时间倒序。事件落地后可填 actual 自动算 surprise。</p>
+            <h2>事件研究区</h2>
+            <p class="panel-desc">发布后的历史事件统计（阶段 2 启用）。当前展示实时状态流。</p>
             <div id="event-list"></div>
         </div>
     </div>
@@ -786,8 +1159,12 @@
     <div class="cme-grid">
         <div class="cme-panel">
             <h2>生成交易卡</h2>
-            <p class="panel-desc">填写交易观点，生成 proposal，等待团队 approve 后再人工下单。</p>
+            <p class="panel-desc">选择已发布并匹配情景的事件。thesis / 五个问题 / Invalidation / Scenario Payoff 由历史研究确定性生成，人工只能补充不能编造。</p>
             <div class="cme-form">
+                <div class="field">
+                    <label for="tp-event">关联事件（已发布 + 已匹配情景）</label>
+                    <select id="tp-event"></select>
+                </div>
                 <div class="field">
                     <label for="tp-symbol">品种</label>
                     <select id="tp-symbol"></select>
@@ -801,35 +1178,13 @@
                         </select>
                     </div>
                     <div class="field">
-                        <label for="tp-confidence">置信度 0-100</label>
-                        <input id="tp-confidence" type="number" min="0" max="100" placeholder="72">
+                        <label for="tp-qty">数量（手）</label>
+                        <input id="tp-qty" type="number" min="1" step="1" value="1">
                     </div>
                 </div>
                 <div class="field">
-                    <label for="tp-thesis">交易逻辑（thesis）</label>
-                    <textarea id="tp-thesis" rows="3" placeholder="CPI 不及预期 + US2Y 下行 + DXY 走弱"></textarea>
-                </div>
-                <div class="field">
-                    <label for="tp-entry">入场条件</label>
-                    <input id="tp-entry" placeholder="事件后确认 DXY 与 US2Y 同向">
-                </div>
-                <div class="row2">
-                    <div class="field">
-                        <label for="tp-stop">止损 / 失效</label>
-                        <input id="tp-stop" placeholder="US2Y +10bp 或 DXY +0.6%">
-                    </div>
-                    <div class="field">
-                        <label for="tp-horizon">持仓周期</label>
-                        <input id="tp-horizon" placeholder="6-48h">
-                    </div>
-                </div>
-                <div class="field">
-                    <label for="tp-size">仓位建议（选填）</label>
-                    <input id="tp-size" placeholder="如 2 contracts">
-                </div>
-                <div class="field">
-                    <label for="tp-owner">负责人（选填）</label>
-                    <input id="tp-owner" placeholder="团队成员名">
+                    <label for="tp-thesis">交易逻辑（选填，留空用系统确定性生成）</label>
+                    <textarea id="tp-thesis" rows="3" placeholder="留空则由历史 1D 研究结果自动生成"></textarea>
                 </div>
                 <button id="tp-save" class="btn-primary">生成 proposal</button>
                 <div id="tp-hint" class="cme-hint"></div>
@@ -838,7 +1193,7 @@
 
         <div class="cme-panel">
             <h2>交易提案</h2>
-            <p class="panel-desc">Pending / Approved / Rejected 三态，由人工点击 approve 或 reject。</p>
+            <p class="panel-desc">DRAFT → REVIEW → APPROVED → EXECUTED → CLOSED → REVIEWED 状态机。五问填全且 Risk Check 非 BLOCK 才能 APPROVE；系统绝不自动下单。</p>
             <div id="proposal-list"></div>
         </div>
     </div>
@@ -855,7 +1210,74 @@
         <h2>组合风险</h2>
         <div id="risk-warnings"></div>
         <div class="risk-metrics" id="risk-metrics"></div>
-        <div class="cme-note">风控红线来自配置文件（可调），正式赛前按 2026 Rules PDF 最终核验。账户权益默认模拟 $100,000，可到后端 risk-config 调整。</div>
+        <div class="cme-note">风控红线来自配置文件（可调），正式赛前按 2026 Rules PDF 最终核验。模拟账户权益默认 $1,000,000；单日合约上限 10 手；单日亏损 0-8% SAFE / 8-12% CAUTION / 12-16% REDUCE RISK / 16-18% HIGH RISK / 18-20% CRITICAL / ≥20% OFFICIAL LOCK RISK。</div>
+    </div>
+
+    <div class="cme-panel" style="margin-bottom:20px;">
+        <h2>Position Sizing <span class="section-tag">V2.1 §6</span></h2>
+        <p class="panel-desc">确定性仓位引擎：风险预算 → 每手风险 → 风险上限 → 证据调整 → 集中度调整 → 最终上限 → 建议工作区间。所有数字来自合约规格与风控参数的确定性计算，<strong>不由 AI 生成</strong>；AI 只能解释这些数字，不能自行决定手数。</p>
+        <div class="cme-form">
+            <div class="row2">
+                <div class="field">
+                    <label for="ps-proposal">关联交易提案（选填，自动带入品种/方向/手数）</label>
+                    <select id="ps-proposal"></select>
+                </div>
+                <div class="field">
+                    <label for="ps-symbol">品种</label>
+                    <select id="ps-symbol"></select>
+                </div>
+            </div>
+            <div class="row2">
+                <div class="field">
+                    <label for="ps-direction">方向</label>
+                    <select id="ps-direction">
+                        <option value="long">Long 做多</option>
+                        <option value="short">Short 做空</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="ps-evidence">证据等级 Evidence</label>
+                    <select id="ps-evidence">
+                        <option value="">自动（按历史样本数分级）</option>
+                        <option value="HIGHER">HIGHER</option>
+                        <option value="MEDIUM">MEDIUM</option>
+                        <option value="LOW">LOW</option>
+                        <option value="VERY LOW">VERY LOW</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row2">
+                <div class="field">
+                    <label for="ps-entry">入场价（留空用合约参考价）</label>
+                    <input id="ps-entry" type="number" step="any">
+                </div>
+                <div class="field">
+                    <label for="ps-stop">止损价（留空用默认止损 %）</label>
+                    <input id="ps-stop" type="number" step="any">
+                </div>
+            </div>
+            <div class="row2">
+                <div class="field">
+                    <label for="ps-qty">拟选手数（用于超限校验）</label>
+                    <input id="ps-qty" type="number" min="0" step="1" value="1">
+                </div>
+                <div class="field">
+                    <label for="ps-confirmation">市场确认 Market Confirmation</label>
+                    <select id="ps-confirmation">
+                        <option value="">自动</option>
+                        <option value="CONFIRMED">CONFIRMED</option>
+                        <option value="PARTIALLY CONFIRMED">PARTIALLY CONFIRMED</option>
+                        <option value="MIXED">MIXED</option>
+                        <option value="DIVERGING">DIVERGING</option>
+                        <option value="NO TRADE">NO TRADE</option>
+                    </select>
+                </div>
+            </div>
+            <button id="ps-run" class="btn-primary">计算仓位</button>
+            <div id="ps-hint" class="cme-hint"></div>
+        </div>
+        <div id="ps-result"></div>
+        <div class="cme-note">术语：<strong>Parite Risk-Based Size</strong>=风险预算允许的上限（风险天花板，不等于建议满仓）；<strong>Calculated Working Range</strong>=建议工作区间；最终手数由人工决定。</div>
     </div>
 
     <div class="cme-grid">
@@ -958,6 +1380,64 @@
                 </label>
                 <span id="bk-hint" class="cme-hint" style="flex:1;min-width:200px;"></span>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Tab 6：AI 研究分析师（MODULE 5 / V2.1 §12-13） ============ -->
+<div class="tab-pane" id="tab-ai">
+    <div class="cme-section">
+        <h2>AI 研究分析师 <span class="section-tag">模块 E</span></h2>
+        <p>AI 只解释确定性数据：行情快照、当前事件、匹配情景、历史事件研究、组合状态、持仓、交易提案与仓位引擎结果。<strong>它不会发明价格、概率、命中率、保证金或手数</strong>；数据缺失会明确标注 Missing。</p>
+    </div>
+
+    <div class="cme-grid">
+        <div class="cme-panel">
+            <h2>提问</h2>
+            <p class="panel-desc">先选焦点品种与关联提案，再用快捷问题或自由提问。AI 会把这些确定性上下文一起喂给模型。</p>
+            <div class="cme-form">
+                <div class="row2">
+                    <div class="field">
+                        <label for="ai-focus">焦点品种</label>
+                        <select id="ai-focus"></select>
+                    </div>
+                    <div class="field">
+                        <label for="ai-provider-cme">模型</label>
+                        <select id="ai-provider-cme"></select>
+                    </div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="ai-proposal">关联交易提案（选填）</label>
+                        <select id="ai-proposal"></select>
+                    </div>
+                    <div class="field">
+                        <label for="ai-qty">拟选手数（选填）</label>
+                        <input id="ai-qty" type="number" min="0" step="1" placeholder="如 2">
+                    </div>
+                </div>
+                <div class="ai-quick" id="ai-quick"></div>
+                <div class="field">
+                    <label for="ai-question">自由提问</label>
+                    <textarea id="ai-question" rows="3" placeholder="如：为什么当前宏观观点偏空？这个论点最可能被什么推翻？"></textarea>
+                </div>
+                <button id="ai-ask" class="btn-primary">分析</button>
+                <div id="ai-hint" class="cme-hint"></div>
+            </div>
+        </div>
+
+        <div class="cme-panel">
+            <h2>研究结论 <span id="ai-meta" class="ai-meta"></span></h2>
+            <div id="ai-result" class="ai-result">
+                <div class="ai-empty">还没有分析结果。左侧点一个快捷问题开始。</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cme-panel" style="margin-top:20px;">
+        <h2>本次会话记录 <span class="section-tag">点条目可重新查看</span></h2>
+        <div id="ai-history" class="ai-history">
+            <div class="ai-hist-empty">暂无记录。</div>
         </div>
     </div>
 </div>
@@ -1207,16 +1687,10 @@
     // 共享品种列表 + 下拉框填充
     // ============================================================
     var CME_SYMBOLS = [
-        { v: 'GC=F', l: '黄金期货 GC=F' },
-        { v: 'NQ=F', l: '纳斯达克100 NQ=F' },
-        { v: 'ES=F', l: '标普500 ES=F' },
-        { v: '6E=F', l: '欧元期货 6E=F' },
-        { v: '6J=F', l: '日元期货 6J=F' },
-        { v: '6B=F', l: '英镑期货 6B=F' },
-        { v: 'ZT=F', l: '2年期美债 ZT=F' },
-        { v: 'ZF=F', l: '5年期美债 ZF=F' },
-        { v: 'ZN=F', l: '10年期美债 ZN=F' },
-        { v: 'CL=F', l: '原油 CL=F' }
+        { v: 'GC', l: 'Gold GC' },
+        { v: 'DX', l: 'DXY DX' },
+        { v: '6E', l: 'EUR/USD 6E' },
+        { v: 'NQ', l: 'Nasdaq NQ' }
     ];
     function fillSymbolSelect(sel) {
         if (!sel) return;
@@ -1227,7 +1701,7 @@
             sel.appendChild(opt);
         });
     }
-    ['ms-symbol', 'tp-symbol', 'pos-symbol', 'jr-symbol'].forEach(function (id) {
+    ['ms-symbol', 'tp-symbol', 'pos-symbol', 'jr-symbol', 'ps-symbol', 'ai-focus'].forEach(function (id) {
         fillSymbolSelect(document.getElementById(id));
     });
 
@@ -1418,18 +1892,247 @@
     }
 
     // ============================================================
-    // 模块 B：Event Scenario
+    // 模块 B：Event Impact & Scenario Lab（V2）
     // ============================================================
     var evType = document.getElementById('ev-type');
-    var evCountry = document.getElementById('ev-country');
     var evTime = document.getElementById('ev-time');
+    var evMetric = document.getElementById('ev-metric');
     var evImportance = document.getElementById('ev-importance');
     var evConsensus = document.getElementById('ev-consensus');
     var evPrevious = document.getElementById('ev-previous');
+    var evSource = document.getElementById('ev-source');
     var evNote = document.getElementById('ev-note');
     var evSave = document.getElementById('ev-save');
     var evHint = document.getElementById('ev-hint');
     var eventList = document.getElementById('event-list');
+
+    var SCENARIO_STYLE = { HOT: 'sc-hot', INLINE: 'sc-inline', COOL: 'sc-cool' };
+    var SCENARIO_LABEL = { HOT: 'HOT', INLINE: 'INLINE', COOL: 'COOL' };
+
+    function fmtNum(v) {
+        return v != null && v !== '' ? v : '—';
+    }
+
+    function scenarioDirectionLabel(d) {
+        if (d === 'up') return '↑';
+        if (d === 'down') return '↓';
+        return '震荡';
+    }
+
+    function renderScenarioCard(sc, released) {
+        var style = SCENARIO_STYLE[sc.scenario_key] || 'sc-inline';
+        var triggered = sc.triggered ? ' sc-triggered' : '';
+        var impacts = (sc.asset_impacts || []).map(function (a) {
+            return '<span>' + esc(a.asset) + ' ' + scenarioDirectionLabel(a.direction) + '</span>';
+        }).join('');
+        var invalid = (sc.invalidation || []).length
+            ? '<div class="sc-invalid">失效条件：' + esc((sc.invalidation || []).join(' · ')) + '</div>'
+            : '';
+        var frozen = '';
+        if (released && sc.frozen_at) {
+            frozen = '<div class="sc-frozen">🔒 已冻结于发布时刻</div>';
+        }
+        return '<div class="scenario-card ' + style + triggered + '">' +
+            '<div class="sc-name">' + esc(sc.scenario_name || SCENARIO_LABEL[sc.scenario_key] || sc.scenario_key) + '</div>' +
+            '<span class="sc-tag">' + esc(sc.tag || '') + '</span>' +
+            '<div class="sc-rule">规则：' + esc(sc.trigger_rule || '') + '</div>' +
+            '<div class="sc-block"><b>传导链</b><ul>' +
+                (sc.transmission || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') +
+            '</ul></div>' +
+            '<div class="sc-block"><b>资产影响</b><div class="sc-assets">' + impacts + '</div></div>' +
+            (sc.counter_case ? '<div class="sc-block"><b>反例</b>' + esc(sc.counter_case) + '</div>' : '') +
+            invalid + frozen +
+        '</div>';
+    }
+
+    function countdownText(targetStr) {
+        if (!targetStr) return '';
+        var target = new Date(targetStr.replace(' ', 'T')).getTime();
+        if (isNaN(target)) return '';
+        var diff = target - Date.now();
+        if (diff <= 0) return '';
+        var d = Math.floor(diff / 86400000);
+        var h = Math.floor(diff % 86400000 / 3600000);
+        var m = Math.floor(diff % 3600000 / 60000);
+        var s = Math.floor(diff % 60000 / 1000);
+        var pad = function (n) { return n < 10 ? '0' + n : n; };
+        var str = pad(h) + ':' + pad(m) + ':' + pad(s);
+        if (d > 0) str = d + '天 ' + str;
+        return str;
+    }
+
+    function fmtPct(v, signed) {
+        if (v == null || v === '' || isNaN(v)) return '—';
+        var s = parseFloat(v);
+        var str = s.toFixed(2) + '%';
+        if (signed && s > 0) str = '+' + str;
+        return str;
+    }
+
+    function fmtHitRate(v) {
+        if (v == null || v === '') return '—';
+        return (Math.round(parseFloat(v) * 10) / 10) + '%';
+    }
+
+    function studyStatsGrid(st) {
+        if (!st) return '<div class="study-empty">无可用数据。</div>';
+        if (st.unavailable) return '<div class="study-empty">' + esc(st.reason || 'data unavailable') + '</div>';
+        var n = st.n != null ? st.n : 0;
+        var rows = [
+            ['样本量 n', n],
+            ['均值', fmtPct(st.mean, true)],
+            ['中位数', fmtPct(st.median, true)],
+            ['上涨样本', st.positive + ' / ' + n],
+            ['命中率', fmtHitRate(st.hit_rate)],
+            ['Q25', fmtPct(st.q25, true)],
+            ['Q75', fmtPct(st.q75, true)],
+            ['最小', fmtPct(st.min, true)],
+            ['最大', fmtPct(st.max, true)]
+        ];
+        return '<div class="study-grid">' + rows.map(function (r) {
+            return '<div class="sg-item"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
+        }).join('') + '</div>';
+    }
+
+    function studyHitNote(name, st) {
+        if (!st || st.unavailable || st.hit_rate == null) return '';
+        var verb = (st.positive != null && st.negative != null && st.positive >= st.negative) ? 'rose' : 'fell';
+        return esc(name) + ' ' + verb + ' in ' + fmtHitRate(st.hit_rate) +
+            ' of the selected historical observations (n = ' + (st.n != null ? st.n : 0) + ').';
+    }
+
+    function renderStudyInstrument(study, name) {
+        var inst = (study.instruments || {})[name] || {};
+        var horizons = inst.horizons || {};
+        var labels = Object.keys(horizons);
+        if (!labels.length) return '<div class="study-empty">暂无该品种历史数据。</div>';
+        var activeHz = labels.indexOf('1d') >= 0 ? '1d' : labels[0];
+        var head = '<div class="study-inst-head"><b>' + esc(name) + '</b>' +
+            (inst.tendency ? '<span class="study-tendency">Historical tendency: ' + esc(inst.tendency) + '</span>' : '') +
+            (inst.evidence ? '<span class="study-evidence">Evidence: ' + esc(inst.evidence) + '</span>' : '') +
+        '</div>';
+        var hzRow = '<div class="study-hz-row">' + labels.map(function (l) {
+            return '<button class="study-hz' + (l === activeHz ? ' active' : '') + '" data-hz="' + esc(l) + '">' + esc(l) + '</button>';
+        }).join('') + '</div>';
+        var st = horizons[activeHz];
+        var note = '<div class="study-note" data-hz-note>' + studyHitNote(name, st) + '</div>';
+        var stats = '<div class="study-stats" data-hz-stats>' + studyStatsGrid(st) + '</div>';
+        return head + hzRow + note + stats;
+    }
+
+    function renderPathTable(study) {
+        var paths = study.path_vs_today || {};
+        var names = Object.keys(paths);
+        if (!names.length) return '';
+        return '<div class="study-path">' + names.map(function (name) {
+            var rows = paths[name] || [];
+            var trs = rows.map(function (r) {
+                var med = r.unavailable
+                    ? '<span style="color:var(--text-light)">unavailable</span>'
+                    : fmtPct(r.historical_median, true);
+                var input = '<input class="path-today-input" data-path-inst="' + esc(name) + '" data-path-hz="' + esc(r.horizon) + '" ' +
+                    'type="number" step="any" placeholder="%" value="' + (r.today != null ? r.today : '') + '">';
+                return '<tr><td>' + esc(r.horizon) + '</td><td>' + med + '</td><td>' + input + '</td></tr>';
+            }).join('');
+            return '<div class="path-block">' +
+                '<div class="path-title">Historical Path vs Today · ' + esc(name) +
+                    ' <button class="cme-btn path-save" data-path-save="' + esc(name) + '">保存今日变动</button></div>' +
+                '<table class="path-table"><thead><tr><th>水平</th><th>历史中位数</th><th>今日已实现</th></tr></thead>' +
+                '<tbody>' + trs + '</tbody></table>' +
+            '</div>';
+        }).join('') + '</div>';
+    }
+
+    function renderStudy(study) {
+        var names = Object.keys(study.instruments || {});
+        if (!names.length) return '<div class="study-empty">暂无历史对照数据。</div>';
+        var active = names[0];
+        var head = '<div class="study-head">' +
+            '<div class="study-title">📊 Historical Evidence</div>' +
+            '<div class="study-filter">检索条件：' + esc(study.event_type || '') +
+                (study.filters && study.filters.label ? ' · ' + esc(study.filters.label) : '') +
+                ' · 匹配样本 n=' + (study.sample_ids || []).length + '</div>' +
+        '</div>';
+        var tabs = '<div class="study-tabs">' + names.map(function (n) {
+            return '<div class="study-tab' + (n === active ? ' active' : '') + '" data-inst="' + esc(n) + '">' + esc(n) + '</div>';
+        }).join('') + '</div>';
+        var bodies = names.map(function (n) {
+            return '<div class="study-body" data-study-body="' + esc(n) + '"' + (n === active ? '' : ' style="display:none"') + '>' +
+                renderStudyInstrument(study, n) + '</div>';
+        }).join('');
+        return head + tabs + bodies + renderPathTable(study);
+    }
+
+    function bindStudy(el, eventId, study) {
+        el.querySelectorAll('.study-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                el.querySelectorAll('.study-tab').forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                var name = tab.getAttribute('data-inst');
+                el.querySelectorAll('[data-study-body]').forEach(function (b) {
+                    b.style.display = b.getAttribute('data-study-body') === name ? '' : 'none';
+                });
+            });
+        });
+        el.querySelectorAll('.study-hz').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var body = btn.closest('[data-study-body]');
+                if (!body) return;
+                body.querySelectorAll('.study-hz').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                var name = body.getAttribute('data-study-body');
+                var hz = btn.getAttribute('data-hz');
+                var inst = (study.instruments || {})[name] || {};
+                var st = (inst.horizons || {})[hz];
+                var statsEl = body.querySelector('[data-hz-stats]');
+                if (statsEl) statsEl.innerHTML = studyStatsGrid(st);
+                var noteEl = body.querySelector('[data-hz-note]');
+                if (noteEl) noteEl.innerHTML = studyHitNote(name, st);
+            });
+        });
+        el.querySelectorAll('[data-path-save]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var name = btn.getAttribute('data-path-save');
+                var moves = {};
+                el.querySelectorAll('.path-today-input[data-path-inst="' + name + '"]').forEach(function (inp) {
+                    var v = inp.value.trim();
+                    if (v !== '') moves[inp.getAttribute('data-path-hz')] = parseFloat(v);
+                });
+                var payload = { realized_moves: {} };
+                payload.realized_moves[name] = moves;
+                btn.textContent = '保存中…';
+                fetch('/api/cme/events/' + encodeURIComponent(eventId), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(function (r) { return r.json(); }).then(function (data) {
+                    btn.textContent = data.success ? '✅ 已保存' : '保存失败';
+                    if (data.success) loadStudy(eventId, el);
+                    else setTimeout(function () { btn.textContent = '保存今日变动'; }, 2000);
+                }).catch(function () {
+                    btn.textContent = '保存失败';
+                    setTimeout(function () { btn.textContent = '保存今日变动'; }, 2000);
+                });
+            });
+        });
+    }
+
+    function loadStudy(eventId, el) {
+        fetch('/api/cme/events/' + encodeURIComponent(eventId) + '/study', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var study = data.study;
+                if (!study || study.error) {
+                    el.innerHTML = '<div class="study-empty">' + esc((study && study.error) || '暂无历史对照数据。') + '</div>';
+                    return;
+                }
+                el.innerHTML = renderStudy(study);
+                bindStudy(el, eventId, study);
+            })
+            .catch(function () {
+                el.innerHTML = '<div class="study-empty">Historical Evidence 加载失败。</div>';
+            });
+    }
 
     function renderEvents(list) {
         if (!list.length) {
@@ -1438,41 +2141,87 @@
         }
         var html = '';
         list.forEach(function (ev) {
-            var surprise = ev.surprise != null
+            var released = ev.status === 'RELEASED' || ev.status === 'POST_EVENT' || ev.status === 'ARCHIVED';
+            var status = ev.status || 'SCHEDULED';
+            var surpriseHtml = ev.surprise != null
                 ? '<span style="color:' + (parseFloat(ev.surprise) >= 0 ? '#f85149' : '#3fb950') + '">' +
                   (parseFloat(ev.surprise) >= 0 ? '+' : '') + esc(ev.surprise) + '</span>'
                 : '—';
-            html += '<div class="event-card">' +
-                '<div class="ev-head">' +
-                    '<span class="ev-title">' + esc(ev.event_type) + ' · ' + esc(ev.country || '—') + '</span>' +
-                    '<span class="importance-' + esc(ev.importance || 'low') + '">' + esc(ev.importance || 'low') + '</span>' +
+            var countdown = released
+                ? ''
+                : '<div class="evd-countdown">⏳ 距发布 <b>' + countdownText(ev.scheduled_at) + '</b> · ' +
+                  esc(ev.scheduled_at) + '（America/Chicago）</div>';
+            var facts = '<div class="evd-facts">' +
+                '<span class="fact">指标 <b>' + esc(ev.metric || '—') + '</b></span>' +
+                '<span class="fact">预期 <b>' + fmtNum(ev.consensus) + (ev.unit ? esc(ev.unit) : '') + '</b></span>' +
+                '<span class="fact">前值 <b>' + fmtNum(ev.previous) + (ev.unit ? esc(ev.unit) : '') + '</b></span>' +
+                '<span class="fact">实际 <b>' + fmtNum(ev.actual) + (ev.unit ? esc(ev.unit) : '') + '</b></span>' +
+                '<span class="fact">Surprise <b>' + surpriseHtml + '</b></span>' +
+                (ev.matched_scenario ? '<span class="fact">触发情景 <b>' + esc(ev.matched_scenario) + '</b></span>' : '') +
+            '</div>';
+            var scenarios = ev.scenarios || [];
+            var scenarioHtml = scenarios.length
+                ? '<div class="scenario-grid">' + scenarios.map(function (sc) {
+                    return renderScenarioCard(sc, released);
+                }).join('') + '</div>'
+                : '<div class="study-stub">该事件类型暂无情景模板（V2 目前覆盖 CPI；NFP / FOMC 在 CPI 链路验收后扩展）。</div>';
+            var banner = '';
+            if (released && ev.matched_scenario) {
+                var scName = '';
+                scenarios.forEach(function (sc) { if (sc.scenario_key === ev.matched_scenario) scName = sc.scenario_name; });
+                var dir = parseFloat(ev.surprise) >= 0 ? 'upside surprise' : 'downside surprise';
+                banner = '<div class="release-banner">🎯 <b>Scenario ' + esc(ev.matched_scenario) + ' triggered</b> · ' +
+                    esc(dir) + ': ' + (parseFloat(ev.surprise) >= 0 ? '+' : '') + esc(ev.surprise) + 'pp<br>' +
+                    '<span style="font-weight:400">已触发情景：' + esc(scName) + '。发布前的三情景与传导内容已全部冻结，未被覆盖或重写。</span></div>';
+            }
+            var actualInput = '<div class="evd-actual-row">' +
+                '<input class="ev-actual-input" data-id="' + esc(ev.id) + '" type="number" step="any" placeholder="填入 actual">' +
+                '<button class="cme-btn primary" data-update="' + esc(ev.id) + '">发布 actual</button>' +
+                (released
+                    ? '<button class="cme-btn" data-status="POST_EVENT" data-id="' + esc(ev.id) + '">标记 POST_EVENT</button>'
+                    : '') +
+                '<button class="cme-btn danger" data-del="' + esc(ev.id) + '">删除</button>' +
+            '</div>';
+            var studyStub = released
+                ? '<div class="study-panel" data-study="' + esc(ev.id) + '"><div class="study-loading">📊 正在加载 Historical Evidence…</div></div>'
+                : '';
+            html += '<div class="event-detail">' +
+                '<div class="evd-head">' +
+                    '<div>' +
+                        '<div class="evd-title">' + esc(ev.event_type) + ' · ' + esc(ev.country || '—') +
+                            ' <span class="importance-' + esc(ev.importance || 'low') + '">' + esc(ev.importance || '') + '</span></div>' +
+                        '<div class="evd-sub">' + esc(ev.scheduled_at) + ' · source: ' + esc(ev.sourceId || '—') + '</div>' +
+                    '</div>' +
+                    '<span class="status-chip status-' + esc(status) + '">' + esc(status) + '</span>' +
                 '</div>' +
-                '<div class="ev-meta">' +
-                    '<span>🕐 ' + esc(ev.scheduled_at) + '</span>' +
-                    '<span>预期 ' + esc(ev.consensus != null ? ev.consensus : '—') + '</span>' +
-                    '<span>前值 ' + esc(ev.previous != null ? ev.previous : '—') + '</span>' +
-                    '<span>实际 ' + esc(ev.actual != null ? ev.actual : '—') + '</span>' +
-                    '<span>Surprise ' + surprise + '</span>' +
-                '</div>' +
-                (ev.note ? '<div class="ev-note">' + esc(ev.note) + '</div>' : '') +
-                '<div class="ev-actual-row">' +
-                    '<input class="ev-actual-input" data-id="' + esc(ev.id) + '" type="number" step="any" placeholder="填入 actual">' +
-                    '<button class="cme-btn primary" data-update="' + esc(ev.id) + '">更新 actual</button>' +
-                    '<button class="cme-btn danger" data-del="' + esc(ev.id) + '">删除</button>' +
-                '</div>' +
-                '</div>';
+                countdown + facts + scenarioHtml + banner + studyStub + actualInput +
+            '</div>';
         });
         eventList.innerHTML = html;
+
+        eventList.querySelectorAll('[data-study]').forEach(function (el) {
+            loadStudy(el.getAttribute('data-study'), el);
+        });
 
         eventList.querySelectorAll('[data-update]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var id = btn.getAttribute('data-update');
                 var input = eventList.querySelector('.ev-actual-input[data-id="' + id + '"]');
                 var val = input ? input.value.trim() : '';
+                if (val === '') return;
                 fetch('/api/cme/events/' + id, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ actual: val === '' ? null : parseFloat(val) })
+                    body: JSON.stringify({ actual: parseFloat(val) })
+                }).then(function () { refreshEvents(); });
+            });
+        });
+        eventList.querySelectorAll('[data-status]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cme/events/' + btn.getAttribute('data-id'), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: btn.getAttribute('data-status') })
                 }).then(function () { refreshEvents(); });
             });
         });
@@ -1487,7 +2236,7 @@
     function refreshEvents() {
         fetch('/api/cme/events', { cache: 'no-store' })
             .then(function (r) { return r.json(); })
-            .then(function (list) { renderEvents(list); })
+            .then(function (list) { renderEvents(list); refreshProposalEvents(list || []); })
             .catch(function () {});
     }
 
@@ -1499,11 +2248,12 @@
             }
             var body = {
                 event_type: evType.value,
-                country: evCountry.value.trim(),
                 scheduled_at: evTime.value.trim(),
+                metric: evMetric.value.trim(),
                 importance: evImportance.value,
                 consensus: evConsensus.value === '' ? null : parseFloat(evConsensus.value),
                 previous: evPrevious.value === '' ? null : parseFloat(evPrevious.value),
+                sourceId: evSource.value.trim(),
                 note: evNote.value.trim()
             };
             fetch('/api/cme/events', {
@@ -1512,11 +2262,12 @@
                 body: JSON.stringify(body)
             }).then(function (r) { return r.json(); }).then(function (data) {
                 if (data.success) {
-                    evHint.textContent = '✅ 已保存事件';
-                    evCountry.value = '';
+                    evHint.textContent = '✅ 已保存事件，生成情景：' + (data.event.scenarios || []).length + ' 张';
                     evTime.value = '';
+                    evMetric.value = '';
                     evConsensus.value = '';
                     evPrevious.value = '';
+                    evSource.value = '';
                     evNote.value = '';
                     refreshEvents();
                 } else {
@@ -1527,52 +2278,128 @@
         });
     }
 
+    setInterval(function () {
+        var cd = eventList.querySelectorAll('.evd-countdown');
+        if (!cd.length) return;
+        refreshEvents();
+    }, 30000);
+
     // ============================================================
     // 模块 C：Trade Planner
     // ============================================================
+    var tpEvent = document.getElementById('tp-event');
     var tpSymbol = document.getElementById('tp-symbol');
     var tpDirection = document.getElementById('tp-direction');
-    var tpConfidence = document.getElementById('tp-confidence');
+    var tpQty = document.getElementById('tp-qty');
     var tpThesis = document.getElementById('tp-thesis');
-    var tpEntry = document.getElementById('tp-entry');
-    var tpStop = document.getElementById('tp-stop');
-    var tpHorizon = document.getElementById('tp-horizon');
-    var tpSize = document.getElementById('tp-size');
-    var tpOwner = document.getElementById('tp-owner');
     var tpSave = document.getElementById('tp-save');
     var tpHint = document.getElementById('tp-hint');
     var proposalList = document.getElementById('proposal-list');
 
+    var PROP_TRANSITIONS = {
+        DRAFT: ['REVIEW', 'CANCELLED'],
+        REVIEW: ['APPROVED', 'REJECTED', 'CANCELLED'],
+        APPROVED: ['EXECUTED', 'INVALIDATED', 'CANCELLED'],
+        EXECUTED: ['CLOSED', 'INVALIDATED'],
+        CLOSED: ['REVIEWED'],
+        REJECTED: [], INVALIDATED: [], CANCELLED: []
+    };
+    var PROP_DELETABLE = ['DRAFT', 'REVIEW', 'REJECTED', 'INVALIDATED', 'CANCELLED'];
+    var PROP_NOTEABLE = ['EXECUTED', 'CLOSED', 'REVIEWED'];
+
+    function payoffRow(label, o) {
+        if (!o) return '';
+        var color = (o.pnl >= 0) ? '#3fb950' : '#f85149';
+        return '<div class="pp-payoff-row">' +
+            '<span>' + esc(label) + '</span>' +
+            '<span>' + fmtPct(o.move_pct, true) + '</span>' +
+            '<span style="color:' + color + ';font-weight:700;">' + fmtMoney(o.pnl) + '</span>' +
+            '</div>';
+    }
+
+    function riskCheckBlock(rc) {
+        if (!rc) return '';
+        var cls = rc.result === 'BLOCK' ? 'rc-block' : (rc.result === 'WARN' ? 'rc-warn' : 'rc-pass');
+        var rows = (rc.checks || []).map(function (c) {
+            var s = c.status === 'BLOCK' ? 'chk-block' : (c.status === 'WARN' ? 'chk-warn' : 'chk-pass');
+            return '<div class="pc-row ' + s + '">' +
+                '<span class="pc-name">' + esc(c.name) + '</span>' +
+                '<span class="pc-status">' + esc(c.status) + '</span>' +
+                '<div class="pc-msg">' + esc(c.message) + '</div>' +
+                '</div>';
+        }).join('');
+        return '<div class="pp-riskc ' + cls + '">' +
+            '<div class="pp-rc-head">RISK CHECK · ' + esc(rc.result) + '</div>' + rows + '</div>';
+    }
+
     function renderProposals(list) {
         if (!list.length) {
-            proposalList.innerHTML = '<div class="snapshot-empty">还没有交易提案，先在左侧生成一张交易卡。</div>';
+            proposalList.innerHTML = '<div class="snapshot-empty">还没有交易提案，先在左侧选择已发布事件生成一张交易卡。</div>';
             return;
         }
         var html = '';
         list.forEach(function (p) {
+            var st = p.status || 'DRAFT';
             var dirColor = p.direction === 'long' ? '#3fb950' : '#f85149';
-            var conf = p.confidence != null ? esc(p.confidence) + ' / 100' : '—';
-            html += '<div class="proposal-card status-' + esc(p.status) + '">' +
+            var fq = p.five_questions || {};
+            var inv = p.invalidation || {};
+            var origin = p.origin || {};
+            var ed = p.event_data || {};
+            var pay = p.scenario_payoff;
+            var surprise = origin.surprise != null ? origin.surprise : ed.surprise;
+            html += '<div class="proposal-card status-' + esc(st) + '">' +
                 '<div class="pp-head">' +
-                    '<span class="pp-symbol">' + esc(p.symbol) + ' <span class="pp-dir" style="color:' + dirColor + '">' + esc(p.direction.toUpperCase()) + '</span></span>' +
-                    '<span class="section-tag" style="font-size:11px;">' + esc(p.status) + '</span>' +
+                    '<span class="pp-symbol">' + esc(p.symbol) +
+                        ' <span class="pp-dir" style="color:' + dirColor + '">' + esc(String(p.direction || '').toUpperCase()) + '</span>' +
+                        ' · ' + esc(p.qty) + ' 手</span>' +
+                    '<span class="prop-status ps-' + esc(st) + '">' + esc(st) + '</span>' +
                 '</div>' +
+                '<div class="pp-origin">来源事件 <b>' + esc(origin.event_type || '—') + '</b>' +
+                    ' · 匹配情景 <b>' + esc(origin.scenario || ed.scenario || '—') + '</b>' +
+                    ' · Surprise <b>' + esc(surprise != null ? surprise : '—') + '</b>' +
+                    ' · 历史 1D 中位 <b>' + fmtPct(ed.hist_1d_median, true) + '</b>' +
+                    ' · 命中率 <b>' + fmtHitRate(ed.hist_1d_hit_rate) + '</b>' +
+                    ' (n=' + esc(ed.hist_1d_n != null ? ed.hist_1d_n : '—') + ')</div>' +
                 (p.thesis ? '<div class="pp-thesis">' + esc(p.thesis) + '</div>' : '') +
-                '<div class="pp-grid">' +
-                    '<span>置信度 <strong>' + conf + '</strong></span>' +
-                    '<span>周期 <strong>' + esc(p.horizon || '—') + '</strong></span>' +
-                    '<span>入场 <strong>' + esc(p.entry_condition || '—') + '</strong></span>' +
-                    '<span>止损 <strong>' + esc(p.stop_rule || '—') + '</strong></span>' +
-                    '<span>仓位 <strong>' + esc(p.size_hint || '—') + '</strong></span>' +
-                    '<span>负责人 <strong>' + esc(p.owner || '—') + '</strong></span>' +
-                '</div>' +
+                '<div class="pp-block"><b>五个问题</b><div class="pp-fq">' +
+                    '<div><span>Why</span>' + esc(fq.why || '—') + '</div>' +
+                    '<div><span>Why now</span>' + esc(fq.why_now || '—') + '</div>' +
+                    '<div><span>Proves wrong</span>' + esc(fq.proves_wrong || '—') + '</div>' +
+                    '<div><span>Max loss</span>' + esc(fq.max_loss || '—') + '</div>' +
+                    '<div><span>Reassess at</span>' + esc(fq.reassess_at || '—') + '</div>' +
+                '</div></div>' +
+                '<div class="pp-block"><b>Invalidation</b><div class="pp-inv">' +
+                    '<div><span>Price stop</span>' + esc(inv.price_stop || '—') + '</div>' +
+                    '<div><span>Macro invalidation</span>' + esc(inv.macro_invalidation || '—') + '</div>' +
+                    '<div><span>Time stop</span>' + esc(inv.time_stop || '—') + '</div>' +
+                '</div></div>' +
+                (pay ? '<div class="pp-block"><b>Scenario Payoff · ' + esc(pay.code || pay.symbol) +
+                    ' · 参考价 ' + esc(pay.reference_price) + ' · 佣金 ' + fmtMoney(pay.commission_total) + '</b>' +
+                    '<div class="pp-payoff">' +
+                        '<div class="pp-payoff-head"><span>情景</span><span>1D Move</span><span>Net P&amp;L</span></div>' +
+                        payoffRow('Bear (Q25)', pay.bear) +
+                        payoffRow('Base (Median)', pay.base) +
+                        payoffRow('Bull (Q75)', pay.bull) +
+                    '</div></div>' : '') +
+                riskCheckBlock(p.risk_check) +
+                (p.post_trade_note ? '<div class="pp-note">赛后记录：' + esc(p.post_trade_note) + '</div>' : '') +
                 '<div class="pp-actions">' +
-                    (p.status === 'pending'
-                        ? '<button class="cme-btn approve" data-status="' + esc(p.id) + ':approved">Approve</button>' +
-                          '<button class="cme-btn reject" data-status="' + esc(p.id) + ':rejected">Reject</button>'
-                        : '<button class="cme-btn" data-status="' + esc(p.id) + ':pending">回到 Pending</button>') +
-                    '<button class="cme-btn danger" data-del-prop="' + esc(p.id) + '">删除</button>' +
+                    (['DRAFT', 'REVIEW'].indexOf(st) >= 0
+                        ? '<button class="cme-btn primary" data-riskcheck="' + esc(p.id) + '">SEND TO RISK CHECK</button>' : '') +
+                    (PROP_TRANSITIONS[st] || []).map(function (t) {
+                        var cls = ['APPROVED', 'CLOSED', 'REVIEWED'].indexOf(t) >= 0 ? 'approve'
+                                : (['REJECTED', 'INVALIDATED', 'CANCELLED'].indexOf(t) >= 0 ? 'reject' : '');
+                        return '<button class="cme-btn ' + cls + '" data-status="' + esc(p.id) + ':' + t + '">' + t + '</button>';
+                    }).join('') +
+                    (PROP_DELETABLE.indexOf(st) >= 0
+                        ? '<button class="cme-btn danger" data-del-prop="' + esc(p.id) + '">删除</button>' : '') +
                 '</div>' +
+                (PROP_NOTEABLE.indexOf(st) >= 0
+                    ? '<div class="pp-note-edit">' +
+                        '<textarea data-note-input="' + esc(p.id) + '" rows="2" placeholder="manual execution / post-trade note">' +
+                            esc(p.post_trade_note || '') + '</textarea>' +
+                        '<button class="cme-btn primary" data-note-save="' + esc(p.id) + '" data-note-status="' + esc(st) + '">保存赛后记录</button>' +
+                      '</div>' : '') +
                 '</div>';
         });
         proposalList.innerHTML = html;
@@ -1584,13 +2411,44 @@
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: parts[1] })
-                }).then(function () { refreshProposals(); });
+                }).then(function (r) { return r.json(); }).then(function (data) {
+                    if (!data.success) alert('状态迁移失败：' + (data.error || '未知错误'));
+                    refreshProposals();
+                }).catch(function () {});
+            });
+        });
+        proposalList.querySelectorAll('[data-riskcheck]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch('/api/cme/proposals/' + btn.getAttribute('data-riskcheck') + '/risk-check', { method: 'POST' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (!data.success) alert('Risk Check 失败：' + (data.error || '未知错误'));
+                        refreshProposals();
+                    }).catch(function () {});
+            });
+        });
+        proposalList.querySelectorAll('[data-note-save]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-note-save');
+                var input = proposalList.querySelector('[data-note-input="' + id + '"]');
+                fetch('/api/cme/proposals/' + id + '/status', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: btn.getAttribute('data-note-status') || 'DRAFT', post_trade_note: input ? input.value : '' })
+                }).then(function (r) { return r.json(); }).then(function (data) {
+                    if (!data.success) alert('保存失败：' + (data.error || '未知错误'));
+                    refreshProposals();
+                }).catch(function () {});
             });
         });
         proposalList.querySelectorAll('[data-del-prop]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 fetch('/api/cme/proposals/' + btn.getAttribute('data-del-prop'), { method: 'DELETE' })
-                    .then(function () { refreshProposals(); });
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (!data.success) alert('删除失败：' + (data.error || '未知错误'));
+                        refreshProposals();
+                    }).catch(function () {});
             });
         });
     }
@@ -1602,43 +2460,65 @@
             .catch(function () {});
     }
 
+    function renderProposalEvents(events) {
+        if (!tpEvent) return;
+        var eligible = (events || []).filter(function (e) {
+            return (e.status === 'RELEASED' || e.status === 'POST_EVENT') && e.matched_scenario;
+        });
+        if (!eligible.length) {
+            tpEvent.innerHTML = '<option value="">暂无已发布并匹配情景的事件</option>';
+            return;
+        }
+        var prev = tpEvent.value;
+        tpEvent.innerHTML = eligible.map(function (e) {
+            var label = (e.event_type || e.id) + ' · ' + esc(e.metric || '') +
+                ' · 实际 ' + (e.actual != null ? e.actual : '—') +
+                ' vs 预期 ' + (e.consensus != null ? e.consensus : '—') +
+                ' · 情景 ' + e.matched_scenario;
+            return '<option value="' + esc(e.id) + '">' + label + '</option>';
+        }).join('');
+        if (prev && tpEvent.querySelector('[value="' + prev + '"]')) tpEvent.value = prev;
+    }
+
+    function refreshProposalEvents() {
+        if (!tpEvent) return;
+        fetch('/api/cme/events', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (events) { renderProposalEvents(events); })
+            .catch(function () {});
+    }
+
     if (tpSave) {
         tpSave.addEventListener('click', function () {
-            if (!tpSymbol.value || !tpDirection.value || !tpThesis.value.trim()) {
-                tpHint.textContent = '请填写品种、方向和交易逻辑';
+            if (!tpEvent || !tpEvent.value) {
+                tpHint.textContent = '请选择一个已发布并匹配情景的事件';
+                return;
+            }
+            if (!tpSymbol.value || !tpDirection.value) {
+                tpHint.textContent = '请选择品种和方向';
                 return;
             }
             var body = {
+                event_id: tpEvent.value,
                 symbol: tpSymbol.value,
                 direction: tpDirection.value,
-                thesis: tpThesis.value.trim(),
-                entry_condition: tpEntry.value.trim(),
-                stop_rule: tpStop.value.trim(),
-                horizon: tpHorizon.value.trim(),
-                size_hint: tpSize.value.trim(),
-                confidence: tpConfidence.value === '' ? null : parseFloat(tpConfidence.value),
-                owner: tpOwner.value.trim()
+                qty: Math.max(1, parseInt(tpQty.value, 10) || 1)
             };
+            if (tpThesis.value.trim()) body.thesis = tpThesis.value.trim();
             fetch('/api/cme/proposals', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             }).then(function (r) { return r.json(); }).then(function (data) {
                 if (data.success) {
-                    tpHint.textContent = '✅ 已生成 proposal（待 approve）';
+                    tpHint.textContent = '✅ 已生成 DRAFT 提案（thesis / 五问 / payoff 已确定性生成）';
                     tpThesis.value = '';
-                    tpEntry.value = '';
-                    tpStop.value = '';
-                    tpHorizon.value = '';
-                    tpSize.value = '';
-                    tpOwner.value = '';
-                    tpConfidence.value = '';
                     refreshProposals();
                 } else {
                     tpHint.textContent = '失败：' + (data.error || '未知错误');
                 }
             }).catch(function () { tpHint.textContent = '服务器暂不可用'; });
-            setTimeout(function () { tpHint.textContent = ''; }, 3000);
+            setTimeout(function () { tpHint.textContent = ''; }, 4000);
         });
     }
 
@@ -1667,6 +2547,20 @@
     var jrHint = document.getElementById('jr-hint');
     var journalList = document.getElementById('journal-list');
 
+    var RISK_BAND_CLASS = {
+        'SAFE': 'rb-safe',
+        'CAUTION': 'rb-caution',
+        'REDUCE RISK': 'rb-reduce',
+        'HIGH RISK': 'rb-high',
+        'CRITICAL': 'rb-critical',
+        'OFFICIAL LOCK RISK': 'rb-lock'
+    };
+
+    function riskMetric(label, value, color) {
+        return '<div class="rm"><div class="rm-label">' + esc(label) + '</div>' +
+            '<div class="rm-value"' + (color ? ' style="color:' + color + ';"' : '') + '>' + value + '</div></div>';
+    }
+
     function renderRisk(risk) {
         if (riskWarnings) {
             var warnings = risk.warnings || [];
@@ -1678,15 +2572,35 @@
                 }).join('');
             }
         }
-        if (riskMetrics) {
-            riskMetrics.innerHTML =
-                '<div class="rm"><div class="rm-label">账户权益</div><div class="rm-value">' + fmtMoney(risk.net_equity) + '</div></div>' +
-                '<div class="rm"><div class="rm-label">保证金占用</div><div class="rm-value">' + fmtMoney(risk.margin_used) + '</div></div>' +
-                '<div class="rm"><div class="rm-label">保证金利用率</div><div class="rm-value">' + fmtPct(risk.margin_utilization_pct) + '</div></div>' +
-                '<div class="rm"><div class="rm-label">未实现盈亏</div><div class="rm-value" style="color:' + (risk.unrealized_pnl >= 0 ? '#3fb950' : '#f85149') + '">' + fmtMoney(risk.unrealized_pnl) + '</div></div>' +
-                '<div class="rm"><div class="rm-label">总敞口</div><div class="rm-value">' + fmtMoney(risk.gross_exposure) + '</div></div>' +
-                '<div class="rm"><div class="rm-label">集中度</div><div class="rm-value">' + fmtPct(risk.concentration_pct) + '</div></div>';
-        }
+        if (!riskMetrics) return;
+        var band = risk.risk_band || 'SAFE';
+        var bandCls = RISK_BAND_CLASS[band] || 'rb-safe';
+        var dailyColor = risk.daily_pnl >= 0 ? '#3fb950' : '#f85149';
+        var contracts = (risk.today_contracts != null ? risk.today_contracts : 0) + '/' +
+            (risk.max_contracts_per_day != null ? risk.max_contracts_per_day : '—');
+        var compOpen = risk.competition_open ? '进行中' : '未开始 / 已结束';
+        riskMetrics.innerHTML =
+            '<div class="rm rm-band ' + bandCls + '">' +
+                '<div class="rm-label">Risk Band · 单日亏损 ' + fmtPct(risk.daily_loss_pct) + '</div>' +
+                '<div class="rm-value">' + esc(band) + '</div>' +
+            '</div>' +
+            riskMetric('账户权益 Account Equity', fmtMoney(risk.account_equity)) +
+            riskMetric('净权益 Net Equity', fmtMoney(risk.net_equity)) +
+            riskMetric('保证金占用 Margin Used', fmtMoney(risk.margin_used)) +
+            riskMetric('保证金利用率 Margin Util', fmtPct(risk.margin_utilization_pct)) +
+            riskMetric('可用余量 Headroom', fmtMoney(risk.headroom)) +
+            riskMetric('当日合约 Contracts Today', esc(contracts) +
+                (risk.today_contracts >= risk.max_contracts_per_day ? ' ⛔' : '')) +
+            riskMetric('当日盈亏 Daily P&L', fmtMoney(risk.daily_pnl), dailyColor) +
+            riskMetric('已实现（当日）Realized', fmtMoney(risk.realized_pnl_today)) +
+            riskMetric('当日手续费 Fees Today', fmtMoney(risk.fees_today)) +
+            riskMetric('未实现盈亏 Unrealized', fmtMoney(risk.unrealized_pnl),
+                risk.unrealized_pnl >= 0 ? '#3fb950' : '#f85149') +
+            riskMetric('总敞口 Gross Exposure', fmtMoney(risk.gross_exposure)) +
+            riskMetric('集中度 Concentration', fmtPct(risk.concentration_pct) +
+                ' / 上限 ' + fmtPct(risk.max_concentration_pct)) +
+            riskMetric('Trading Date', esc(risk.trading_date || '—')) +
+            riskMetric('赛制状态 Competition', esc(compOpen));
     }
 
     function renderPositions(list) {
@@ -1762,6 +2676,271 @@
             .then(function (list) { renderJournal(list); })
             .catch(function () {});
         loadTopBar();
+    }
+
+    // ============================================================
+    // Position Sizing Engine（V2.1 §6）：确定性输出，AI 仅可解释
+    // ============================================================
+    var psProposal = document.getElementById('ps-proposal');
+    var psSymbol = document.getElementById('ps-symbol');
+    var psDirection = document.getElementById('ps-direction');
+    var psEvidence = document.getElementById('ps-evidence');
+    var psConfirmation = document.getElementById('ps-confirmation');
+    var psEntry = document.getElementById('ps-entry');
+    var psStop = document.getElementById('ps-stop');
+    var psQty = document.getElementById('ps-qty');
+    var psRun = document.getElementById('ps-run');
+    var psHint = document.getElementById('ps-hint');
+    var psResult = document.getElementById('ps-result');
+    var PS_LATEST = null;
+
+    function psLimit(label, value, binding) {
+        return '<div class="pl' + (binding ? ' binding' : '') + '">' +
+            '<div class="pl-label">' + esc(label) + '</div>' +
+            '<div class="pl-value">' + (value == null ? '—' : esc(value)) + '</div></div>';
+    }
+
+    function psWi(label, value, color) {
+        return '<div class="ps-wi"><div class="ps-wi-label">' + esc(label) + '</div>' +
+            '<div class="ps-wi-value"' + (color ? ' style="color:' + color + '"' : '') + '>' + value + '</div></div>';
+    }
+
+    function psPg(k, v) {
+        return '<div class="pg"><span class="pg-k">' + esc(k) + '</span>' +
+            '<span class="pg-v">' + v + '</span></div>';
+    }
+
+    function renderPositionSizing(r) {
+        PS_LATEST = r;
+        var sv = r.simple_view || {};
+        var acc = r.account || {};
+        var lim = r.limits || {};
+        var sug = r.suggested || {};
+        var con = r.contract || {};
+        var lv = r.levels || {};
+        var ev = r.evidence || {};
+        var cf = r.confirmation || {};
+        var cn = r.concentration || {};
+        var wi = r.what_if || {};
+        var equity = Number(acc.account_equity) || 0;
+
+        var lossRows = (sv.estimated_loss || []).map(function (row) {
+            var pct = equity ? (Math.abs(Number(row.loss)) / equity * 100).toFixed(3) : '—';
+            return '<li><span class="ps-k">' + esc(row.qty) + ' contract(s)</span>' +
+                '<span style="color:#f85149;font-weight:600;">' + fmtMoney(row.loss) + '</span>' +
+                '<span class="ps-note">占权益 ' + pct + '%</span></li>';
+        }).join('');
+
+        var contractCtx = (wi.notional_per_contract != null)
+            ? '1 ' + esc(r.symbol) + ' ≈ ' + fmtMoney(wi.notional_per_contract) +
+              ' 名义敞口（multiplier ' + esc(con.contract_multiplier) + ' × 价格 ' + esc(lv.entry) + '）'
+            : '—';
+
+        var html = '';
+        var warns = (r.warnings || []).map(function (w) {
+            return '<div class="risk-warning">⚠️ ' + esc(w) + '</div>';
+        }).join('');
+        if (warns) html += warns;
+
+        html += '<div class="ps-simple">' +
+            '<h3>' + esc(sv.question || 'How much should we consider trading?') + '</h3>' +
+            '<div class="ps-answer-label">Calculated Working Range · Parite Risk-Based Size</div>' +
+            '<div class="ps-answer">' + esc(sv.suggested_label || '—') + '</div>' +
+            '<ul class="ps-list">' +
+                '<li><span class="ps-k">Why not more?</span><span>' + esc(sv.why_not_more || '—') + '</span></li>' +
+                '<li><span class="ps-k">Maximum Risk Limit</span><span>' + esc(sv.max_risk_limit || '—') +
+                    '<br><span class="ps-note">' + esc(sv.max_risk_limit_note || '') + '</span></span></li>' +
+                '<li><span class="ps-k">Contract Context</span><span>' + contractCtx + '</span></li>' +
+                '<li><span class="ps-k">Account Impact</span><span>' + esc(sv.account_impact || '—') + '</span></li>' +
+                '<li><span class="ps-k">Margin</span><span>' + esc(sv.margin || '—') + '</span></li>' +
+                '<li><span class="ps-k">Portfolio Concentration</span><span>' + esc(sv.portfolio_concentration || '—') + '</span></li>' +
+            '</ul>' +
+            (lossRows
+                ? '<ul class="ps-list" style="margin-top:10px;">' +
+                    '<li><span class="ps-k">Estimated Loss if Stop Is Hit</span></li>' + lossRows + '</ul>'
+                : '') +
+            '<div class="ps-limits">' +
+                psLimit('Risk-Based Max', lim.risk_based_max, false) +
+                psLimit('Evidence-Adjusted', lim.evidence_adjusted_max, false) +
+                psLimit('Concentration-Adjusted', lim.concentration_adjusted_max, false) +
+                psLimit('Margin-Based', lim.margin_based_max, false) +
+                psLimit('Daily-Loss-Based', lim.daily_loss_based_max, false) +
+                psLimit('Contract Limit', lim.contract_limit_max, false) +
+                psLimit('Final Max', lim.final_max, true) +
+            '</div>' +
+            '<div class="ps-note" style="margin-top:10px;">Binding constraint：' + esc(lim.binding_constraint || '—') +
+                ' · Final Max = MIN(Concentration-Adjusted / Margin-Based / Daily-Loss-Based / Contract Limit)。</div>';
+
+        // §6.15 What-if：手数滑块（全部按每手线性基准即时换算）
+        var maxQty = Math.max(Number(lim.final_max) || 0, Number(r.selected_qty) || 0, 1);
+        var startQty = Math.min(Math.max(Number(r.selected_qty) || 0, 0), maxQty);
+        html += '<div class="ps-whatif">' +
+            '<div class="ps-answer-label">What-if · Position Size Simulator</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;">' +
+                '<span style="font-size:12px;color:var(--text-light);">Contracts（拖动即时换算，上限为 Final Max）</span>' +
+                '<span id="ps-wi-qty" style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;">' + startQty + '</span>' +
+            '</div>' +
+            '<input id="ps-wi-slider" type="range" min="0" max="' + maxQty + '" step="1" value="' + startQty + '">' +
+            '<div class="ps-wi-grid" id="ps-wi-grid"></div>' +
+            '<div class="ps-override" id="ps-override">' +
+                '<div class="risk-warning">⚠ This exceeds the current Parite risk limit.</div>' +
+                '<div class="field"><label for="ps-override-reason">Override Reason（超限必须填写理由）</label>' +
+                '<input id="ps-override-reason" placeholder="如：仅作情景推演 / 组合对冲需要"></div>' +
+            '</div>' +
+        '</div>';
+
+        // §6.13 Professional View：完整推导链
+        html += '<details class="ps-pro"><summary>Professional View · 展开完整推导</summary>' +
+            '<div class="ps-pro-grid">' +
+                psPg('Contract Spec', esc(con.tick_size) + ' tick / ' + fmtMoney(con.tick_value) + ' per tick') +
+                psPg('Contract Multiplier', esc(con.contract_multiplier)) +
+                psPg('Notional / Contract', wi.notional_per_contract != null ? fmtMoney(wi.notional_per_contract) : '—') +
+                psPg('Margin / Contract', fmtMoney(con.margin_per_contract)) +
+                psPg('Commission (round trip)', fmtMoney(con.commission_round_trip)) +
+                psPg('Slippage Buffer', fmtMoney(con.slippage_buffer) + ' (' + esc(con.slippage_ticks) + ' tick)') +
+                psPg('Entry', esc(lv.entry)) +
+                psPg('Stop', esc(lv.stop) + ' · ' + esc(lv.stop_source)) +
+                psPg('Stop Distance', esc(lv.stop_distance) + ' / ' + fmtPct(lv.stop_distance_pct)) +
+                psPg('Risk per Contract', fmtMoney(lv.risk_per_contract)) +
+                psPg('Risk Budget', fmtPct(acc.risk_budget_pct) + ' → ' + fmtMoney(acc.risk_budget_usd)) +
+                psPg('Evidence', esc(ev.level) + ' × ' + esc(ev.multiplier) + ' → ' + esc(ev.adjusted_max) +
+                    ' <span class="ps-note">(' + esc(ev.source) + ')</span>') +
+                psPg('Market Confirmation', esc(cf.status) + ' × ' + esc(cf.multiplier) +
+                    (cf.applied_to_final ? '' : ' <span class="ps-note">仅披露，不重复扣减</span>')) +
+                psPg('Concentration', esc(cn.status) + ' × ' + esc(cn.overlap_multiplier) +
+                    ' · 上限 ' + fmtPct(cn.limit_pct)) +
+                psPg('Final Max', esc(lim.final_max) + ' · binding: ' + esc(lim.binding_constraint)) +
+                psPg('Suggested Range', esc(sug.low) + '–' + esc(sug.high) + ' ' + esc(r.symbol)) +
+                psPg('Selected Qty', esc(r.selected_qty) +
+                    (r.selected_exceeds_final_max ? ' <span class="ps-note">超限</span>' : '')) +
+                psPg('Margin Status', esc(r.margin_status)) +
+            '</div>';
+        if (cn.overlaps && cn.overlaps.length) {
+            html += '<div class="cme-note">宏观主题重叠：' + cn.overlaps.map(function (o) {
+                return esc(o.symbol) + ' ' + esc(o.direction) +
+                    '（' + esc((o.shared_themes || []).join('、')) + '）';
+            }).join('；') + '</div>';
+        }
+        html += '</details></div>';
+
+        psResult.innerHTML = html;
+
+        var slider = document.getElementById('ps-wi-slider');
+        if (slider) {
+            slider.addEventListener('input', function () { psUpdateWhatIf(slider.value); });
+            psUpdateWhatIf(slider.value);
+        }
+    }
+
+    function psUpdateWhatIf(qty) {
+        var r = PS_LATEST;
+        if (!r) return;
+        var wi = r.what_if || {};
+        var acc = r.account || {};
+        var lim = r.limits || {};
+        var equity = Number(acc.account_equity) || 0;
+        var q = Number(qty) || 0;
+        var qEl = document.getElementById('ps-wi-qty');
+        if (qEl) qEl.textContent = q;
+        var grid = document.getElementById('ps-wi-grid');
+        if (!grid) return;
+        function money(per) {
+            if (per == null) return '—';
+            var v = Number(per) * q;
+            return '<span style="color:' + (v < 0 ? '#f85149' : v > 0 ? '#3fb950' : 'var(--text)') + '">' +
+                fmtMoney(v) + '</span>';
+        }
+        var stopLoss = (wi.stop_risk_per_contract != null) ? Number(wi.stop_risk_per_contract) * q : null;
+        var stopPct = (stopLoss != null && equity)
+            ? (Math.abs(stopLoss) / equity * 100).toFixed(3) + '%' : '—';
+        var dailyRem = (acc.daily_loss_remaining_usd != null) ? fmtMoney(acc.daily_loss_remaining_usd) : '—';
+        var sc = wi.scenario_per_contract;
+        grid.innerHTML =
+            psWi('Stop Risk', stopLoss != null
+                ? '<span style="color:#f85149">' + fmtMoney(stopLoss) + '</span>' : '—') +
+            psWi('% of Equity', stopPct) +
+            psWi('Margin Required', money(wi.margin_per_contract)) +
+            psWi('Commission', money(wi.commission_per_contract)) +
+            psWi('Notional Exposure', money(wi.notional_per_contract)) +
+            psWi('Daily Loss Remaining', dailyRem) +
+            (sc ? psWi('Bear Scenario P&L', money(sc.bear)) : '') +
+            (sc ? psWi('Base Scenario P&L', money(sc.base)) : '') +
+            (sc ? psWi('Bull Scenario P&L', money(sc.bull)) : '');
+        var ov = document.getElementById('ps-override');
+        if (ov) {
+            if (q > (Number(lim.final_max) || 0)) ov.classList.add('show');
+            else ov.classList.remove('show');
+        }
+    }
+
+    function psBody() {
+        var body = { symbol: psSymbol ? psSymbol.value : '', direction: psDirection ? psDirection.value : 'long' };
+        if (psProposal && psProposal.value) body.proposal_id = psProposal.value;
+        if (psEvidence && psEvidence.value) body.evidence = psEvidence.value;
+        if (psConfirmation && psConfirmation.value) body.confirmation = psConfirmation.value;
+        if (psEntry && psEntry.value !== '') body.entry_price = parseFloat(psEntry.value);
+        if (psStop && psStop.value !== '') body.stop_price = parseFloat(psStop.value);
+        if (psQty && psQty.value !== '') body.qty = parseInt(psQty.value, 10);
+        return body;
+    }
+
+    function runPositionSizing() {
+        if (!psResult || !psSymbol) return;
+        if (!psSymbol.value) { psHint.textContent = '请选择品种'; return; }
+        psHint.textContent = '计算中…';
+        fetch('/api/cme/position-sizing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(psBody())
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (!data.ok) {
+                psResult.innerHTML = '<div class="risk-warning">⚠️ ' + esc(data.error || '计算失败') + '</div>';
+                psHint.textContent = '';
+                return;
+            }
+            psHint.textContent = '✅ 已按确定性引擎计算（' + data.symbol + ' ' + data.direction + '）';
+            renderPositionSizing(data);
+            setTimeout(function () { psHint.textContent = ''; }, 4000);
+        }).catch(function () { psHint.textContent = '服务器暂不可用'; });
+    }
+
+    if (psRun) psRun.addEventListener('click', runPositionSizing);
+
+    function refreshPsProposals() {
+        if (!psProposal) return;
+        fetch('/api/cme/proposals', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) {
+                var prev = psProposal.value;
+                var opts = ['<option value="">手动输入（不关联提案）</option>'].concat((list || []).map(function (p) {
+                    return '<option value="' + esc(p.id) + '">' + esc(p.symbol) + ' ' +
+                        esc(p.direction || '') + ' × ' + esc(p.qty) + ' · ' + esc(p.status) + '</option>';
+                }));
+                psProposal.innerHTML = opts.join('');
+                if (prev && psProposal.querySelector('[value="' + prev + '"]')) psProposal.value = prev;
+            }).catch(function () {});
+    }
+
+    function loadPsFromProposal(id) {
+        if (!psProposal) return;
+        psProposal.value = id;
+        fetch('/api/cme/proposals', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) {
+                var p = (list || []).filter(function (x) { return x.id === id; })[0];
+                if (!p) return;
+                if (p.symbol && psSymbol) psSymbol.value = p.symbol;
+                if (p.direction && psDirection) psDirection.value = p.direction;
+                if (p.qty != null && psQty) psQty.value = p.qty;
+                if (p.market_confirmation && psConfirmation) psConfirmation.value = p.market_confirmation;
+                runPositionSizing();
+            }).catch(function () {});
+    }
+
+    if (psProposal) {
+        psProposal.addEventListener('change', function () {
+            if (psProposal.value) loadPsFromProposal(psProposal.value);
+        });
     }
 
     if (posSave) {
@@ -1903,6 +3082,288 @@
         });
     }
 
+    // ============================================================
+    // AI 研究分析师（MODULE 5 / V2.1 §12-13）
+    // AI 只解释确定性上下文，仓位数字一律来自 Position Sizing 引擎
+    // ============================================================
+    var aiFocus = document.getElementById('ai-focus');
+    var aiProposalSel = document.getElementById('ai-proposal');
+    var aiProviderSel = document.getElementById('ai-provider-cme');
+    var aiQtyEl = document.getElementById('ai-qty');
+    var aiQuestionEl = document.getElementById('ai-question');
+    var aiAskBtn = document.getElementById('ai-ask');
+    var aiHintEl = document.getElementById('ai-hint');
+    var aiQuickEl = document.getElementById('ai-quick');
+    var aiResultEl = document.getElementById('ai-result');
+    var aiMetaEl = document.getElementById('ai-meta');
+    var aiHistoryEl = document.getElementById('ai-history');
+    var aiHistory = [];
+    var aiBusy = false;
+
+    var AI_SECTIONS = [
+        { k: 'simple_view', t: '1 · 一句话观点 SIMPLE VIEW' },
+        { k: 'why', t: '2 · 为什么 WHY' },
+        { k: 'market_confirmation', t: '3 · 市场确认 MARKET CONFIRMATION' },
+        { k: 'suggested_direction', t: '4 · 建议方向 SUGGESTED DIRECTION' },
+        { k: 'position_size_context', t: '5 · 仓位背景 POSITION SIZE CONTEXT' },
+        { k: 'main_risk', t: '6 · 主要风险 MAIN RISK', c: 'risk' },
+        { k: 'what_to_watch', t: '7 · 后续观察 WHAT TO WATCH', c: 'watch' }
+    ];
+    var AI_EXTRA_TEXT = [
+        { k: 'base_view', t: 'Base View 基准观点' },
+        { k: 'historical_context', t: 'Historical Context 历史背景' },
+        { k: 'evidence_quality', t: 'Evidence Quality 证据质量' }
+    ];
+    var AI_EXTRA_LIST = [
+        { k: 'supporting_factors', t: 'Supporting Factors 支持因素' },
+        { k: 'counter_factors', t: 'Counter Factors 反方因素' },
+        { k: 'invalidation', t: 'Invalidation 失效条件' },
+        { k: 'what_to_watch_next', t: 'What To Watch Next 后续观察点' }
+    ];
+    var AI_QUICK = [
+        { l: 'Explain Current View', q: 'Explain Current View：解释当前的宏观观点与信号，说明完整因果链。' },
+        { l: 'What Could Break This Thesis?', q: 'What Could Break This Thesis?：当前论点最可能被什么推翻？哪些证据会先发生变化？' },
+        { l: 'Interpret Latest Event', q: 'Interpret Latest Event：解读最新已发布事件的含义、情景匹配与资产传导。' },
+        { l: 'Compare With History', q: 'Compare With History：把今天与历史同类事件样本对比，说明统计依据与证据强度。' },
+        { l: 'Review Current Position', q: 'Review Current Position：复核当前持仓与风险状态，指出需要重点关注的地方。' },
+        { l: 'Build Daily Brief', q: 'Build Daily Brief：生成今日决策简报（观点、事件、仓位背景、风险、观察点）。' }
+    ];
+
+    function aiEsc(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function aiMarkMissing(s) {
+        return aiEsc(s).replace(/Missing:[^；;，,\n。]*/g, function (m) {
+            return '<span class="ai-missing">' + m + '</span>';
+        });
+    }
+    function aiSeg(sec, val) {
+        if (!val) return '';
+        var cls = 'ai-seg' + (sec.c ? ' ' + sec.c : '');
+        return '<div class="' + cls + '"><div class="ai-seg-head">' + aiEsc(sec.t) + '</div>' +
+            '<div class="ai-seg-body">' + aiMarkMissing(val) + '</div></div>';
+    }
+    function aiSegList(sec, arr) {
+        if (!arr || !arr.length) return '';
+        return '<div class="ai-seg"><div class="ai-seg-head">' + aiEsc(sec.t) + '</div><ul>' +
+            arr.map(function (v) { return '<li>' + aiMarkMissing(v) + '</li>'; }).join('') +
+            '</ul></div>';
+    }
+
+    function renderAiAnswer(data, question) {
+        if (!aiResultEl) return;
+        var ans = data.answer || {};
+        var meta = data.context_meta || {};
+        var html = '';
+
+        var badges = [];
+        if (meta.focus_instrument) badges.push('焦点 <b>' + aiEsc(meta.focus_instrument) + '</b>');
+        if (meta.matched_scenario) badges.push('匹配情景 <b>' + aiEsc(meta.matched_scenario) + '</b>');
+        if (meta.sample_size !== null && meta.sample_size !== undefined) {
+            badges.push('历史样本 <b>' + aiEsc(meta.sample_size) + '</b>');
+        }
+        if (meta.sizing_available) {
+            badges.push('建议工作区间 <b>' + aiEsc(meta.suggested_label || '—') + '</b>');
+            badges.push('Final Max <b>' + aiEsc(meta.final_max === null || meta.final_max === undefined ? '—' : meta.final_max) + '</b>');
+        } else {
+            badges.push('仓位引擎 <b>未计算</b>');
+        }
+        if (badges.length) {
+            html += '<div class="ai-badges">' + badges.map(function (b) {
+                return '<span class="ai-badge">' + b + '</span>';
+            }).join('') + '</div>';
+        }
+
+        AI_SECTIONS.forEach(function (s) { html += aiSeg(s, ans[s.k]); });
+
+        var extra = '';
+        AI_EXTRA_TEXT.forEach(function (s) { extra += aiSeg(s, ans[s.k]); });
+        AI_EXTRA_LIST.forEach(function (s) { extra += aiSegList(s, ans[s.k]); });
+        if (extra) {
+            html += '<details class="ai-pro"><summary>附加结构化字段（基准观点 / 历史背景 / 证据质量 / 支持与反方因素 / 失效条件）</summary>' +
+                '<div style="margin-top:12px;">' + extra + '</div></details>';
+        }
+
+        var miss = (data.missing || []).concat(ans.missing_data || []);
+        var seen = {};
+        miss = miss.filter(function (m) {
+            var key = String(m);
+            if (seen[key]) return false;
+            seen[key] = 1;
+            return true;
+        });
+        if (miss.length) {
+            html += '<div class="ai-ctxbox"><strong style="color:var(--text);">数据缺失（AI 不得编造，已标注 Missing）</strong><br>' +
+                miss.map(function (m) { return '<span class="ai-badge">' + aiEsc(m) + '</span>'; }).join('') + '</div>';
+        }
+
+        var fresh = meta.data_freshness || {};
+        if (fresh && (fresh.snapshot_latest || fresh.signal_latest || fresh.event_latest)) {
+            html += '<div class="ai-ctxbox">上下文时点：快照 ' + aiEsc(fresh.snapshot_latest || '—') +
+                ' · 信号 ' + aiEsc(fresh.signal_latest || '—') +
+                ' · 事件 ' + aiEsc(fresh.event_latest || '—') +
+                ((fresh.stale_items && fresh.stale_items.length) ? ' · 过期项 ' + aiEsc(fresh.stale_items.join('、')) : '') +
+                '</div>';
+        }
+
+        if (data.raw_text) {
+            html += '<details class="ai-pro"><summary>模型原始输出</summary><div class="ai-raw">' +
+                aiEsc(data.raw_text) + '</div></details>';
+        }
+
+        aiResultEl.innerHTML = html;
+        if (aiMetaEl) aiMetaEl.textContent = question ? '· ' + question.slice(0, 36) : '';
+    }
+
+    function renderAiHistory() {
+        if (!aiHistoryEl) return;
+        if (!aiHistory.length) {
+            aiHistoryEl.innerHTML = '<div class="ai-hist-empty">暂无记录。</div>';
+            return;
+        }
+        aiHistoryEl.innerHTML = aiHistory.map(function (h, i) {
+            var t = h.at;
+            var stamp = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2);
+            return '<div class="ai-hist-item" data-i="' + i + '">' +
+                '<div class="ah-q">' + aiEsc(h.q) + '</div>' +
+                '<div class="ah-t">' + stamp + ' · ' + aiEsc((h.data.provider || {}).name || '') + ' · ' +
+                aiEsc((h.data.context_meta || {}).focus_instrument || '—') + '</div></div>';
+        }).join('');
+        aiHistoryEl.querySelectorAll('.ai-hist-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                var h = aiHistory[parseInt(item.getAttribute('data-i'), 10)];
+                if (h) renderAiAnswer(h.data, h.q);
+            });
+        });
+    }
+
+    function aiSetBusy(busy) {
+        aiBusy = busy;
+        if (aiAskBtn) {
+            aiAskBtn.disabled = busy;
+            aiAskBtn.textContent = busy ? '分析中…' : '分析';
+        }
+        if (aiQuickEl) {
+            aiQuickEl.querySelectorAll('button').forEach(function (b) { b.disabled = busy; });
+        }
+    }
+
+    function runAiResearch(question) {
+        if (aiBusy) return;
+        var q = String(question || '').trim();
+        if (!q) {
+            if (aiHintEl) aiHintEl.textContent = '请先输入问题，或点一个快捷问题';
+            return;
+        }
+        aiSetBusy(true);
+        if (aiHintEl) aiHintEl.textContent = '正在构建确定性上下文并请求模型…';
+        if (aiResultEl) aiResultEl.innerHTML = '<div class="ai-empty">分析中，请稍候…</div>';
+
+        var payload = {
+            question: q,
+            symbol: aiFocus ? aiFocus.value : '',
+            proposal_id: aiProposalSel ? aiProposalSel.value : '',
+            provider: aiProviderSel ? aiProviderSel.value : ''
+        };
+        if (aiQtyEl && aiQtyEl.value !== '') payload.qty = Number(aiQtyEl.value);
+
+        fetch('/api/cme/ai-research', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            aiSetBusy(false);
+            if (!data || data.ok !== true) {
+                var msg = (data && data.error) || '分析失败';
+                if (data && data.need_config) msg += '（请先前往 AI 配置页设置密钥）';
+                if (aiHintEl) aiHintEl.textContent = '❌ ' + msg;
+                if (aiResultEl) aiResultEl.innerHTML = '<div class="ai-empty">' + aiEsc(msg) + '</div>';
+                return;
+            }
+            if (aiHintEl) {
+                aiHintEl.textContent = '✅ 已基于确定性上下文生成（模型：' +
+                    ((data.provider || {}).model || '—') + '）';
+            }
+            renderAiAnswer(data, q);
+            aiHistory.unshift({ q: q, data: data, at: new Date() });
+            if (aiHistory.length > 20) aiHistory.pop();
+            renderAiHistory();
+            setTimeout(function () { if (aiHintEl) aiHintEl.textContent = ''; }, 6000);
+        }).catch(function () {
+            aiSetBusy(false);
+            if (aiHintEl) aiHintEl.textContent = '❌ 请求失败：服务器暂不可用';
+            if (aiResultEl) aiResultEl.innerHTML = '<div class="ai-empty">请求失败：服务器暂不可用</div>';
+        });
+    }
+
+    function refreshAiPanel() {
+        if (!aiQuickEl) return;
+        aiQuickEl.innerHTML = AI_QUICK.map(function (q, i) {
+            return '<button type="button" data-i="' + i + '">' + aiEsc(q.l) + '</button>';
+        }).join('');
+        aiQuickEl.querySelectorAll('button').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var item = AI_QUICK[parseInt(b.getAttribute('data-i'), 10)];
+                if (!item) return;
+                if (aiQuestionEl) aiQuestionEl.value = item.q;
+                runAiResearch(item.q);
+            });
+        });
+
+        fetch('/api/ai/config', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (cfg) {
+                if (!aiProviderSel) return;
+                var list = (cfg && cfg.providers) || [];
+                aiProviderSel.innerHTML = list.length ? list.map(function (p) {
+                    return '<option value="' + aiEsc(p.id) + '">' + aiEsc(p.name || p.model || p.id) +
+                        (p.has_key ? '' : '（无密钥）') + '</option>';
+                }).join('') : '<option value="">未配置模型</option>';
+                if (cfg && cfg.active) aiProviderSel.value = cfg.active;
+            }).catch(function () {
+                if (aiProviderSel) aiProviderSel.innerHTML = '<option value="">加载失败</option>';
+            });
+
+        fetch('/api/cme/proposals', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (list) {
+                if (!aiProposalSel) return;
+                var prev = aiProposalSel.value;
+                aiProposalSel.innerHTML = ['<option value="">不关联提案</option>'].concat((list || []).map(function (p) {
+                    return '<option value="' + aiEsc(p.id) + '">' + aiEsc(p.symbol) + ' ' +
+                        aiEsc(p.direction || '') + ' × ' + aiEsc(p.qty) + ' · ' + aiEsc(p.status) + '</option>';
+                })).join('');
+                if (prev && aiProposalSel.querySelector('[value="' + prev + '"]')) aiProposalSel.value = prev;
+            }).catch(function () {});
+
+        renderAiHistory();
+    }
+
+    if (aiProposalSel) {
+        aiProposalSel.addEventListener('change', function () {
+            if (!aiProposalSel.value) return;
+            fetch('/api/cme/proposals', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (list) {
+                    var p = (list || []).filter(function (x) { return x.id === aiProposalSel.value; })[0];
+                    if (!p) return;
+                    if (p.symbol && aiFocus) aiFocus.value = p.symbol;
+                    if (p.qty !== null && p.qty !== undefined && aiQtyEl) aiQtyEl.value = p.qty;
+                }).catch(function () {});
+        });
+    }
+
+    if (aiAskBtn) {
+        aiAskBtn.addEventListener('click', function () {
+            runAiResearch(aiQuestionEl ? aiQuestionEl.value : '');
+        });
+    }
+    if (aiQuestionEl) {
+        aiQuestionEl.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runAiResearch(aiQuestionEl.value);
+        });
+    }
+
     // 初始加载所有模块数据
     loadTopBar();
     loadFactors();
@@ -1910,6 +3371,8 @@
     refreshEvents();
     refreshProposals();
     refreshRisk();
+    refreshPsProposals();
+    refreshAiPanel();
 })();
 </script>
 {% endblock %}
