@@ -1265,21 +1265,64 @@ def _cme_file_path(name):
     return os.path.join(_data_dir(), "cme_" + name + ".json")
 
 
+try:  # 演示数据随代码部署，保证线上首次打开就能看到每个功能的完整示例
+    from cme_seed import CME_DEMO_SEED as _CME_DEMO_SEED
+except Exception:  # pragma: no cover - 缺少演示数据时退化为空
+    _CME_DEMO_SEED = {}
+
+
+def _cme_demo(name):
+    """返回演示数据的深拷贝；该集合没有演示数据时返回 None。
+
+    cme_*.json 已被 .gitignore 忽略（运行期数据线上走 Upstash KV），
+    因此全新部署时云端与本地都为空，页面会是一片空白。
+    这里提供一份可交互的示例数据兜底，让「使用方式」在真实网页上可见。
+    """
+    data = _CME_DEMO_SEED.get(name)
+    if data is None:
+        return None
+    try:  # 用 JSON 往返做深拷贝，避免调用方原地修改污染模块级常量
+        return _json.loads(_json.dumps(data, ensure_ascii=False))
+    except Exception:
+        return None
+
+
 def _cme_load(name, default):
-    """通用读取：云端优先，本地 JSON 文件兜底（也承担首次上云的迁移）。"""
+    """通用读取：云端优先 → 本地 JSON 文件 → 演示数据 → 调用方默认值。"""
     if _kv_env():
         data = _kv_get("parite:cme:" + name)
         if data is not None:
             return data
     path = _cme_file_path(name)
-    if not os.path.exists(path):
-        return default
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = _json.load(f)
-        return data if data is not None else default
-    except Exception:
-        return default
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = _json.load(f)
+            if data is not None:  # 空列表/空字典是用户的有意结果，需尊重
+                return data
+        except Exception:
+            pass
+    demo = _cme_demo(name)
+    return demo if demo is not None else default
+
+
+_cme_demo_state = {}  # name -> (checked_at, is_demo)，避免每次请求都打 KV
+_CME_DEMO_STATE_TTL = 60.0
+
+
+def _cme_is_demo(name):
+    """当前集合是否正在展示演示数据（云端无数据 且 本地文件不存在）。"""
+    cached = _cme_demo_state.get(name)
+    if cached and (time.time() - cached[0]) < _CME_DEMO_STATE_TTL:
+        return cached[1]
+    flag = False
+    if name in _CME_DEMO_SEED:
+        has_cloud = False
+        if _kv_env():
+            has_cloud = _kv_get("parite:cme:" + name) is not None
+        flag = (not has_cloud) and (not os.path.exists(_cme_file_path(name)))
+    _cme_demo_state[name] = (time.time(), flag)
+    return flag
 
 
 def _cme_save(name, data):
@@ -1813,6 +1856,37 @@ CME_CONTRACT_SPECS = {
 }
 CME_CONTRACT_SPECS_BY_NAME = {v["name"].upper(): k for k, v in CME_CONTRACT_SPECS.items()}
 CME_COMMISSION_PER_SIDE = 2.50
+
+# V2.1 Contract Context：近月/远月合约月份（演示用静态映射；正式赛按 CME 官网核对）。
+# code 规则：G=2月 J=4月 M=6月 Z=12月，末两位为年份。
+CME_CONTRACT_MONTHS = {
+    "GC": [
+        {"month": "Dec 2026", "code": "GCZ26", "active": True,  "expiry": "2026-11-27"},
+        {"month": "Feb 2027", "code": "GCG27", "active": False, "expiry": "2027-01-27"},
+        {"month": "Apr 2027", "code": "GCJ27", "active": False, "expiry": "2027-03-29"},
+    ],
+    "NQ": [
+        {"month": "Dec 2026", "code": "NQZ26", "active": True,  "expiry": "2026-12-18"},
+        {"month": "Mar 2027", "code": "NQH27", "active": False, "expiry": "2027-03-19"},
+        {"month": "Jun 2027", "code": "NQM27", "active": False, "expiry": "2027-06-18"},
+    ],
+    "6E": [
+        {"month": "Dec 2026", "code": "6EZ26", "active": True,  "expiry": "2026-12-14"},
+        {"month": "Mar 2027", "code": "6EH27", "active": False, "expiry": "2027-03-15"},
+        {"month": "Jun 2027", "code": "6EM27", "active": False, "expiry": "2027-06-14"},
+    ],
+    "DX": [
+        {"month": "Dec 2026", "code": "DXZ26", "active": True,  "expiry": "2026-12-14"},
+        {"month": "Mar 2027", "code": "DXH27", "active": False, "expiry": "2027-03-15"},
+        {"month": "Jun 2027", "code": "DXM27", "active": False, "expiry": "2027-06-14"},
+    ],
+}
+CME_CONTRACT_TYPE_LABELS = {
+    "GC": "Gold Futures · COMEX · 100 troy oz",
+    "NQ": "Nasdaq-100 Futures · CME · index × $20",
+    "6E": "Euro FX Futures · CME · €125,000",
+    "DX": "US Dollar Index Futures · ICE · $1,000 × index",
+}
 
 # ---- V2.1 §18：Position Sizing Engine（确定性引擎；AI 只能解释，不能发明数字）----
 # 证据质量乘数：把风险上限按历史样本的可靠程度下调（§18：MEDIUM → 6 手降为 4 手）。
@@ -2954,15 +3028,35 @@ def _compute_position_sizing(symbol, direction="long", entry_price=None, stop_pr
         "scenario_per_contract": scenario_per_contract,
     }
 
+    # V2.1 Contract Context：当前持仓（同品种净数量，供 9 字段展示）
+    current_position = 0
+    for p in _load_positions():
+        if _resolve_symbol(p.get("symbol")) == code:
+            try:
+                current_position += float(p.get("qty") or 0)
+            except (TypeError, ValueError):
+                pass
+
+    months = CME_CONTRACT_MONTHS.get(code, [])
+    active_month = next((m for m in months if m.get("active")), months[0] if months else None)
+
     return {
         "ok": True,
         "symbol": code,
         "name": spec.get("name", code),
         "direction": dirn,
         "contract": {
+            "instrument": "%s (%s)" % (spec.get("name", code), code),
+            "contract_type": CME_CONTRACT_TYPE_LABELS.get(code, "Futures"),
             "tick_size": tick_size,
             "tick_value": tick_value,
             "contract_multiplier": contract_multiplier,
+            "contract_size": CME_CONTRACT_TYPE_LABELS.get(code, "Futures"),
+            "contract_month": (active_month or {}).get("month"),
+            "contract_code": (active_month or {}).get("code"),
+            "expiry": (active_month or {}).get("expiry"),
+            "months": months,
+            "current_position": int(current_position) if current_position == int(current_position) else current_position,
             "reference_price": float(spec["reference_price"]),
             "margin_per_contract": margin_per_contract,
             "commission_per_side": CME_COMMISSION_PER_SIDE,
@@ -3320,6 +3414,31 @@ def api_cme_import():
             _cme_save(name, payload[name])
             restored[name] = len(payload[name]) if isinstance(payload[name], (list, dict)) else 1
     return jsonify({"success": True, "restored": restored})
+
+
+# 演示数据中文名（前端提示条展示用）
+_CME_DEMO_LABELS = {
+    "snapshots": "行情快照",
+    "signals": "Macro Score 信号",
+    "events": "经济事件",
+    "scenarios": "事件情景推演",
+    "event_config": "事件阈值配置",
+    "proposals": "交易提案",
+    "positions": "持仓",
+    "journal": "交易日志",
+    "risk_config": "风控参数",
+}
+
+
+@app.route("/api/cme/demo-status", methods=["GET"])
+def api_cme_demo_status():
+    """告知前端当前哪些功能正在展示演示数据（页面顶部提示条用）。"""
+    active = [n for n in _CME_COLLECTIONS if _cme_is_demo(n)]
+    return jsonify({
+        "demo": bool(active),
+        "collections": active,
+        "labels": [_CME_DEMO_LABELS.get(n, n) for n in active],
+    })
 
 
 # ============================================================
@@ -3726,6 +3845,218 @@ CME_AI_EXTRA_KEYS = (
     "historical_context", "invalidation", "what_to_watch_next",
     "evidence_quality", "missing_data",
 )
+
+# ============================================================
+# V2.2 —— 多模型路由 · 分析缓存 · 成本控制
+# LEVEL 0 NO LLM / LEVEL 1 DeepSeek（默认）/ LEVEL 2 GPT Terra
+# LEVEL 3A Claude（独立复核）/ LEVEL 3B GPT Sol（深度分析）
+# ============================================================
+CME_AI_LEVELS = {
+    "quick": {
+        "level": 1, "label": "Quick Analysis", "role": "Default Research Assistant",
+        "target": "deepseek", "cost_usd": 0.08,
+        "note": "日常研究助手（默认，≈80–90% 调用），保持 36 小时数据新鲜度即可",
+    },
+    "final": {
+        "level": 2, "label": "Generate Final Analysis", "role": "Primary Trading Analyst",
+        "target": "gpt", "cost_usd": 0.74,
+        "note": "主交易分析师：生成交易提案前的最终版分析",
+    },
+    "review": {
+        "level": 3, "label": "Request Independent Review", "role": "Independent Reviewer",
+        "target": "claude", "cost_usd": 0.22,
+        "note": "独立复核：找分歧与盲点（RECOMMEND_ONLY 默认，需人工点击）",
+    },
+    "deep": {
+        "level": 3, "label": "Deep Analysis", "role": "Deep Analysis",
+        "target": "sol", "cost_usd": 1.20,
+        "note": "深度分析：仅在复杂场景手动触发（More ▼ 菜单内）",
+    },
+}
+CME_AI_PREMIUM_LEVELS = {"final", "review", "deep"}
+CME_AI_PREMIUM_COOLDOWN_MS = 15 * 60 * 1000   # premiumCooldownMinutes = 15
+CME_AI_MAX_PREMIUM_PER_PROPOSAL = 1           # Claude 触发时允许 2；Sol 不计入
+CME_AI_MISSING_GATE = 6                        # 缺失项 ≥ 该阈值 → INSUFFICIENT DATA
+CME_AI_INSUFFICIENT_MSG = (
+    "INSUFFICIENT DATA — 缺少关键输入（%s）。请先补录行情快照/事件/提案后重试；"
+    "更贵的模型也不能把缺失数据变成真实数据。"
+)
+
+
+def _cme_ai_match_provider(providers, keyword):
+    """按关键词（deepseek/gpt/claude/sol 等）模糊匹配已配置模型。"""
+    if not keyword:
+        return None
+    kw = str(keyword).lower()
+    for p in providers or []:
+        hay = " ".join([
+            str(p.get("id") or ""), str(p.get("name") or ""),
+            str(p.get("model") or ""), str(p.get("type") or ""),
+        ]).lower()
+        if kw in hay:
+            return p
+    return None
+
+
+def _cme_ai_levels_status(cfg):
+    """按 V2.2 层级标注每个模型是否已配置（驱动前端按钮可用态）。"""
+    providers = (cfg or {}).get("providers") or []
+    available = {}
+    for key, lv in CME_AI_LEVELS.items():
+        hit = _cme_ai_match_provider(providers, lv["target"])
+        available[key] = {
+            "key": key,
+            "level": lv["level"], "label": lv["label"], "role": lv["role"],
+            "cost_usd": lv["cost_usd"], "note": lv["note"],
+            "provider": (hit or {}).get("id") if hit else None,
+            "provider_name": (hit or {}).get("name") if hit else None,
+            "configured": bool(hit),
+        }
+    return available
+
+
+def _cme_ai_route_provider(cfg, level_key, explicit_provider_id=None):
+    """routeAI(ctx)：显式 provider > 层级目标模型 > active 兜底。
+
+    返回 (provider, routed)：routed 说明实际路由方式（用于结果徽章与审计）。
+    """
+    providers = (cfg or {}).get("providers") or []
+    if explicit_provider_id:
+        hit = next((p for p in providers if p.get("id") == explicit_provider_id), None)
+        if hit:
+            return hit, "manual"
+    target = (CME_AI_LEVELS.get(level_key) or {}).get("target")
+    if target:
+        hit = _cme_ai_match_provider(providers, target)
+        if hit:
+            return hit, "level"
+    hit = _active_provider(cfg or {})
+    return hit, "fallback"
+
+
+def _cme_ai_context_hash(question, symbol, proposal_id, event_id, qty, context):
+    """V2.2 analysis_context_hash：上下文 6 组成项的稳定指纹。
+
+    问题文本不参与哈希（同上下文换问题视为同一缓存键的场景由 question 区分）；
+    哈希覆盖：市场快照 / 当前事件 / 匹配情景 / 历史研究 / 组合状态 / 仓位引擎结果。
+    """
+    import hashlib
+    import json as _json
+
+    def _stable(o):
+        try:
+            return _json.dumps(o, sort_keys=True, ensure_ascii=False, default=str)
+        except Exception:
+            return str(o)
+
+    basis = {
+        "q": (question or "").strip()[:120],
+        "symbol": symbol or "",
+        "proposal_id": proposal_id or "",
+        "event_id": event_id or "",
+        "qty": qty,
+        "market": context.get("market_snapshot"),
+        "event": context.get("current_event"),
+        "scenario": context.get("matched_scenario"),
+        "study": context.get("historical_event_study"),
+        "portfolio": context.get("portfolio_state"),
+        "sizing": context.get("position_sizing"),
+    }
+    return hashlib.md5(_stable(basis).encode("utf-8")).hexdigest()
+
+
+def _cme_ai_cache_path():
+    return os.path.join(_data_dir(), "cme_ai_cache.json")
+
+
+def _load_ai_cache():
+    import json as _json
+    path = _cme_ai_cache_path()
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = _json.load(f)
+                if isinstance(data, dict):
+                    return data
+    except Exception:
+        pass
+    try:
+        raw = _kv_get("parite:cme:ai_cache")
+        if raw:
+            data = _json.loads(raw)
+            if isinstance(data, dict):
+                return data
+    except Exception:
+        pass
+    return {}
+
+
+def _save_ai_cache(cache):
+    import json as _json
+    path = _cme_ai_cache_path()
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            _json.dump(cache, f, ensure_ascii=False)
+    except Exception:
+        pass
+    try:
+        _kv_set("parite:cme:ai_cache", _json.dumps(cache, ensure_ascii=False))
+    except Exception:
+        pass
+
+
+def _load_ai_usage():
+    import json as _json
+    path = os.path.join(_data_dir(), "cme_ai_usage.json")
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = _json.load(f)
+                if isinstance(data, list):
+                    return data
+    except Exception:
+        pass
+    try:
+        raw = _kv_get("parite:cme:ai_usage")
+        if raw:
+            data = _json.loads(raw)
+            if isinstance(data, list):
+                return data
+    except Exception:
+        pass
+    return []
+
+
+def _append_ai_usage(entry):
+    import json as _json
+    usage = _load_ai_usage()
+    usage.append(entry)
+    usage = usage[-500:]  # LLMUsageLog 仅保留最近 500 条
+    path = os.path.join(_data_dir(), "cme_ai_usage.json")
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            _json.dump(usage, f, ensure_ascii=False)
+    except Exception:
+        pass
+    try:
+        _kv_set("parite:cme:ai_usage", _json.dumps(usage, ensure_ascii=False))
+    except Exception:
+        pass
+
+
+def _cme_ai_direction_token(text):
+    """从建议方向文本中提取方向 token（用于独立复核的一致性比较）。"""
+    t = str(text or "").lower()
+    if not t:
+        return None
+    if "long" in t or "做多" in t or "看多" in t or "买入" in t:
+        return "long"
+    if "short" in t or "做空" in t or "看空" in t or "卖出" in t:
+        return "short"
+    if "neutral" in t or "观望" in t or "no trade" in t:
+        return "neutral"
+    return None
+
 
 CME_AI_SYSTEM_PROMPT = """你是 Parité CME Mode 的 AI 研究分析师，服务于 2026 CME 大学生交易挑战赛的决策支持工作台。
 
@@ -4207,10 +4538,12 @@ def _cme_ai_normalize_answer(parsed, raw_text):
 
 @app.route("/api/cme/ai-research", methods=["POST"])
 def api_cme_ai_research():
-    """CME AI 研究分析师：Context Builder → Provider → 固定结构化输出。
+    """CME AI 研究分析师：Context Builder → 路由 → 缓存/预算控制 → Provider → 固定结构化输出。
 
-    请求体：{question, symbol?, proposal_id?, event_id?, qty?, provider?}
-    返回体：{ok, provider, answer{7 段 + 附加字段}, context_meta, missing[], parsed, raw_text, generated_at}
+    请求体：{question, symbol?, proposal_id?, event_id?, qty?, provider?, level?, force?}
+    level ∈ quick(默认) | final | review | deep（V2.2 四层级）
+    返回体：{ok, provider, routing, answer, context_meta, missing[], parsed, raw_text,
+            generated_at, cache, consistency?}
     """
     import json as _json
     import urllib.request
@@ -4221,8 +4554,14 @@ def api_cme_ai_research():
     if not question:
         return jsonify({"error": "问题不能为空"}), 400
 
+    level_key = str(data.get("level") or "quick").strip().lower()
+    if level_key not in CME_AI_LEVELS:
+        level_key = "quick"
+    level_def = CME_AI_LEVELS[level_key]
+    force = bool(data.get("force"))
+
     cfg = _load_ai_config()
-    provider = _find_provider(cfg, (data.get("provider") or "").strip()) or _active_provider(cfg)
+    provider, routed = _cme_ai_route_provider(cfg, level_key, (data.get("provider") or "").strip())
     if not provider:
         return jsonify({"error": "请先配置 AI 模型", "need_config": True}), 200
     if not (provider.get("api_key") or ""):
@@ -4237,6 +4576,70 @@ def api_cme_ai_research():
         qty=data.get("qty"),
     )
 
+    ctx_hash = _cme_ai_context_hash(
+        question, data.get("symbol"), data.get("proposal_id"),
+        data.get("event_id"), data.get("qty"), context,
+    )
+    proposal_id = (data.get("proposal_id") or "").strip()
+    routing = {
+        "level": level_key,
+        "level_label": level_def["label"],
+        "level_role": level_def["role"],
+        "routed": routed,
+        "requested_provider": (data.get("provider") or "").strip() or None,
+    }
+
+    # ---- V2.2 PremiumPreCheck：缺失数据门（premium 层级才拦截；quick 继续服务）----
+    if level_key in CME_AI_PREMIUM_LEVELS and len(missing) >= CME_AI_MISSING_GATE:
+        return jsonify({
+            "ok": False,
+            "insufficient_data": True,
+            "error": CME_AI_INSUFFICIENT_MSG % "、".join(missing[:6]),
+            "missing": missing,
+            "routing": routing,
+        }), 200
+
+    cache = _load_ai_cache()
+    cache_key = "%s::%s" % (level_key, ctx_hash)
+    entry = cache.get(cache_key)
+    now = _now_ms()
+
+    # ---- V2.2 Premium 预算：每提案 premium 调用上限（final/review 各 1 次；Sol 不计入）----
+    if level_key in ("final", "review") and not force and proposal_id:
+        usage = _load_ai_usage()
+        used = [u for u in usage
+                if u.get("proposal_id") == proposal_id
+                and u.get("level") in ("final", "review")
+                and u.get("level") == level_key]
+        if used:
+            return jsonify({
+                "ok": False,
+                "budget_reached": True,
+                "error": "Premium AI Budget Reached — 该提案已使用过 %s 预算（每提案各 1 次）。"
+                         "DeepSeek 继续提供日常分析；如确需重跑，请使用 [ Manual Override ]。"
+                         % level_def["label"],
+                "routing": routing,
+            }), 200
+
+    # ---- V2.2 Analysis Cache + premiumCooldown：同上下文且未过冷却 → 直接回缓存 ----
+    ttl = CME_AI_PREMIUM_COOLDOWN_MS if level_key in CME_AI_PREMIUM_LEVELS else 10 * 60 * 1000
+    if entry and not force and (now - entry.get("generated_at", 0)) < ttl:
+        cached_meta = dict(entry.get("context_meta") or {})
+        cached_meta["cache_hit"] = True
+        cached_meta["cache_age_min"] = int((now - entry.get("generated_at", 0)) / 60000)
+        return jsonify({
+            "ok": True,
+            "provider": entry.get("provider") or {},
+            "routing": entry.get("routing") or routing,
+            "answer": entry.get("answer") or {},
+            "context_meta": cached_meta,
+            "missing": entry.get("missing") or [],
+            "parsed": entry.get("parsed"),
+            "raw_text": entry.get("raw_text") or "",
+            "generated_at": entry.get("generated_at"),
+            "cache": {"hit": True, "age_min": cached_meta["cache_age_min"], "context_unchanged": True},
+        }), 200
+
     user_content = (
         "<QUESTION>\n%s\n</QUESTION>\n\n"
         "<CONTEXT>\n%s\n</CONTEXT>\n\n"
@@ -4244,6 +4647,17 @@ def api_cme_ai_research():
         "上下文 missing 列表中的项目必须在相应段落写成 `Missing: 项目名`，不要自行补齐。"
         % (question, _json.dumps(context, ensure_ascii=False, default=str))
     )
+
+    if level_key == "review":
+        user_content += (
+            "\n\n<ROLE>你是独立复核员（Independent Reviewer）：假设主分析师可能是错的，"
+            "重点检查主分析中未充分讨论的反方证据与盲点。保持中立，不迎合主分析结论。</ROLE>"
+        )
+    elif level_key == "deep":
+        user_content += (
+            "\n\n<ROLE>这是深度分析（Deep Analysis）：请给出更完整的多空两侧论证、"
+            "传导路径分支与失效条件推演，篇幅可比常规分析更长。</ROLE>"
+        )
 
     try:
         raw_text = _call_provider(provider, CME_AI_SYSTEM_PROMPT, user_content, temperature=0.2)
@@ -4253,12 +4667,12 @@ def api_cme_ai_research():
             msg = _json.loads(body).get("error", {}).get("message", body)
         except Exception:
             msg = "HTTP %s" % e.code
-        return jsonify({"error": "AI 接口返回错误：%s" % msg}), 200
+        return jsonify({"error": "AI 接口返回错误：%s" % msg, "routing": routing}), 200
     except Exception as e:
-        return jsonify({"error": "请求失败：%s" % e}), 200
+        return jsonify({"error": "请求失败：%s" % e, "routing": routing}), 200
 
     if not raw_text:
-        return jsonify({"error": "AI 返回内容为空"}), 200
+        return jsonify({"error": "AI 返回内容为空", "routing": routing}), 200
 
     parsed = _cme_ai_extract_json(raw_text)
     answer = _cme_ai_normalize_answer(parsed, raw_text)
@@ -4269,28 +4683,136 @@ def api_cme_ai_research():
     if parsed is None:
         merged_missing.append("structured JSON output（模型未按格式返回，已回退为纯文本）")
 
-    return jsonify({
-        "ok": True,
-        "provider": {
-            "id": provider.get("id"),
-            "name": provider.get("name"),
-            "model": provider.get("model"),
-        },
+    context_meta = {
+        "focus_instrument": context.get("focus_instrument"),
+        "event_id": (context.get("current_event") or {}).get("event_id"),
+        "matched_scenario": (context.get("matched_scenario") or {}).get("matched_key"),
+        "sample_size": (context.get("historical_event_study") or {}).get("sample_size"),
+        "sizing_available": bool((context.get("position_sizing") or {}).get("available")),
+        "suggested_label": ((context.get("position_sizing") or {}).get("suggested") or {}).get("label"),
+        "final_max": ((context.get("position_sizing") or {}).get("limits") or {}).get("final_max"),
+        "data_freshness": context.get("data_freshness"),
+    }
+
+    provider_info = {
+        "id": provider.get("id"),
+        "name": provider.get("name"),
+        "model": provider.get("model"),
+    }
+
+    # ---- V2.2 LLMUsageLog：记录调用成本（估算值，按层级基准计）----
+    _append_ai_usage({
+        "ts": now,
+        "level": level_key,
+        "level_label": level_def["label"],
+        "provider": provider.get("id"),
+        "provider_name": provider.get("name"),
+        "model": provider.get("model"),
+        "routed": routed,
+        "cost_usd": level_def["cost_usd"],
+        "proposal_id": proposal_id or None,
+        "question": question[:80],
+        "cache_hit": False,
+    })
+
+    # ---- V2.2 Analysis Cache 写入（保留每层级最近 40 条）----
+    cache[cache_key] = {
+        "level": level_key,
+        "provider": provider_info,
+        "routing": routing,
         "answer": answer,
-        "context_meta": {
-            "focus_instrument": context.get("focus_instrument"),
-            "event_id": (context.get("current_event") or {}).get("event_id"),
-            "matched_scenario": (context.get("matched_scenario") or {}).get("matched_key"),
-            "sample_size": (context.get("historical_event_study") or {}).get("sample_size"),
-            "sizing_available": bool((context.get("position_sizing") or {}).get("available")),
-            "suggested_label": ((context.get("position_sizing") or {}).get("suggested") or {}).get("label"),
-            "final_max": ((context.get("position_sizing") or {}).get("limits") or {}).get("final_max"),
-            "data_freshness": context.get("data_freshness"),
-        },
+        "context_meta": context_meta,
         "missing": merged_missing,
         "parsed": parsed is not None,
         "raw_text": raw_text,
-        "generated_at": _now_ms(),
+        "generated_at": now,
+        "question": question[:120],
+        "proposal_id": proposal_id or None,
+    }
+    if len(cache) > 160:
+        for k in sorted(cache, key=lambda k: cache[k].get("generated_at", 0))[:-40]:
+            cache.pop(k, None)
+    _save_ai_cache(cache)
+
+    # ---- V2.2 分歧展示：review 与主分析对比方向一致性 ----
+    consistency = None
+    if level_key == "review" and proposal_id:
+        primary = None
+        for k in sorted(cache, key=lambda k: cache[k].get("generated_at", 0), reverse=True):
+            e = cache[k]
+            if e.get("proposal_id") == proposal_id and e.get("level") in ("quick", "final") \
+                    and e.get("generated_at") != now:
+                primary = e
+                break
+        if primary:
+            p_dir = _cme_ai_direction_token((primary.get("answer") or {}).get("suggested_direction"))
+            r_dir = _cme_ai_direction_token(answer.get("suggested_direction"))
+            if p_dir and r_dir:
+                consistent = p_dir == r_dir
+                consistency = {
+                    "status": "CONSISTENT" if consistent else "DISAGREEMENT",
+                    "primary_level": primary.get("level"),
+                    "primary_direction": p_dir,
+                    "review_direction": r_dir,
+                    "message": ("Primary research is internally consistent. 主分析与独立复核方向一致（%s）。"
+                                % p_dir if consistent else
+                                "⚠ ANALYST DISAGREEMENT — 主分析方向 %s，独立复核方向 %s，请人工裁决。"
+                                % (p_dir, r_dir)),
+                }
+
+    resp = {
+        "ok": True,
+        "provider": provider_info,
+        "routing": routing,
+        "answer": answer,
+        "context_meta": context_meta,
+        "missing": merged_missing,
+        "parsed": parsed is not None,
+        "raw_text": raw_text,
+        "generated_at": now,
+        "cache": {"hit": False},
+    }
+    if consistency:
+        resp["consistency"] = consistency
+    return jsonify(resp)
+
+
+@app.route("/api/cme/ai-cost", methods=["GET"])
+def api_cme_ai_cost():
+    """V2.2 AI Cost Dashboard：按层级/模型聚合用量与估算成本 + 层级可用状态。"""
+    cfg = _load_ai_config()
+    usage = _load_ai_usage()
+    cache = _load_ai_cache()
+    now = _now_ms()
+    by_level = {}
+    for key, lv in CME_AI_LEVELS.items():
+        by_level[key] = {
+            "key": key,
+            "level": lv["level"], "label": lv["label"], "role": lv["role"],
+            "calls": 0, "cost_usd": 0.0,
+        }
+    for u in usage:
+        lk = u.get("level")
+        if lk in by_level:
+            by_level[lk]["calls"] += 1
+            by_level[lk]["cost_usd"] = round(by_level[lk]["cost_usd"] + float(u.get("cost_usd") or 0), 2)
+    total = round(sum(v["cost_usd"] for v in by_level.values()), 2)
+    cooldown_active = []
+    for k, e in cache.items():
+        if e.get("level") in CME_AI_PREMIUM_LEVELS and (now - e.get("generated_at", 0)) < CME_AI_PREMIUM_COOLDOWN_MS:
+            cooldown_active.append({
+                "level": e.get("level"),
+                "age_min": int((now - e.get("generated_at", 0)) / 60000),
+                "question": (e.get("question") or "")[:60],
+            })
+    return jsonify({
+        "ok": True,
+        "levels": _cme_ai_levels_status(cfg),
+        "usage_by_level": list(by_level.values()),
+        "total_cost_usd": total,
+        "total_calls": len(usage),
+        "premium_cooldown_minutes": int(CME_AI_PREMIUM_COOLDOWN_MS / 60000),
+        "cooldown_active": cooldown_active,
     })
 
 

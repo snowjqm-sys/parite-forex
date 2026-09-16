@@ -32,11 +32,10 @@
 .cme-hero h1 {
     font-size: 30px;
     font-weight: 700;
+    letter-spacing: -0.01em;
     margin-bottom: 8px;
-    background: linear-gradient(135deg, #e6edf3, #58a6ff 60%, #bc8cff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #f0f6fc;
+    text-shadow: 0 0 26px rgba(88, 166, 255, 0.32);
 }
 .cme-hero .hero-sub {
     color: var(--text-light);
@@ -895,6 +894,141 @@
 .ai-hist-item .ah-q { font-size: 13px; font-weight: 600; }
 .ai-hist-item .ah-t { font-size: 11px; color: var(--text-light); margin-top: 4px; }
 .ai-hist-empty { color: var(--text-light); font-size: 12.5px; }
+
+/* ===== V2.1 演示提示条 ===== */
+.cme-demo-banner {
+    display: flex; gap: 10px; align-items: flex-start;
+    border: 1px dashed rgba(255, 180, 84, 0.55);
+    background: rgba(255, 180, 84, 0.08);
+    color: var(--text-light); border-radius: 10px;
+    padding: 10px 14px; margin: 0 0 16px; font-size: 12.5px; line-height: 1.7;
+}
+.cme-demo-banner[hidden] { display: none; }
+.cme-demo-banner .db-icon { font-size: 16px; line-height: 1.4; }
+.cme-demo-banner strong { color: #ffb454; }
+.cme-demo-banner .demo-chip {
+    display: inline-block; border: 1px solid rgba(255, 180, 84, 0.4);
+    border-radius: 999px; padding: 0 8px; margin: 0 2px; font-size: 11.5px;
+    background: rgba(255, 180, 84, 0.06);
+}
+
+/* ===== V2.1 术语 tooltip（不占主界面空间，? 图标 + 悬浮卡）===== */
+.term { border-bottom: 1px dotted var(--text-light); cursor: help; }
+.term-pop {
+    position: absolute; z-index: 60; max-width: 300px;
+    background: var(--panel, #141b26); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+    padding: 10px 12px; font-size: 12px; line-height: 1.7; color: var(--text-light);
+}
+.term-pop .tp-title { font-weight: 700; color: var(--text); margin-bottom: 4px; font-size: 12.5px; }
+.how-link { color: var(--primary); font-size: 11px; cursor: pointer; text-decoration: underline dotted; margin-left: 6px; }
+
+/* ===== V2.1 Market Confirmation 徽章 ===== */
+.mk-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 999px; padding: 2px 10px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: 0.02em; margin: 0 4px 6px 0; border: 1px solid transparent;
+}
+.mk-CONFIRMED { background: rgba(63, 185, 80, 0.12); color: #3fb950; border-color: rgba(63, 185, 80, 0.4); }
+.mk-PARTIALLY { background: rgba(88, 166, 255, 0.12); color: #58a6ff; border-color: rgba(88, 166, 255, 0.4); }
+.mk-MIXED { background: rgba(255, 180, 84, 0.12); color: #ffb454; border-color: rgba(255, 180, 84, 0.4); }
+.mk-DIVERGING { background: rgba(248, 81, 73, 0.12); color: #f85149; border-color: rgba(248, 81, 73, 0.4); }
+.mk-NOTRADE { background: rgba(248, 81, 73, 0.18); color: #f85149; border-color: rgba(248, 81, 73, 0.55); }
+
+/* ===== V2.1 今日合约追踪 ===== */
+.ct-line { font-size: 11.5px; color: var(--text-light); }
+.ct-line b { color: var(--text); }
+.ct-bar { height: 4px; border-radius: 4px; background: var(--border); margin-top: 6px; overflow: hidden; }
+.ct-bar i { display: block; height: 100%; background: var(--primary); border-radius: 4px; }
+
+/* ===== V2.1 风险人话 ===== */
+.risk-plain {
+    display: flex; gap: 10px; align-items: flex-start; margin: 0 0 12px;
+    border: 1px solid var(--border); border-left: 3px solid var(--primary);
+    border-radius: 8px; padding: 10px 14px; font-size: 12.5px; line-height: 1.75;
+    color: var(--text-light); background: rgba(88, 166, 255, 0.04);
+}
+.risk-plain .rp-icon { font-size: 15px; }
+
+/* ===== V2.1 Contract Context 9 字段 ===== */
+.ps-cc-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px; margin-top: 8px;
+}
+.ps-cc { border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }
+.ps-cc .cc-k { font-size: 10.5px; color: var(--text-light); letter-spacing: 0.03em; }
+.ps-cc .cc-v { font-size: 12.5px; color: var(--text); margin-top: 2px; font-weight: 600; }
+.ps-cc.warn { border-color: rgba(255, 180, 84, 0.5); background: rgba(255, 180, 84, 0.06); }
+.cc-expiry-warn {
+    margin-top: 8px; font-size: 12px; color: #ffb454;
+    border: 1px dashed rgba(255, 180, 84, 0.5); border-radius: 8px; padding: 7px 10px;
+    background: rgba(255, 180, 84, 0.05);
+}
+
+/* ===== V2.2 层级按钮 / 徽章 / 缓存 / 分歧 / 成本看板 ===== */
+.ai-level-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
+.ai-level-btn {
+    border: 1px solid var(--border); background: var(--panel, #141b26); color: var(--text);
+    border-radius: 8px; padding: 8px 14px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; transition: all 0.18s;
+}
+.ai-level-btn:hover { border-color: var(--primary); }
+.ai-level-btn.primary {
+    background: linear-gradient(135deg, rgba(47, 129, 246, 0.22), rgba(47, 129, 246, 0.08));
+    border-color: var(--primary); color: #9ecbff;
+}
+.ai-level-btn.premium { border-color: rgba(255, 180, 84, 0.45); }
+.ai-level-btn.premium:hover { border-color: #ffb454; }
+.ai-level-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ai-more-wrap { position: relative; }
+.ai-more-menu {
+    position: absolute; top: calc(100% + 6px); left: 0; min-width: 230px; z-index: 50;
+    background: var(--panel, #141b26); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45); padding: 6px;
+}
+.ai-more-menu button {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    color: var(--text); font-size: 12.5px; padding: 8px 10px; border-radius: 7px; cursor: pointer;
+}
+.ai-more-menu button:hover { background: rgba(88, 166, 255, 0.1); }
+.ai-more-menu .mm-cost { color: #ffb454; font-size: 11px; margin-left: 6px; }
+.ai-level-badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;
+    padding: 3px 12px; font-size: 11.5px; font-weight: 700; margin-bottom: 10px;
+    border: 1px solid rgba(88, 166, 255, 0.45); background: rgba(88, 166, 255, 0.1); color: #58a6ff;
+}
+.ai-level-badge.lv-final { border-color: rgba(255, 180, 84, 0.5); background: rgba(255, 180, 84, 0.1); color: #ffb454; }
+.ai-level-badge.lv-review { border-color: rgba(188, 140, 255, 0.5); background: rgba(188, 140, 255, 0.1); color: #bc8cff; }
+.ai-level-badge.lv-deep { border-color: rgba(248, 81, 73, 0.5); background: rgba(248, 81, 73, 0.1); color: #f85149; }
+.ai-cache-note {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-light);
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; margin-bottom: 10px;
+    background: rgba(88, 166, 255, 0.04);
+}
+.ai-consist { border-radius: 10px; padding: 10px 14px; margin: 12px 0 0; font-size: 12.5px; line-height: 1.7; }
+.ai-consist.ok { border: 1px solid rgba(63, 185, 80, 0.4); background: rgba(63, 185, 80, 0.07); color: #3fb950; }
+.ai-consist.bad { border: 1px solid rgba(248, 81, 73, 0.45); background: rgba(248, 81, 73, 0.07); color: #f85149; }
+.ai-insufficient {
+    border: 1px dashed rgba(255, 180, 84, 0.55); background: rgba(255, 180, 84, 0.07);
+    border-radius: 10px; padding: 12px 14px; margin: 0 0 10px; font-size: 12.5px; line-height: 1.75; color: #ffb454;
+}
+.ai-override-btn {
+    margin-top: 10px; border: 1px solid rgba(255, 180, 84, 0.55); background: rgba(255, 180, 84, 0.08);
+    color: #ffb454; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.ai-cost-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.ai-cost-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px 13px; }
+.ai-cost-card .ac-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.ai-cost-card .ac-sub { font-size: 11px; color: var(--text-light); margin: 3px 0 6px; }
+.ai-cost-card .ac-cost { font-size: 15px; font-weight: 700; color: #ffb454; font-variant-numeric: tabular-nums; }
+.ai-cost-card .ac-calls { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.ai-cost-card.not-ready { opacity: 0.55; }
+.ai-cost-card.not-ready .ac-cost { color: var(--text-light); }
+.ai-cost-total {
+    display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px;
+    margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; font-size: 13px;
+}
+.ai-cost-total .act-v { font-size: 17px; font-weight: 700; color: #ffb454; font-variant-numeric: tabular-nums; }
 </style>
 {% endblock %}
 
@@ -917,6 +1051,13 @@
     </div>
 </div>
 
+<!-- V2.1 演示提示条：告知当前哪些功能在展示演示数据 -->
+<div class="cme-demo-banner" id="cme-demo-banner" hidden>
+    <span class="db-icon">🧪</span>
+    <div><strong>演示模式</strong> — 以下功能正在展示内置演示数据：<span id="demo-labels"></span>。
+    在任意模块保存第一条真实记录后，该模块会自动切换为你自己的数据；演示数据只作展示，不影响计算。</div>
+</div>
+
 <!-- Top Bar：比赛倒计时 / 权益 / P&L / 合约数 -->
 <div class="cme-topbar" id="cme-topbar">
     <div class="tb-card">
@@ -935,9 +1076,10 @@
         <div class="tb-sub">未实现盈亏</div>
     </div>
     <div class="tb-card">
-        <div class="tb-label">今日合约</div>
+        <div class="tb-label">今日合约<a class="how-link" id="ct-how">如何计算？</a></div>
         <div class="tb-value" id="tb-contracts">—</div>
-        <div class="tb-sub">最低 10 手 / 日</div>
+        <div class="ct-line" id="tb-ct-tracker">最低 10 手 / 日</div>
+        <div class="ct-bar"><i id="tb-ct-bar" style="width:0%;"></i></div>
     </div>
 </div>
 
@@ -1388,7 +1530,12 @@
 <div class="tab-pane" id="tab-ai">
     <div class="cme-section">
         <h2>AI 研究分析师 <span class="section-tag">模块 E</span></h2>
-        <p>AI 只解释确定性数据：行情快照、当前事件、匹配情景、历史事件研究、组合状态、持仓、交易提案与仓位引擎结果。<strong>它不会发明价格、概率、命中率、保证金或手数</strong>；数据缺失会明确标注 Missing。</p>
+        <p>AI 只解释确定性数据：行情快照、当前事件、匹配情景、历史事件研究、组合状态、持仓、交易提案与仓位引擎结果。<strong>它不会发明价格、概率、命中率、保证金或手数</strong>；数据缺失会明确标注 Missing。
+        术语说明（点击看解释）：<span class="term" data-term="long">Long</span> 做多 / <span class="term" data-term="short">Short</span> 做空 /
+        <span class="term" data-term="dovish">Dovish</span> 鸽派 / <span class="term" data-term="hawkish">Hawkish</span> 鹰派 /
+        <span class="term" data-term="yield">Yield</span> 收益率 / <span class="term" data-term="bp">bp</span> 基点 /
+        <span class="term" data-term="margin">Margin</span> 保证金 / <span class="term" data-term="contract">Contract</span> 合约 /
+        <span class="term" data-term="near_month">Near Month</span> 近月 / <span class="term" data-term="deferred">Deferred</span> 远月。</p>
     </div>
 
     <div class="cme-grid">
@@ -1417,6 +1564,20 @@
                     </div>
                 </div>
                 <div class="ai-quick" id="ai-quick"></div>
+                <div class="ps-answer-label" style="margin-top:14px;">分析层级 Analysis Level（按预算自动路由模型）</div>
+                <div class="ai-level-row" id="ai-level-row">
+                    <button type="button" class="ai-level-btn primary" data-level="quick" title="日常研究助手 · DeepSeek · ≈$0.08/次">⚡ Quick Analysis · $0.08</button>
+                    <button type="button" class="ai-level-btn premium" data-level="final" title="主交易分析师 · GPT-5.6 Terra · ≈$0.74/次，每提案 1 次">★ Final Analysis · $0.74</button>
+                    <button type="button" class="ai-level-btn premium" data-level="review" title="独立复核 · Claude Sonnet 5 · ≈$0.22/次，每提案 1 次">⚖ Independent Review · $0.22</button>
+                    <div class="ai-more-wrap">
+                        <button type="button" class="ai-level-btn" id="ai-more-btn">More ▼</button>
+                        <div class="ai-more-menu" id="ai-more-menu" hidden>
+                            <button type="button" data-level="quick" data-q="View Raw Evidence：逐条列出当前可用的原始数据（快照/事件/信号/持仓），不做解读，只摆事实。">View Raw Evidence<span class="mm-cost">$0.08</span></button>
+                            <button type="button" data-level="quick" data-q="Refresh Historical Study：基于最新历史事件研究数据，重新对比当前事件与历史同类样本，更新统计依据。">Refresh Historical Study<span class="mm-cost">$0.08</span></button>
+                            <button type="button" data-level="deep" title="深度分析 · GPT-5.6 Sol · ≈$1.20/次，仅复杂场景手动触发">Deep Analysis<span class="mm-cost">$1.20</span></button>
+                        </div>
+                    </div>
+                </div>
                 <div class="field">
                     <label for="ai-question">自由提问</label>
                     <textarea id="ai-question" rows="3" placeholder="如：为什么当前宏观观点偏空？这个论点最可能被什么推翻？"></textarea>
@@ -1439,6 +1600,15 @@
         <div id="ai-history" class="ai-history">
             <div class="ai-hist-empty">暂无记录。</div>
         </div>
+    </div>
+
+    <!-- V2.2 AI 用量与成本看板 -->
+    <div class="cme-panel" style="margin-top:20px;" id="ai-cost-panel">
+        <h2>AI 用量与成本 <span class="section-tag">估算值 · 按层级基准价计 · 每次分析后自动刷新</span></h2>
+        <div class="ai-cost-grid" id="ai-cost-grid">
+            <div class="ai-hist-empty">加载中…</div>
+        </div>
+        <div class="ai-cost-total" id="ai-cost-total"></div>
     </div>
 </div>
 {% endblock %}
@@ -1717,6 +1887,18 @@
         return v.toFixed(2) + '%';
     }
 
+    // V2.1 Market Confirmation 四态徽章（CONFIRMED / PARTIALLY CONFIRMED / MIXED / DIVERGING）
+    function mkChipHtml(status) {
+        var s = String(status || '').toUpperCase();
+        var cls = 'mk-CONFIRMED';
+        if (s.indexOf('PARTIALLY') === 0) cls = 'mk-PARTIALLY';
+        else if (s === 'MIXED') cls = 'mk-MIXED';
+        else if (s === 'DIVERGING') cls = 'mk-DIVERGING';
+        else if (s.indexOf('NO TRADE') === 0) cls = 'mk-NOTRADE';
+        else if (!s) return '<span class="mk-chip mk-MIXED">—</span>';
+        return '<span class="mk-chip ' + cls + '">' + esc(status) + '</span>';
+    }
+
     // ============================================================
     // Top Bar：倒计时 / 权益 / P&L / 合约
     // ============================================================
@@ -1752,6 +1934,22 @@
                 }
                 var ct = document.getElementById('tb-contracts');
                 if (ct) ct.textContent = (risk.today_contracts != null ? risk.today_contracts : '—') + ' / ' + (risk.max_contracts_per_day || 10);
+
+                // V2.1 Contracts Today Tracker：每日最低 10 手达成进度
+                var ctMin = 10;
+                var ctToday = Number(risk.today_contracts);
+                var ctT = document.getElementById('tb-ct-tracker');
+                var ctB = document.getElementById('tb-ct-bar');
+                if (ctT) {
+                    ctT.innerHTML = '最低 <b style="color:var(--text);">' + ctMin + ' 手</b> / 日' +
+                        (isNaN(ctToday) ? '' : ' · 已 <b style="color:var(--text);">' + ctToday + '</b> 手' +
+                            (ctToday >= ctMin ? ' ✓ 已达标' : '（还差 ' + (ctMin - ctToday) + ' 手）'));
+                }
+                if (ctB) {
+                    var pct = Math.max(0, Math.min(100, (isNaN(ctToday) ? 0 : ctToday) / ctMin * 100));
+                    ctB.style.width = pct.toFixed(1) + '%';
+                    ctB.style.background = pct >= 100 ? '#3fb950' : (pct >= 60 ? '#ffb454' : '');
+                }
             })
             .catch(function () { /* 忽略 */ });
     }
@@ -2561,6 +2759,15 @@
             '<div class="rm-value"' + (color ? ' style="color:' + color + ';"' : '') + '>' + value + '</div></div>';
     }
 
+    var RISK_PLAIN = {
+        'SAFE': '状态安全：今天亏得很少（或还在盈利），离风险红线还远。可以正常考虑新机会，但每笔手数仍要经过 Position Sizing 计算。',
+        'CAUTION': '注意：今天的亏损开始接近红线。开新仓要更挑剔，优先选风险小、证据强的机会。',
+        'REDUCE RISK': '该降风险了：亏损已明显接近红线。避免新增大仓位，考虑先减掉最大的一笔持仓。',
+        'HIGH RISK': '高风险：亏损马上就要触红线。今天原则上不开新仓，只减不加。',
+        'CRITICAL': '危急：亏损就在红线边缘。立即停止开新仓，认真考虑清掉亏损最大的仓位。',
+        'OFFICIAL LOCK RISK': '官方锁险：当日亏损已达官方淘汰线，今天必须停止交易。'
+    };
+
     function renderRisk(risk) {
         if (riskWarnings) {
             var warnings = risk.warnings || [];
@@ -2579,7 +2786,24 @@
         var contracts = (risk.today_contracts != null ? risk.today_contracts : 0) + '/' +
             (risk.max_contracts_per_day != null ? risk.max_contracts_per_day : '—');
         var compOpen = risk.competition_open ? '进行中' : '未开始 / 已结束';
-        riskMetrics.innerHTML =
+
+        // V2.1 Risk 四档人话 + 集中度人话
+        var plainTxt = RISK_PLAIN[band] || '';
+        var concPct = Number(risk.concentration_pct) || 0;
+        var concMax = Number(risk.max_concentration_pct) || 0;
+        var concTxt = '';
+        if (concMax && concPct >= concMax) {
+            concTxt = '集中度超限：单一宏观主题占组合比重过高，几笔仓位的涨跌会太相似。先分散或减仓，再考虑新机会。';
+        } else if (concMax && concPct >= concMax * 0.8) {
+            concTxt = '集中度偏高：组合越来越集中在同一个宏观主题上，注意分散。';
+        }
+        var plainHtml = (plainTxt || concTxt)
+            ? '<div class="risk-plain"><span class="rp-icon">' + (band === 'SAFE' && !concTxt ? '🙂' : '⚠️') + '</span><div>' +
+              (plainTxt ? esc(plainTxt) : '') + (plainTxt && concTxt ? '<br>' : '') +
+              (concTxt ? esc(concTxt) : '') + '</div></div>'
+            : '';
+
+        riskMetrics.innerHTML = plainHtml +
             '<div class="rm rm-band ' + bandCls + '">' +
                 '<div class="rm-label">Risk Band · 单日亏损 ' + fmtPct(risk.daily_loss_pct) + '</div>' +
                 '<div class="rm-value">' + esc(band) + '</div>' +
@@ -2754,6 +2978,9 @@
                 '<li><span class="ps-k">Account Impact</span><span>' + esc(sv.account_impact || '—') + '</span></li>' +
                 '<li><span class="ps-k">Margin</span><span>' + esc(sv.margin || '—') + '</span></li>' +
                 '<li><span class="ps-k">Portfolio Concentration</span><span>' + esc(sv.portfolio_concentration || '—') + '</span></li>' +
+                '<li><span class="ps-k">Market Confirmation</span><span>' + mkChipHtml(cf.status) +
+                    ' <span class="ps-note">× ' + esc(cf.multiplier || '—') +
+                    (cf.applied_to_final ? '' : '（仅披露，不重复扣减）') + '</span></span></li>' +
             '</ul>' +
             (lossRows
                 ? '<ul class="ps-list" style="margin-top:10px;">' +
@@ -2770,6 +2997,20 @@
             '</div>' +
             '<div class="ps-note" style="margin-top:10px;">Binding constraint：' + esc(lim.binding_constraint || '—') +
                 ' · Final Max = MIN(Concentration-Adjusted / Margin-Based / Daily-Loss-Based / Contract Limit)。</div>';
+
+        // V2.1 §6 Contract Context：9 字段合约档案 + 近/远月选择
+        var ccMonths = con.months || [];
+        var ccMonthSel = ccMonths.length
+            ? '<div class="field" style="margin-top:10px;max-width:340px;"><label for="ps-cc-month">合约月份（近月 / 远月）</label>' +
+              '<select id="ps-cc-month">' + ccMonths.map(function (m, i) {
+                  return '<option value="' + i + '"' + (m.active ? ' selected' : '') + '>' +
+                      esc(m.month + ' · ' + m.code) + (m.active ? '（近月 Active）' : '（远月 Deferred）') + '</option>';
+              }).join('') + '</select></div>'
+            : '';
+        html += '<div style="margin-top:14px;">' +
+            '<div class="ps-answer-label">Contract Context · 合约档案（你交易的具体合约）</div>' +
+            '<div class="ps-cc-grid" id="ps-cc-grid"></div>' + ccMonthSel +
+            '<div class="cc-expiry-warn" id="ps-cc-expiry" hidden></div></div>';
 
         // §6.15 What-if：手数滑块（全部按每手线性基准即时换算）
         var maxQty = Math.max(Number(lim.final_max) || 0, Number(r.selected_qty) || 0, 1);
@@ -2825,10 +3066,63 @@
 
         psResult.innerHTML = html;
 
+        psRenderCc();
         var slider = document.getElementById('ps-wi-slider');
         if (slider) {
             slider.addEventListener('input', function () { psUpdateWhatIf(slider.value); });
             psUpdateWhatIf(slider.value);
+        }
+    }
+
+    // V2.1 Contract Context：填充 9 字段网格；切换近/远月即时更新月份/代码/到期与到期预警
+    function psRenderCc() {
+        var r = PS_LATEST;
+        if (!r) return;
+        var con = r.contract || {};
+        var grid = document.getElementById('ps-cc-grid');
+        var warnEl = document.getElementById('ps-cc-expiry');
+        var sel = document.getElementById('ps-cc-month');
+        var mIdx = sel ? parseInt(sel.value, 10) : NaN;
+        var m = (con.months || [])[mIdx] || null;
+        var month = (m && m.month) || con.contract_month || '—';
+        var code = (m && m.code) || con.contract_code || '—';
+        var expiry = (m && m.expiry) || con.expiry || '—';
+        var curPos = con.current_position;
+        var curPosTxt = (curPos != null && Number(curPos) !== 0
+            ? (Number(curPos) > 0 ? '+' : '') + curPos : '0') + ' 手';
+        var rows = [
+            ['Instrument 品种', con.instrument || (esc(r.name) + ' (' + esc(r.symbol) + ')')],
+            ['Contract Type 类型', esc(con.contract_type || '—')],
+            ['Contract Size 规模', esc(con.contract_size || '—')],
+            ['Tick Size 最小变动', con.tick_size != null ? esc(con.tick_size) : '—'],
+            ['Tick Value 变动价值', con.tick_value != null ? fmtMoney(con.tick_value) : '—'],
+            ['Contract Month 月份', esc(month) + ' · ' + esc(code)],
+            ['Expiry 到期日', esc(expiry)],
+            ['Current Position 当前持仓', curPosTxt],
+            ['Proposed Qty 拟选数量', (r.selected_qty != null ? esc(r.selected_qty) : '—') + ' 手']
+        ];
+        if (grid) {
+            grid.innerHTML = rows.map(function (row) {
+                return '<div class="ps-cc"><div class="cc-k">' + esc(row[0]) + '</div>' +
+                    '<div class="cc-v">' + row[1] + '</div></div>';
+            }).join('');
+        }
+        if (warnEl) {
+            var days = null;
+            if (expiry && /^\d{4}-\d{2}-\d{2}$/.test(String(expiry))) {
+                days = Math.ceil((new Date(expiry + 'T00:00:00') - new Date()) / 86400000);
+            }
+            if (days !== null && days <= 14) {
+                warnEl.hidden = false;
+                warnEl.textContent = '⚠ Contract approaching expiry — ' + code + ' 将于 ' + expiry +
+                    ' 到期（剩 ' + days + ' 天）。临近到期价格波动可能放大，考虑换到下一个月份（远月）。';
+            } else {
+                warnEl.hidden = true;
+            }
+        }
+        if (sel && !sel.dataset.bound) {
+            sel.dataset.bound = '1';
+            sel.addEventListener('change', psRenderCc);
         }
     }
 
@@ -3099,6 +3393,31 @@
     var aiHistoryEl = document.getElementById('ai-history');
     var aiHistory = [];
     var aiBusy = false;
+    var aiLevelRow = document.getElementById('ai-level-row');
+    var aiMoreBtn = document.getElementById('ai-more-btn');
+    var aiMoreMenu = document.getElementById('ai-more-menu');
+    var AI_PENDING = null;
+
+    // V2.2 层级元信息（徽章 / 默认问题）
+    var AI_LEVEL_META = {
+        quick: {
+            icon: '⚡', label: 'Quick Analysis', role: '日常研究助手',
+            defq: 'Explain Current View：解释当前的宏观观点与信号，说明完整因果链。'
+        },
+        final: {
+            icon: '★', label: 'Final Analysis', role: '主交易分析师',
+            defq: 'Final Analysis：基于当前确定性上下文给出最终交易分析（观点、市场确认、方向、仓位背景、风险与观察点）。'
+        },
+        review: {
+            icon: '⚖', label: 'Independent Review', role: '独立复核',
+            defq: 'Independent Review：假设主分析可能有误，独立复核当前论点的反方证据与盲点，不迎合主分析结论。'
+        },
+        deep: {
+            icon: '🔬', label: 'Deep Analysis', role: '深度分析',
+            defq: 'Deep Analysis：深度推演当前宏观情景的多空两侧论证、传导路径分支与失效条件。'
+        }
+    };
+    var AI_LEVEL_ORDER = ['quick', 'final', 'review', 'deep'];
 
     var AI_SECTIONS = [
         { k: 'simple_view', t: '1 · 一句话观点 SIMPLE VIEW' },
@@ -3154,7 +3473,33 @@
         if (!aiResultEl) return;
         var ans = data.answer || {};
         var meta = data.context_meta || {};
+        var routing = data.routing || {};
+        var cacheInfo = data.cache || {};
         var html = '';
+
+        // V2.2 层级徽章：本次结果由哪个层级 / 模型角色产出
+        var lvKey = routing.level || '';
+        var lvMeta = AI_LEVEL_META[lvKey];
+        if (lvMeta) {
+            html += '<div class="ai-level-badge lv-' + aiEsc(lvKey) + '">' + lvMeta.icon + ' ' +
+                aiEsc(routing.level_label || lvMeta.label) + ' · ' + aiEsc(routing.level_role || lvMeta.role) +
+                ' · ' + aiEsc((data.provider || {}).model || (data.provider || {}).name || '') + '</div>';
+        }
+
+        // V2.2 Analysis Cache 命中提示：同上下文不重复计费
+        if (cacheInfo.hit) {
+            html += '<div class="ai-cache-note">♻ Analysis Cache 命中 — 上下文与问题未变化' +
+                (cacheInfo.age_min != null ? '（结果生成于 ' + cacheInfo.age_min + ' 分钟前）' : '') +
+                '，直接返回已验证结果，本次未产生新的调用成本。</div>';
+        }
+
+        // V2.2 分歧展示：独立复核 vs 主分析
+        if (data.consistency) {
+            var cs = data.consistency;
+            var csOk = cs.status === 'CONSISTENT';
+            html += '<div class="ai-consist ' + (csOk ? 'ok' : 'bad') + '">' + (csOk ? '✓ ' : '⚠ ') +
+                aiEsc(cs.message || cs.status) + '</div>';
+        }
 
         var badges = [];
         if (meta.focus_instrument) badges.push('焦点 <b>' + aiEsc(meta.focus_instrument) + '</b>');
@@ -3226,8 +3571,10 @@
             var stamp = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2);
             return '<div class="ai-hist-item" data-i="' + i + '">' +
                 '<div class="ah-q">' + aiEsc(h.q) + '</div>' +
-                '<div class="ah-t">' + stamp + ' · ' + aiEsc((h.data.provider || {}).name || '') + ' · ' +
-                aiEsc((h.data.context_meta || {}).focus_instrument || '—') + '</div></div>';
+                '<div class="ah-t">' + stamp + ' · ' + aiEsc((h.data.provider || {}).name || '') +
+                ' · ' + aiEsc((h.data.routing || {}).level_label || '') +
+                ' · ' + aiEsc((h.data.context_meta || {}).focus_instrument || '—') +
+                ((h.data.cache || {}).hit ? ' · ♻缓存' : '') + '</div></div>';
         }).join('');
         aiHistoryEl.querySelectorAll('.ai-hist-item').forEach(function (item) {
             item.addEventListener('click', function () {
@@ -3246,15 +3593,19 @@
         if (aiQuickEl) {
             aiQuickEl.querySelectorAll('button').forEach(function (b) { b.disabled = busy; });
         }
+        if (aiLevelRow) {
+            aiLevelRow.querySelectorAll('button').forEach(function (b) { b.disabled = busy; });
+        }
     }
 
-    function runAiResearch(question) {
+    function runAiResearch(question, level, force) {
         if (aiBusy) return;
         var q = String(question || '').trim();
         if (!q) {
             if (aiHintEl) aiHintEl.textContent = '请先输入问题，或点一个快捷问题';
             return;
         }
+        var lv = level || 'quick';
         aiSetBusy(true);
         if (aiHintEl) aiHintEl.textContent = '正在构建确定性上下文并请求模型…';
         if (aiResultEl) aiResultEl.innerHTML = '<div class="ai-empty">分析中，请稍候…</div>';
@@ -3263,7 +3614,9 @@
             question: q,
             symbol: aiFocus ? aiFocus.value : '',
             proposal_id: aiProposalSel ? aiProposalSel.value : '',
-            provider: aiProviderSel ? aiProviderSel.value : ''
+            provider: aiProviderSel ? aiProviderSel.value : '',
+            level: lv,
+            force: !!force
         };
         if (aiQtyEl && aiQtyEl.value !== '') payload.qty = Number(aiQtyEl.value);
 
@@ -3277,17 +3630,51 @@
                 var msg = (data && data.error) || '分析失败';
                 if (data && data.need_config) msg += '（请先前往 AI 配置页设置密钥）';
                 if (aiHintEl) aiHintEl.textContent = '❌ ' + msg;
+
+                // V2.2 INSUFFICIENT DATA / PREMIUM BUDGET 专用展示 + 处置按钮
+                if (aiResultEl && data && (data.insufficient_data || data.budget_reached)) {
+                    AI_PENDING = { q: q, level: lv };
+                    var missHtml = '';
+                    if (data.insufficient_data && (data.missing || []).length) {
+                        missHtml = '<div style="margin-top:8px;">缺失项：' +
+                            data.missing.map(function (m) { return '<span class="ai-badge">' + aiEsc(m) + '</span>'; }).join('') + '</div>';
+                    }
+                    var guide = data.insufficient_data
+                        ? '更贵的模型不能把缺失数据变成真实数据——请先补齐上述数据（行情快照 / 信号 / 事件等），或改用 Quick Analysis 继续日常研究。'
+                        : '该提案的 Premium 预算已用完（每提案 Final / Review 各 1 次）。Quick Analysis 不受限制；如确需重跑，可手动确认覆盖。';
+                    var btnHtml = data.insufficient_data
+                        ? '<button type="button" class="ai-override-btn" id="ai-quick-fallback">⚡ 改用 Quick Analysis 继续</button>'
+                        : '<button type="button" class="ai-override-btn" id="ai-override-btn">Manual Override · 确认强制重跑</button>';
+                    aiResultEl.innerHTML = '<div class="ai-insufficient"><strong>⛔ ' +
+                        (data.insufficient_data ? 'INSUFFICIENT DATA — 数据不足，已拦截本次 Premium 调用'
+                                                : 'PREMIUM BUDGET REACHED — 预算已用完') +
+                        '</strong><div style="margin-top:6px;">' + aiEsc(msg) + '</div>' + missHtml +
+                        '<div style="margin-top:10px;color:var(--text-light);font-size:12px;">' + aiEsc(guide) + '</div>' +
+                        '<div style="margin-top:10px;">' + btnHtml + '</div></div>';
+                    var fb = document.getElementById('ai-quick-fallback');
+                    if (fb) fb.addEventListener('click', function () {
+                        if (AI_PENDING) runAiResearch(AI_PENDING.q, 'quick', false);
+                    });
+                    var ob = document.getElementById('ai-override-btn');
+                    if (ob) ob.addEventListener('click', function () {
+                        if (AI_PENDING) runAiResearch(AI_PENDING.q, AI_PENDING.level, true);
+                    });
+                    setTimeout(function () { if (aiHintEl) aiHintEl.textContent = ''; }, 8000);
+                    return;
+                }
                 if (aiResultEl) aiResultEl.innerHTML = '<div class="ai-empty">' + aiEsc(msg) + '</div>';
                 return;
             }
             if (aiHintEl) {
                 aiHintEl.textContent = '✅ 已基于确定性上下文生成（模型：' +
-                    ((data.provider || {}).model || '—') + '）';
+                    ((data.provider || {}).model || '—') +
+                    ((data.cache || {}).hit ? ' · ♻ 缓存命中，未计费' : '') + '）';
             }
             renderAiAnswer(data, q);
             aiHistory.unshift({ q: q, data: data, at: new Date() });
             if (aiHistory.length > 20) aiHistory.pop();
             renderAiHistory();
+            loadAiCost();
             setTimeout(function () { if (aiHintEl) aiHintEl.textContent = ''; }, 6000);
         }).catch(function () {
             aiSetBusy(false);
@@ -3353,14 +3740,184 @@
         });
     }
 
+    // ===== V2.2 层级按钮 / More 菜单绑定 =====
+    var aiCurLevel = 'quick';
+    function aiSetActiveLevel(lv) {
+        aiCurLevel = lv;
+        if (!aiLevelRow) return;
+        aiLevelRow.querySelectorAll('.ai-level-btn[data-level]').forEach(function (b) {
+            b.style.outline = b.getAttribute('data-level') === lv ? '2px solid var(--primary)' : 'none';
+        });
+    }
+    if (aiLevelRow) {
+        aiLevelRow.querySelectorAll('.ai-level-btn[data-level]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var lv = b.getAttribute('data-level');
+                var meta = lv && AI_LEVEL_META[lv];
+                if (!meta) return;
+                aiSetActiveLevel(lv);
+                if (aiQuestionEl) aiQuestionEl.value = meta.defq;
+                runAiResearch(meta.defq, lv, false);
+            });
+        });
+    }
+    if (aiMoreBtn && aiMoreMenu) {
+        aiMoreBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            aiMoreMenu.hidden = !aiMoreMenu.hidden;
+        });
+        aiMoreMenu.querySelectorAll('button[data-level]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                aiMoreMenu.hidden = true;
+                var lv = b.getAttribute('data-level') || 'quick';
+                var q = b.getAttribute('data-q') || ((AI_LEVEL_META[lv] || {}).defq) || '';
+                if (aiQuestionEl) aiQuestionEl.value = q;
+                runAiResearch(q, lv, false);
+            });
+        });
+        document.addEventListener('click', function (e) {
+            if (!aiMoreMenu.hidden && !aiMoreMenu.contains(e.target) && e.target !== aiMoreBtn) {
+                aiMoreMenu.hidden = true;
+            }
+        });
+    }
+
+    // ===== V2.2 AI 用量与成本看板 =====
+    function loadAiCost() {
+        fetch('/api/cme/ai-cost', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var grid = document.getElementById('ai-cost-grid');
+                var total = document.getElementById('ai-cost-total');
+                if (!grid || !d || d.ok !== true) return;
+                var levels = d.levels || {};
+                var usage = {};
+                (d.usage_by_level || []).forEach(function (u) { usage[u.key] = u; });
+                grid.innerHTML = AI_LEVEL_ORDER.map(function (k) {
+                    var lv = levels[k];
+                    var u = usage[k] || { calls: 0, cost_usd: 0 };
+                    if (!lv) return '';
+                    return '<div class="ai-cost-card' + (lv.configured ? '' : ' not-ready') + '">' +
+                        '<div class="ac-name">' + aiEsc(lv.label) + '</div>' +
+                        '<div class="ac-sub">' + aiEsc(lv.role) + ' · ' +
+                            aiEsc(lv.provider_name || (lv.configured ? '已配置' : '未配置')) + '</div>' +
+                        '<div class="ac-cost">$' + (Number(u.cost_usd) || 0).toFixed(2) + '</div>' +
+                        '<div class="ac-calls">' + (u.calls || 0) + ' 次调用 · 基准 $' +
+                            (Number(lv.cost_usd) || 0).toFixed(2) + '/次</div></div>';
+                }).join('');
+                var cd = (d.cooldown_active || []);
+                if (total) {
+                    total.innerHTML = '<span>累计估算成本 · ' + (d.total_calls || 0) + ' 次调用' +
+                        (cd.length ? ' · ⏳ Premium 冷却中：' + cd.map(function (c) {
+                            return aiEsc(c.level) + '（剩 ' +
+                                Math.max(0, (d.premium_cooldown_minutes || 15) - (c.age_min || 0)) + ' 分钟）';
+                        }).join('、') : '') + '</span>' +
+                        '<span class="act-v">$' + (Number(d.total_cost_usd) || 0).toFixed(2) + '</span>';
+                }
+            }).catch(function () {});
+    }
+
+    // ===== V2.1 演示提示条 =====
+    function loadDemoBanner() {
+        fetch('/api/cme/demo-status', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var banner = document.getElementById('cme-demo-banner');
+                var lab = document.getElementById('demo-labels');
+                if (!banner || !lab) return;
+                if (d && d.demo && (d.labels || []).length) {
+                    lab.innerHTML = d.labels.map(function (n) {
+                        return '<span class="demo-chip">' + aiEsc(n) + '</span>';
+                    }).join('');
+                    banner.hidden = false;
+                } else {
+                    banner.hidden = true;
+                }
+            }).catch(function () {});
+    }
+
+    // ===== V2.1 术语 tooltip 弹层（10 条，点击显示/再点关闭）=====
+    var TERM_DEFS = {
+        long: { t: 'Long · 做多', d: '买入合约建立多头头寸，价格上涨时获利。例如做多 6E 欧元期货 = 看好欧元兑美元升值。' },
+        short: { t: 'Short · 做空', d: '卖出合约建立空头头寸，价格下跌时获利。例如做空美元指数 = 预期美元走弱。' },
+        dovish: { t: 'Dovish · 鸽派', d: '央行言论偏向宽松（降息 / 维持低利率），通常利空该货币、利多债券价格。' },
+        hawkish: { t: 'Hawkish · 鹰派', d: '央行言论偏向紧缩（加息 / 抗通胀），通常利多该货币、利空债券价格。' },
+        yield: { t: 'Yield · 收益率', d: '债券到期收益率。收益率上升 = 债券价格下跌；它是宏观情绪与利率预期最核心的读数。' },
+        bp: { t: 'bp · 基点', d: 'Basis Point，1 bp = 0.01%。利率与收益率变动的标准单位，如加息 25bp = 上调 0.25%。' },
+        margin: { t: 'Margin · 保证金', d: '开仓所需的履约押金（交易所最低 × 经纪商上浮）。占用保证金决定你能开多少手，而非合约名义价值。' },
+        contract: { t: 'Contract · 合约', d: '标准化期货合约，1 手 = 固定名义金额（如 1 手 6E = 125,000 欧元）。比赛要求每日至少成交 10 手。' },
+        near_month: { t: 'Near Month · 近月', d: '最近到期的合约月份，流动性最好，CME 比赛结算以此为准。' },
+        deferred: { t: 'Deferred · 远月', d: '较晚到期的合约月份。近月与远月的价差（Term Structure）反映市场对远期利率/汇率的预期。' }
+    };
+    document.addEventListener('click', function (e) {
+        var term = e.target.closest ? e.target.closest('.term') : null;
+        var pop = document.getElementById('cme-term-pop');
+        var cpop = document.getElementById('cme-ct-pop');
+        if (term) {
+            var def = TERM_DEFS[term.getAttribute('data-term')];
+            if (def) {
+                e.preventDefault();
+                if (!pop) {
+                    pop = document.createElement('div');
+                    pop.id = 'cme-term-pop';
+                    pop.className = 'term-pop';
+                    document.body.appendChild(pop);
+                }
+                var key = term.getAttribute('data-term');
+                if (pop.getAttribute('data-cur') === key && !pop.hidden) {
+                    pop.hidden = true;
+                    pop.setAttribute('data-cur', '');
+                    return;
+                }
+                pop.innerHTML = '<div class="tp-title">' + aiEsc(def.t) + '</div>' + aiEsc(def.d);
+                pop.hidden = false;
+                pop.setAttribute('data-cur', key);
+                var rect = term.getBoundingClientRect();
+                pop.style.left = Math.max(8, Math.min(window.innerWidth - 320, rect.left + window.scrollX)) + 'px';
+                pop.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+            }
+        } else if (pop && !pop.hidden && !(e.target.closest && e.target.closest('#cme-term-pop'))) {
+            pop.hidden = true;
+        }
+        if (cpop && !cpop.hidden && !(e.target.closest && e.target.closest('#cme-ct-pop')) &&
+            !(e.target.closest && e.target.closest('#ct-how'))) {
+            cpop.hidden = true;
+        }
+    });
+
+    // ===== V2.1 合约数计算说明弹层 =====
+    var ctHow = document.getElementById('ct-how');
+    if (ctHow) {
+        ctHow.addEventListener('click', function (e) {
+            e.preventDefault();
+            var pop = document.getElementById('cme-ct-pop');
+            if (!pop) {
+                pop = document.createElement('div');
+                pop.id = 'cme-ct-pop';
+                pop.className = 'term-pop';
+                pop.style.maxWidth = '340px';
+                pop.hidden = true;
+                document.body.appendChild(pop);
+                pop.innerHTML = '<div class="tp-title">今日合约数如何计算？</div>' +
+                    '统计当天全部成交：开仓与平仓双向计数（买 2 手再卖 2 手 = 4 手）。<br>' +
+                    '比赛规则：每日最低 10 手、上限 10 手——恰好成交 10 手最理想。<br>' +
+                    '只统计真实成交，挂单与撤单不计入。';
+            }
+            pop.hidden = !pop.hidden;
+            var rect = ctHow.getBoundingClientRect();
+            pop.style.left = Math.max(8, Math.min(window.innerWidth - 360, rect.left + window.scrollX)) + 'px';
+            pop.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+        });
+    }
+
     if (aiAskBtn) {
         aiAskBtn.addEventListener('click', function () {
-            runAiResearch(aiQuestionEl ? aiQuestionEl.value : '');
+            runAiResearch(aiQuestionEl ? aiQuestionEl.value : '', aiCurLevel, false);
         });
     }
     if (aiQuestionEl) {
         aiQuestionEl.addEventListener('keydown', function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runAiResearch(aiQuestionEl.value);
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runAiResearch(aiQuestionEl.value, aiCurLevel, false);
         });
     }
 
@@ -3373,6 +3930,8 @@
     refreshRisk();
     refreshPsProposals();
     refreshAiPanel();
+    loadDemoBanner();
+    loadAiCost();
 })();
 </script>
 {% endblock %}
