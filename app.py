@@ -13,6 +13,7 @@ Parité · 多货币研究平台 — Flask 应用主程序
 
 import math
 import os
+import re
 import time
 import json as _json
 import smtplib
@@ -1484,107 +1485,543 @@ def _save_event_config(cfg):
     _cme_save("event_config", cfg)
 
 
-# 事件类型模板：第一版只做 CPI 这一条完整链路；NFP/FOMC 在链路跑通后复制扩展。
+# 事件类型模板：CPI 完整链路 + 常见事件类型扩展（NFP/FOMC/零售销售/ECB/BOJ）。
 # 每个场景的 transmission / asset_impacts / counter_case / invalidation 均为确定性内容，
 # 数据公布后绝不重新编故事，只冻结并标记触发的情景。
+# threshold 为各类事件的匹配阈值（与数值单位量级匹配）；缺省回退到全局事件配置。
 EVENT_TYPE_DEFS = {
     "CPI": {
         "label": "US CPI",
         "country": "US",
-        "metric": "Headline CPI YoY",
+        "metric": "整体 CPI 同比",
         "unit": "%",
         "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 0.2, "negative": -0.2},
         "transmission_map": [
             "CPI", "Fed Expectations", "US 2Y Yield", "DXY", "Gold / EUR / NQ",
         ],
         "scenarios": [
             {
                 "key": "HOT",
-                "name": "HOT CPI",
-                "tag": "HAWKISH SURPRISE",
-                "trigger_rule": "surprise >= +0.2 percentage points",
+                "name": "通胀超预期",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.2 个百分点",
                 "transmission": [
-                    "Inflation surprise ↑",
-                    "Expected Fed easing ↓",
-                    "US 2Y yield ↑",
-                    "USD ↑ → EUR/USD ↓ / Gold ↓",
-                    "High-duration equity valuation pressure ↑ → Nasdaq ↓",
+                    "通胀超预期 ↑",
+                    "市场对美联储降息的预期 ↓",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "长久期股票估值承压 ↑ → 纳斯达克 ↓",
                 ],
                 "asset_impacts": [
-                    {"asset": "Gold", "direction": "down", "label": "↓"},
-                    {"asset": "DXY", "direction": "up", "label": "↑"},
-                    {"asset": "EUR/USD", "direction": "down", "label": "↓"},
-                    {"asset": "Nasdaq", "direction": "down", "label": "↓"},
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "纳斯达克", "direction": "down", "label": "↓"},
                 ],
-                "counter_case": "市场可能已在 CPI 前定价鹰派，公布后出现 buy-the-news；或核心分项意外温和，削弱整体 surprise 的传导。",
-                "invalidation": ["US 2Y 未上行", "DXY 未走强", "核心 CPI 分项温和"],
+                "counter_case": "市场可能已在数据公布前提前计入鹰派预期，公布后反而出现“利好出尽”式回落；或核心分项意外温和，削弱整体超预期的传导。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强", "核心 CPI 分项温和"],
             },
             {
                 "key": "INLINE",
-                "name": "INLINE",
-                "tag": "MIXED / LIMITED POLICY SURPRISE",
-                "trigger_rule": "surprise 落在 ±0.2 percentage points 之间",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.2 个百分点之间",
                 "transmission": [
-                    "Macro event itself does not provide a sufficiently large surprise.",
-                    "Price action depends more on positioning, revisions, core CPI components and existing market expectations.",
+                    "宏观事件本身未带来足够大的意外。",
+                    "价格反应更多取决于持仓结构、数据修正、核心 CPI 分项以及市场已有预期。",
                 ],
                 "asset_impacts": [
-                    {"asset": "Gold", "direction": "flat", "label": "震荡"},
-                    {"asset": "DXY", "direction": "flat", "label": "震荡"},
-                    {"asset": "EUR/USD", "direction": "flat", "label": "震荡"},
-                    {"asset": "Nasdaq", "direction": "flat", "label": "震荡"},
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "纳斯达克", "direction": "flat", "label": "震荡"},
                 ],
-                "counter_case": "即使 headline inline，核心分项或季调修正仍可能主导即时反应。",
-                "invalidation": ["US 2Y 出现 >10bp 方向性波动", "DXY 突破近期区间"],
+                "counter_case": "即使整体数据符合预期，核心分项或季调修正仍可能主导即时反应。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
             },
             {
                 "key": "COOL",
-                "name": "COOL CPI",
-                "tag": "DOVISH SURPRISE",
-                "trigger_rule": "surprise <= -0.2 percentage points",
+                "name": "通胀低于预期",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.2 个百分点",
                 "transmission": [
-                    "Inflation surprise ↓",
-                    "Expected Fed easing ↑",
-                    "US 2Y yield ↓",
-                    "USD ↓ → EUR/USD ↑ / Gold ↑",
-                    "Discount rate ↓ → Nasdaq support ↑",
+                    "通胀低于预期 ↓",
+                    "市场对美联储降息的预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "折现率 ↓ → 利好纳斯达克 ↑",
                 ],
                 "asset_impacts": [
-                    {"asset": "Gold", "direction": "up", "label": "↑"},
-                    {"asset": "DXY", "direction": "down", "label": "↓"},
-                    {"asset": "EUR/USD", "direction": "up", "label": "↑"},
-                    {"asset": "Nasdaq", "direction": "up", "label": "↑"},
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "纳斯达克", "direction": "up", "label": "↑"},
                 ],
-                "counter_case": "若通胀预期锚定牢固或核心分项仍强，市场可能对 headline 下修反应平淡。",
-                "invalidation": ["US 2Y 未下行", "DXY 未走弱"],
+                "counter_case": "若通胀预期锚定牢固或核心分项仍然偏强，市场可能对整体数据下修反应平淡。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "NFP": {
+        "label": "US Nonfarm Payrolls",
+        "country": "US",
+        "metric": "非农就业人数",
+        "unit": "K",
+        "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 20, "negative": -20},
+        "transmission_map": [
+            "Nonfarm Payrolls", "Fed Expectations", "US 2Y Yield", "DXY", "Gold / EUR / NQ",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "就业数据超预期",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +20K（2 万人）",
+                "transmission": [
+                    "非农就业超预期 ↑",
+                    "劳动力市场强劲 → 美联储推迟降息的预期 ↑",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "利率维持高位 → 估值承压 → 纳斯达克 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "纳斯达克", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "若薪资增速放缓或失业率同步上升，总人数超预期的鹰派含义会被削弱；失业率走弱（萨姆规则升温）时市场反而可能交易降息预期。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强", "失业率明显上升"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±20K 之间",
+                "transmission": [
+                    "宏观事件本身未带来足够大的意外。",
+                    "价格反应更多取决于薪资增速、失业率与劳动参与率等分项以及市场已有预期。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "纳斯达克", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使总人数符合预期，薪资增速或失业率的意外仍可能主导即时反应。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "就业数据不及预期",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -20K（2 万人）",
+                "transmission": [
+                    "非农就业不及预期 ↓",
+                    "劳动力市场转弱 → 美联储提前降息的预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "折现率 ↓ → 利好纳斯达克 ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "纳斯达克", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若就业走弱但薪资增速仍偏高（工资-物价螺旋担忧），市场可能对单月数据反应平淡。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "FOMC": {
+        "label": "FOMC 利率决议",
+        "country": "US",
+        "metric": "联邦基金目标利率",
+        "unit": "%",
+        "sourceId": "federalreserve",
+        "threshold": {"positive": 0.25, "negative": -0.25},
+        "transmission_map": [
+            "FOMC Decision", "Fed Funds Path", "US 2Y Yield", "DXY", "Gold / EUR / NQ",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "决议偏鹰",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.25（25 个基点）",
+                "transmission": [
+                    "利率决议偏鹰 ↑",
+                    "政策路径比预期更紧 → 降息预期 ↓",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "利率维持高位 → 估值承压 → 纳斯达克 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "纳斯达克", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "点阵图与新闻发布会措辞可能比利率结果本身更关键；若发布会释放宽松信号，鹰派效果或被对冲。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强", "点阵图 / 发布会措辞偏鸽"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.25（25 个基点）之间",
+                "transmission": [
+                    "利率决议符合市场预期。",
+                    "价格反应取决于点阵图、经济预测与新闻发布会措辞的边际变化。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "纳斯达克", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使利率结果符合预期，点阵图或发布会措辞仍可能主导即时反应。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "决议偏鸽",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.25（25 个基点）",
+                "transmission": [
+                    "利率决议偏鸽 ↓",
+                    "政策路径比预期更松 → 降息预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "折现率 ↓ → 利好纳斯达克 ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "纳斯达克", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若点阵图仍显示年内不会多次降息，市场可能认为鸽派幅度有限。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "RETAIL_SALES": {
+        "label": "US Retail Sales",
+        "country": "US",
+        "metric": "零售销售环比",
+        "unit": "%",
+        "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 0.2, "negative": -0.2},
+        "transmission_map": [
+            "Retail Sales", "Fed Expectations", "US 2Y Yield", "DXY", "Gold / EUR / NQ",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "消费数据超预期",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.2 个百分点",
+                "transmission": [
+                    "零售销售超预期 ↑",
+                    "消费韧性 → 美联储维持高利率的预期 ↑",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "利率维持高位 → 估值承压 → 纳斯达克 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "纳斯达克", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "零售数据月度波动大且常被大幅修正；剔除汽车/能源的核心零售分项可能给出不同信号。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.2 个百分点之间",
+                "transmission": [
+                    "宏观事件本身未带来足够大的意外。",
+                    "价格反应更多取决于上期修正值与核心零售（剔除汽车/能源）分项。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "纳斯达克", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "上期数据的大幅修正可能改变市场对消费趋势的判断。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "消费数据不及预期",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.2 个百分点",
+                "transmission": [
+                    "零售销售不及预期 ↓",
+                    "消费转弱 → 美联储提前降息的预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "折现率 ↓ → 利好纳斯达克 ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "纳斯达克", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若数据疲软被归因于一次性因素（天气 / 节假日错位），市场可能不将其视为趋势信号。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "ECB": {
+        "label": "ECB 利率决议",
+        "country": "EU",
+        "metric": "欧元区存款便利利率",
+        "unit": "%",
+        "sourceId": "ecb",
+        "threshold": {"positive": 0.25, "negative": -0.25},
+        "transmission_map": [
+            "ECB Decision", "EUR Rate Path", "DE 10Y Yield", "EUR / DXY", "SX5E / XAU",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "决议偏鹰",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.25（25 个基点）",
+                "transmission": [
+                    "欧央行决议偏鹰 ↑",
+                    "欧元区政策路径比预期更紧 → 降息预期 ↓",
+                    "德国 10 年期国债收益率 ↑",
+                    "欧元 ↑ → 美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "欧元区风险资产承压 → 欧洲斯托克 50 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "欧洲斯托克 50", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "拉加德发布会措辞若强调增长下行风险，可能对冲鹰派利率结果；欧元区经济基本面偏弱时鹰派传导有限。",
+                "invalidation": ["德国 10 年期收益率未上行", "欧元兑美元未走强", "发布会措辞偏鸽"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.25（25 个基点）之间",
+                "transmission": [
+                    "利率决议符合市场预期。",
+                    "价格反应取决于发布会措辞、经济预测与分步降息路径的边际变化。",
+                ],
+                "asset_impacts": [
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧洲斯托克 50", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使利率结果符合预期，发布会措辞或前瞻指引仍可能主导即时反应。",
+                "invalidation": ["德国 10 年期收益率出现 >10bp 的方向性波动", "欧元兑美元突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "决议偏鸽",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.25（25 个基点）",
+                "transmission": [
+                    "欧央行决议偏鸽 ↓",
+                    "欧元区政策路径比预期更松 → 降息预期 ↑",
+                    "德国 10 年期国债收益率 ↓",
+                    "欧元 ↓ → 美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "宽松预期 → 欧元区风险资产受益 → 欧洲斯托克 50 ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "欧洲斯托克 50", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若市场已充分定价降息，鸽派结果可能被解读为“利好出尽”。",
+                "invalidation": ["德国 10 年期收益率未下行", "欧元兑美元未走弱"],
+            },
+        ],
+    },
+    "BOJ": {
+        "label": "BOJ 利率决议",
+        "country": "JP",
+        "metric": "日本央行政策利率",
+        "unit": "%",
+        "sourceId": "boj",
+        "threshold": {"positive": 0.25, "negative": -0.25},
+        "transmission_map": [
+            "BOJ Decision", "JPY Rate Path", "JGB 10Y Yield", "USDJPY", "Nikkei / XAU",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "决议偏鹰",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.25（25 个基点）",
+                "transmission": [
+                    "日央行决议偏鹰 ↑",
+                    "日本政策路径比预期更紧 → 加息预期 ↑",
+                    "日本 10 年期国债收益率 ↑",
+                    "日元升值 → 美元兑日元 ↓",
+                    "日元走强 → 出口盈利承压 → 日经 225 ↓；日元走强 → 美元走弱 → 黄金 ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "美元兑日元", "direction": "down", "label": "↓"},
+                    {"asset": "日经 225", "direction": "down", "label": "↓"},
+                    {"asset": "日本国债收益率", "direction": "up", "label": "↑"},
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若植田和男发布会强调维持宽松立场，鹰派结果可能被迅速回吐；日元套息交易平仓节奏也可能扭曲即时反应。",
+                "invalidation": ["美元兑日元未走弱", "日本 10 年期收益率未上行"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.25（25 个基点）之间",
+                "transmission": [
+                    "利率决议符合市场预期。",
+                    "价格反应取决于发布会措辞、季度展望与购债规模调整的边际变化。",
+                ],
+                "asset_impacts": [
+                    {"asset": "美元兑日元", "direction": "flat", "label": "震荡"},
+                    {"asset": "日经 225", "direction": "flat", "label": "震荡"},
+                    {"asset": "日本国债收益率", "direction": "flat", "label": "震荡"},
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使利率结果符合预期，购债缩减或汇率口头干预仍可能主导即时反应。",
+                "invalidation": ["美元兑日元突破近期区间", "日本 10 年期收益率出现 >10bp 方向性波动"],
+            },
+            {
+                "key": "COOL",
+                "name": "决议偏鸽",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.25（25 个基点）",
+                "transmission": [
+                    "日央行决议偏鸽 ↓",
+                    "日本政策路径比预期更松 → 加息预期 ↓",
+                    "日本 10 年期国债收益率 ↓",
+                    "日元贬值 → 美元兑日元 ↑",
+                    "日元贬值 → 出口盈利改善 → 日经 225 ↑；日元贬值 → 美元走强 → 黄金 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "美元兑日元", "direction": "up", "label": "↑"},
+                    {"asset": "日经 225", "direction": "up", "label": "↑"},
+                    {"asset": "日本国债收益率", "direction": "down", "label": "↓"},
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "若鸽派被解读为对全球衰退的确认（避险模式），日元反而可能走强、日股回落。",
+                "invalidation": ["美元兑日元未走强", "日本 10 年期收益率未下行"],
             },
         ],
     },
 }
 
 
-def _match_scenario(surprise, cfg=None):
-    """根据 surprise 确定性匹配情景 key：HOT / INLINE / COOL；无法计算返回 None。"""
+def _norm_event_type(raw):
+    """归一化事件类型键：去首尾空格 + 转大写 + 空格转下划线。
+    前端下拉 "Retail Sales" 与模板键 "RETAIL_SALES" 因此可互相匹配。"""
+    s = (raw or "").strip().upper()
+    return s.replace(" ", "_")
+
+
+def _type_threshold(event_type, cfg=None):
+    """返回 (positive, negative) 匹配阈值：优先事件类型模板的 threshold（适配各指标量级），
+    缺省回退全局事件配置的 strongPositive / strongNegative。"""
     cfg = cfg or _load_event_config()
+    tpl = EVENT_TYPE_DEFS.get(_norm_event_type(event_type)) if event_type else None
+    if tpl and tpl.get("threshold"):
+        th = tpl["threshold"]
+        sp = float(th.get("positive", cfg.get("strongPositive", 0.2)))
+        sn = float(th.get("negative", cfg.get("strongNegative", -0.2)))
+    else:
+        sp = float(cfg.get("strongPositive", 0.2))
+        sn = float(cfg.get("strongNegative", -0.2))
+    return sp, sn
+
+
+def _match_scenario(surprise, cfg=None, event_type=None):
+    """根据 surprise 确定性匹配情景 key：HOT / INLINE / COOL；无法计算返回 None。
+    阈值优先取事件类型模板的 threshold，缺省回退全局事件配置。"""
     try:
         s = float(surprise)
     except (TypeError, ValueError):
         return None
-    if s >= float(cfg.get("strongPositive", 0.2)):
+    sp, sn = _type_threshold(event_type, cfg)
+    if s >= sp:
         return "HOT"
-    if s <= float(cfg.get("strongNegative", -0.2)):
+    if s <= sn:
         return "COOL"
     return "INLINE"
 
 
+# 指标 / 数据源显示名中文化：存储层保留原始代码，展示层翻译，保证 API 键稳定、界面友好。
+METRIC_LABELS = {
+    "Headline CPI YoY": "整体 CPI 同比",
+    "Nonfarm Payrolls": "非农就业人数",
+    "Fed Funds Target Rate": "联邦基金目标利率",
+    "Retail Sales MoM": "零售销售环比",
+}
+SOURCE_LABELS = {
+    "bloomberg-econ": "彭博经济",
+    "federalreserve": "美联储",
+}
+
+
+def _sync_scenario_display(scenarios, event_id, tpl):
+    """把模板中的中文展示字段同步到已存在的情景（保留运行态字段）。
+
+    情景内容是确定性的模板内容，数据公布后只冻结、不重写故事；
+    因此这里只做展示字段对齐，用于已存储数据的一次性中文化迁移。
+    返回是否有改动。
+    """
+    tpl_map = {s["key"]: s for s in tpl.get("scenarios", [])}
+    changed = False
+    for sc in scenarios:
+        if sc.get("event_id") != event_id:
+            continue
+        t = tpl_map.get(sc.get("scenario_key"))
+        if not t:
+            continue
+        display = {
+            "scenario_name": t["name"],
+            "tag": t["tag"],
+            "trigger_rule": t["trigger_rule"],
+            "transmission": list(t.get("transmission", [])),
+            "asset_impacts": list(t.get("asset_impacts", [])),
+            "counter_case": t.get("counter_case", ""),
+            "invalidation": list(t.get("invalidation", [])),
+        }
+        for k, v in display.items():
+            if sc.get(k) != v:
+                sc[k] = v
+                changed = True
+    return changed
+
+
 def _generate_event_scenarios(ev):
-    """根据事件类型模板为事件生成 3 个情景（幂等：已存在则跳过）。"""
-    tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper())
+    """根据事件类型模板为事件生成 3 个情景（幂等：已存在则跳过并同步展示字段）。"""
+    tpl = EVENT_TYPE_DEFS.get(_norm_event_type(ev.get("event_type")))
     if not tpl:
         return []
     scenarios = _load_scenarios()
     existing = [s for s in scenarios if s.get("event_id") == ev.get("id")]
     if existing:
+        if _sync_scenario_display(scenarios, ev.get("id"), tpl):
+            _save_scenarios(scenarios)
         return existing
     created = []
     for sc_tpl in tpl["scenarios"]:
@@ -1722,24 +2159,28 @@ def _ev_tendency(day_stats):
     return "Bearish"
 
 
-def _study_filter_for_scenario(scenario_key, cfg=None):
-    """根据匹配情景返回历史检索过滤条件（阈值与 DEFAULT_EVENT_SCENARIO_CONFIG 一致）。"""
+def _study_filter_for_scenario(scenario_key, cfg=None, event_type=None):
+    """根据匹配情景返回历史检索过滤条件（阈值与应用层匹配一致，按事件类型适配量级）。"""
     cfg = cfg or _load_event_config()
-    sp = float(cfg.get("strongPositive", 0.2))
-    sn = float(cfg.get("strongNegative", -0.2))
+    sp, sn = _type_threshold(event_type, cfg)
+
+    def _fmt(v):
+        return "%g" % v
+
     if scenario_key == "HOT":
-        return {"operator": ">=", "threshold": sp, "label": "surprise >= +%.1fpp" % sp}
+        return {"operator": ">=", "threshold": sp, "sp": sp, "sn": sn,
+                "label": "意外 ≥ +%s" % _fmt(sp)}
     if scenario_key == "COOL":
-        return {"operator": "<=", "threshold": sn, "label": "surprise <= -%.1fpp" % abs(sn)}
-    return {"operator": "between", "threshold": None, "label": "-%.1fpp < surprise < +%.1fpp" % (abs(sn), sp)}
+        return {"operator": "<=", "threshold": sn, "sp": sp, "sn": sn,
+                "label": "意外 ≤ -%s" % _fmt(abs(sn))}
+    return {"operator": "between", "threshold": None, "sp": sp, "sn": sn,
+            "label": "-%s < 意外 < +%s" % (_fmt(abs(sn)), _fmt(sp))}
 
 
 def _select_history_events(event_type, scenario_key, cfg=None):
     """从参考数据集筛选符合条件的历史事件；返回 (事件列表, 过滤条件)。"""
     cfg = cfg or _load_event_config()
-    f = _study_filter_for_scenario(scenario_key, cfg)
-    sp = float(cfg.get("strongPositive", 0.2))
-    sn = float(cfg.get("strongNegative", -0.2))
+    f = _study_filter_for_scenario(scenario_key, cfg, event_type)
     selected = []
     for ev in CME_HISTORY.MACRO_EVENT_HISTORY:
         if ev.get("event_type") != event_type:
@@ -1749,13 +2190,13 @@ def _select_history_events(event_type, scenario_key, cfg=None):
         except (TypeError, ValueError):
             continue
         if f["operator"] == ">=":
-            if s >= sp:
+            if s >= f["sp"]:
                 selected.append(ev)
         elif f["operator"] == "<=":
-            if s <= sn:
+            if s <= f["sn"]:
                 selected.append(ev)
         else:
-            if sn < s < sp:
+            if f["sn"] < s < f["sp"]:
                 selected.append(ev)
     return selected, f
 
@@ -1767,7 +2208,7 @@ def _compute_event_study(event_id):
     if ev is None:
         return {"error": "事件不存在"}
     event_type = (ev.get("event_type") or "").upper()
-    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"), event_type=event_type)
     if not event_type or not scenario_key:
         return {"error": "无法确定匹配情景，无法检索历史对照"}
     selected, filters = _select_history_events(event_type, scenario_key)
@@ -1999,14 +2440,14 @@ def _proposal_default_fields(ev, study, symbol, direction, qty):
     hit = day.get("hit_rate")
     n = day.get("n") or 0
     evidence = day.get("evidence") or "N/A"
-    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"), event_type=ev.get("event_type"))
     scenario_label = scenario_key or "—"
     surprise = ev.get("surprise")
     actual = ev.get("actual")
     consensus = ev.get("consensus")
     previous = ev.get("previous")
     # 从事件类型模板取匹配情景的 invalidation 作为基准
-    tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper())
+    tpl = EVENT_TYPE_DEFS.get(_norm_event_type(ev.get("event_type")))
     invalidation_base = []
     if tpl:
         for sc in tpl.get("scenarios", []):
@@ -2166,13 +2607,11 @@ def api_cme_delete_signal():
 @app.route("/api/cme/events", methods=["GET"])
 def api_cme_get_events():
     events = _load_events()
-    scenarios = _load_scenarios()
     for ev in events:
-        ev_scenarios = [s for s in scenarios if s.get("event_id") == ev.get("id")]
-        if not ev_scenarios:
-            ev_scenarios = _generate_event_scenarios(ev)   # 老数据回填：自动生成三情景
+        # 幂等：已有情景则同步中文展示字段（一次性迁移），无则自动生成三情景
+        ev_scenarios = _generate_event_scenarios(ev)
         ev["scenarios"] = ev_scenarios
-        tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper())
+        tpl = EVENT_TYPE_DEFS.get(_norm_event_type(ev.get("event_type")))
         if not ev.get("status"):
             ev["status"] = "SCHEDULED"
         if tpl and not ev.get("metric"):
@@ -2181,6 +2620,10 @@ def api_cme_get_events():
             ev["unit"] = tpl["unit"]
         if tpl and not ev.get("sourceId"):
             ev["sourceId"] = tpl["sourceId"]
+        if ev.get("metric") in METRIC_LABELS:
+            ev["metric"] = METRIC_LABELS[ev["metric"]]
+        if ev.get("sourceId") in SOURCE_LABELS:
+            ev["sourceId"] = SOURCE_LABELS[ev["sourceId"]]
     events.sort(key=lambda e: e.get("scheduled_at", ""), reverse=True)
     return jsonify(events)
 
@@ -2192,7 +2635,7 @@ def api_cme_add_event():
     scheduled_at = (data.get("scheduled_at") or "").strip()
     if not event_type or not scheduled_at:
         return jsonify({"error": "event_type 和 scheduled_at 不能为空"}), 400
-    tpl = EVENT_TYPE_DEFS.get(event_type.upper())
+    tpl = EVENT_TYPE_DEFS.get(_norm_event_type(event_type))
     ev = {
         "id": _new_id(),
         "event_type": event_type,
@@ -2255,7 +2698,7 @@ def api_cme_update_event(event_id):
                         ev["surprise"] = round(float(data["actual"]) - float(ev["consensus"]), 4)
                     except (TypeError, ValueError):
                         ev["surprise"] = None
-                matched = _match_scenario(ev.get("surprise"))
+                matched = _match_scenario(ev.get("surprise"), event_type=ev.get("event_type"))
                 ev["matched_scenario"] = matched
                 ev["status"] = "RELEASED" if ev.get("status") not in ("ARCHIVED",) else ev.get("status")
                 _freeze_scenarios(ev, matched)
@@ -2381,7 +2824,7 @@ def api_cme_add_proposal():
     ev = next((e for e in events if e.get("id") == event_id), None)
     if ev is None:
         return jsonify({"error": "事件不存在"}), 404
-    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    scenario_key = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"), event_type=ev.get("event_type"))
     if ev.get("status") not in ("RELEASED", "POST_EVENT") or not scenario_key:
         return jsonify({"error": "事件尚未发布/匹配情景，无法创建提案"}), 400
     study = _compute_event_study(event_id)
@@ -2946,10 +3389,10 @@ def _compute_position_sizing(symbol, direction="long", entry_price=None, stop_pr
 
     # 11) Final Max = MIN(所有上限)（§6.11）
     caps = (
-        ("Concentration-Adjusted Max", concentration_adjusted_max),
-        ("Margin-Based Max", margin_based_max),
-        ("Daily-Loss-Based Max", daily_loss_based_max),
-        ("Contract-Limit Max", contract_limit_max),
+        ("集中度调整上限", concentration_adjusted_max),
+        ("保证金上限", margin_based_max),
+        ("单日亏损上限", daily_loss_based_max),
+        ("合约数上限", contract_limit_max),
     )
     final_max = max(0, min(v for _, v in caps))
     binding = next((n for n, v in caps if v == final_max), caps[0][0])
@@ -3853,24 +4296,24 @@ CME_AI_EXTRA_KEYS = (
 # ============================================================
 CME_AI_LEVELS = {
     "quick": {
-        "level": 1, "label": "Quick Analysis", "role": "Default Research Assistant",
+        "level": 1, "label": "快速分析 Quick Analysis", "role": "日常研究助手",
         "target": "deepseek", "cost_usd": 0.08,
         "note": "日常研究助手（默认，≈80–90% 调用），保持 36 小时数据新鲜度即可",
     },
     "final": {
-        "level": 2, "label": "Generate Final Analysis", "role": "Primary Trading Analyst",
+        "level": 2, "label": "终极分析 Final Analysis", "role": "主交易分析师",
         "target": "gpt", "cost_usd": 0.74,
         "note": "主交易分析师：生成交易提案前的最终版分析",
     },
     "review": {
-        "level": 3, "label": "Request Independent Review", "role": "Independent Reviewer",
+        "level": 3, "label": "独立复核 Independent Review", "role": "独立复核",
         "target": "claude", "cost_usd": 0.22,
         "note": "独立复核：找分歧与盲点（RECOMMEND_ONLY 默认，需人工点击）",
     },
     "deep": {
-        "level": 3, "label": "Deep Analysis", "role": "Deep Analysis",
+        "level": 3, "label": "深度分析 Deep Analysis", "role": "深度推演",
         "target": "sol", "cost_usd": 1.20,
-        "note": "深度分析：仅在复杂场景手动触发（More ▼ 菜单内）",
+        "note": "深度分析：仅在复杂场景手动触发（更多 ▼ 菜单内）",
     },
 }
 CME_AI_PREMIUM_LEVELS = {"final", "review", "deep"}
@@ -3878,7 +4321,7 @@ CME_AI_PREMIUM_COOLDOWN_MS = 15 * 60 * 1000   # premiumCooldownMinutes = 15
 CME_AI_MAX_PREMIUM_PER_PROPOSAL = 1           # Claude 触发时允许 2；Sol 不计入
 CME_AI_MISSING_GATE = 6                        # 缺失项 ≥ 该阈值 → INSUFFICIENT DATA
 CME_AI_INSUFFICIENT_MSG = (
-    "INSUFFICIENT DATA — 缺少关键输入（%s）。请先补录行情快照/事件/提案后重试；"
+    "数据不足 — 缺少关键输入（%s）。请先补录行情快照/事件/提案后重试；"
     "更贵的模型也不能把缺失数据变成真实数据。"
 )
 
@@ -4212,7 +4655,7 @@ def _cme_ai_pick_event(event_id=None):
             return hit
     released = [e for e in events
                 if e.get("status") in ("RELEASED", "POST_EVENT")
-                and (e.get("matched_scenario") or _match_scenario(e.get("surprise")))]
+                and (e.get("matched_scenario") or _match_scenario(e.get("surprise"), event_type=e.get("event_type")))]
     if released:
         released.sort(key=lambda e: str(e.get("scheduled_at") or ""), reverse=True)
         return released[0]
@@ -4228,7 +4671,7 @@ def _cme_ai_event_block(ev):
     """当前事件摘要（含模板补全，与 /api/cme/events 口径一致）。"""
     if not ev:
         return None
-    tpl = EVENT_TYPE_DEFS.get((ev.get("event_type") or "").upper()) or {}
+    tpl = EVENT_TYPE_DEFS.get(_norm_event_type(ev.get("event_type"))) or {}
     return {
         "event_id": ev.get("id"),
         "event_type": ev.get("event_type"),
@@ -4244,7 +4687,7 @@ def _cme_ai_event_block(ev):
         "importance": ev.get("importance"),
         "note": ev.get("note"),
         "source_url": ev.get("source_url"),
-        "matched_scenario": ev.get("matched_scenario") or _match_scenario(ev.get("surprise")),
+        "matched_scenario": ev.get("matched_scenario") or _match_scenario(ev.get("surprise"), event_type=ev.get("event_type")),
         "released": ev.get("status") in ("RELEASED", "POST_EVENT"),
     }
 
@@ -4256,7 +4699,7 @@ def _cme_ai_scenario_block(ev):
     scenarios = [s for s in _load_scenarios() if s.get("event_id") == ev.get("id")]
     if not scenarios:
         scenarios = _generate_event_scenarios(ev)
-    matched = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"))
+    matched = ev.get("matched_scenario") or _match_scenario(ev.get("surprise"), event_type=ev.get("event_type"))
     return {
         "matched_key": matched,
         "frozen": any(s.get("frozen_at") for s in scenarios),
@@ -4615,8 +5058,8 @@ def api_cme_ai_research():
             return jsonify({
                 "ok": False,
                 "budget_reached": True,
-                "error": "Premium AI Budget Reached — 该提案已使用过 %s 预算（每提案各 1 次）。"
-                         "DeepSeek 继续提供日常分析；如确需重跑，请使用 [ Manual Override ]。"
+                "error": "高级分析预算已用完 — 该提案已使用过 %s 预算（每提案各 1 次）。"
+                         "快速分析（DeepSeek）继续提供日常分析；如确需重跑，请点击【确认强制重跑】。"
                          % level_def["label"],
                 "routing": routing,
             }), 200
