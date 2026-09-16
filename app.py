@@ -3717,7 +3717,7 @@ def _call_openai(provider, system_prompt, user_content, temperature=0.3):
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    with urllib.request.urlopen(req, timeout=150) as resp:
         result = _json.loads(resp.read().decode("utf-8"))
     return (
         result.get("choices", [{}])[0]
@@ -3751,7 +3751,7 @@ def _call_anthropic(provider, system_prompt, user_content, temperature=0.3):
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    with urllib.request.urlopen(req, timeout=150) as resp:
         result = _json.loads(resp.read().decode("utf-8"))
     parts = result.get("content", []) or []
     return "".join(c.get("text", "") for c in parts if c.get("type") == "text").strip()

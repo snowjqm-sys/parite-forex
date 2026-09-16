@@ -6,7 +6,8 @@
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": "**/*.{py,html,css,js,json}"
+        "includeFiles": "**/*.{py,html,css,js,json}",
+        "maxDuration": 180
       }
     }
   ],
