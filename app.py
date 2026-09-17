@@ -2612,17 +2612,26 @@ def _ev_tendency(day_stats):
 
 
 def _study_filter_for_scenario(scenario_key, cfg=None, event_type=None):
-    """根据匹配情景返回历史检索过滤条件（阈值与应用层匹配一致，按事件类型适配量级）。"""
+    """根据匹配情景返回历史检索过滤条件（阈值与应用层匹配一致，按事件类型适配量级）。
+    invert 型指标（失业率、初请失业金等）数值越低越鹰派，检索方向与应用层匹配保持一致。"""
     cfg = cfg or _load_event_config()
     sp, sn = _type_threshold(event_type, cfg)
+    tpl = EVENT_TYPE_DEFS.get(_norm_event_type(event_type)) if event_type else None
+    invert = bool(tpl and tpl.get("invert"))
 
     def _fmt(v):
         return "%g" % v
 
     if scenario_key == "HOT":
+        if invert:
+            return {"operator": "<=", "threshold": sn, "sp": sp, "sn": sn,
+                    "label": "意外 ≤ -%s（数值越低越强劲）" % _fmt(abs(sn))}
         return {"operator": ">=", "threshold": sp, "sp": sp, "sn": sn,
                 "label": "意外 ≥ +%s" % _fmt(sp)}
     if scenario_key == "COOL":
+        if invert:
+            return {"operator": ">=", "threshold": sp, "sp": sp, "sn": sn,
+                    "label": "意外 ≥ +%s（数值越高越疲弱）" % _fmt(sp)}
         return {"operator": "<=", "threshold": sn, "sp": sp, "sn": sn,
                 "label": "意外 ≤ -%s" % _fmt(abs(sn))}
     return {"operator": "between", "threshold": None, "sp": sp, "sn": sn,
