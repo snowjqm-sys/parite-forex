@@ -1447,6 +1447,10 @@ def _save_signals(signals):
 
 
 # ---- 模块 B：Event Scenario 引擎 ----
+MAX_EVENT_SHOTS = 3                      # 每个事件最多 3 张资讯截图
+MAX_SHOT_DATA_LEN = 300_000              # 单张 data URL 字符上限（≈220KB，压缩后资讯截图足够清晰）
+
+
 def _load_events():
     return _cme_load("events", [])
 
@@ -1928,6 +1932,446 @@ EVENT_TYPE_DEFS = {
             },
         ],
     },
+    "FED_SPEECH": {
+        "label": "美联储官员讲话",
+        "country": "US",
+        "metric": "讲话基调分（鹰派为正）",
+        "unit": "分",
+        "sourceId": "federalreserve",
+        "threshold": {"positive": 0.5, "negative": -0.5},
+        "transmission_map": [
+            "Fed Speech", "Rate Expectations", "US 2Y Yield", "DXY", "Gold / US500",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "讲话偏鹰",
+                "tag": "鹰派意外",
+                "trigger_rule": "基调分 vs 预期 ≥ +0.5（明显偏鹰）",
+                "transmission": [
+                    "官员讲话偏鹰 ↑",
+                    "市场对降息路径的预期推迟 → 降息预期 ↓",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "利率预期上移 → 长久期估值承压 → 纳斯达克 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "纳斯达克", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "官员讲话对市场影响取决于其投票权与市场地位；若讲话后其他官员随即对冲或点阵图预期未变，鹰派传导可能快速回吐。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强", "讲话被其他官员对冲"],
+            },
+            {
+                "key": "INLINE",
+                "name": "讲话中性",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "基调分 vs 预期落在 ±0.5 之间",
+                "transmission": [
+                    "讲话基调与市场预期基本一致。",
+                    "价格反应取决于具体措辞细节、是否重申数据依赖以及提问环节的边际表态。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "纳斯达克", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使整体中性，个别关键措辞（如对通胀、就业的定性）仍可能主导即时反应。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "讲话偏鸽",
+                "tag": "鸽派意外",
+                "trigger_rule": "基调分 vs 预期 ≤ -0.5（明显偏鸽）",
+                "transmission": [
+                    "官员讲话偏鸽 ↓",
+                    "市场对降息路径的预期提前 → 降息预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "利率预期下移 → 估值支撑 → 纳斯达克 ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "纳斯达克", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若鸽派表述与近期数据指引相矛盾，或市场担心只是“口头安抚”，反应可能有限甚至反向。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "GDP": {
+        "label": "美国 GDP",
+        "country": "US",
+        "metric": "美国 GDP 环比年化",
+        "unit": "%",
+        "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 0.3, "negative": -0.3},
+        "transmission_map": [
+            "US GDP", "Growth Surprise", "US 10Y Yield", "DXY", "Gold / US500",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "增长超预期",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.3 个百分点",
+                "transmission": [
+                    "经济增长超预期 ↑",
+                    "衰退担忧 ↓ → 降息预期 ↓",
+                    "美国 10 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "基本面支撑盈利，但利率上移压制估值 → 标普 500 分化或承压",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "若市场将强劲增长解读为盈利利好而非通胀风险，风险资产可能不跌反涨；或分项（库存、净出口）质量不高时传导减弱。",
+                "invalidation": ["美国 10 年期收益率未上行", "美元指数未走强", "增长分项结构偏弱"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.3 个百分点之间",
+                "transmission": [
+                    "增长数据本身未带来足够大的意外。",
+                    "价格反应更多取决于分项质量、消费韧性以及市场对衰退路径的既定判断。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "标普 500", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使整体符合预期，消费、投资与库存分项的组合仍可能主导即时反应。",
+                "invalidation": ["美国 10 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "增长不及预期",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.3 个百分点",
+                "transmission": [
+                    "经济增长不及预期 ↓",
+                    "衰退担忧 ↑ → 降息预期 ↑",
+                    "美国 10 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "盈利预期下修压制股市，但降息预期提供支撑 → 标普 500 分化",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "若走弱被解读为滞胀信号（增长与通胀同弱）或衰退确认，黄金与股市可能同涨，美元未必下跌。",
+                "invalidation": ["美国 10 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "PPI": {
+        "label": "美国 PPI",
+        "country": "US",
+        "metric": "美国 PPI 同比",
+        "unit": "%",
+        "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 0.2, "negative": -0.2},
+        "transmission_map": [
+            "PPI", "Producer Inflation", "US 2Y Yield", "DXY", "Gold / NQ",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "通胀超预期",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.2 个百分点",
+                "transmission": [
+                    "生产者通胀超预期 ↑",
+                    "上游价格压力 → 通胀粘性预期 ↑ → 降息预期 ↓",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "长久期股票估值承压 → 纳斯达克 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "纳斯达克", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "PPI 对上中游传导存在滞后，若核心分项温和或下游 CPI 尚未跟随，市场可能淡化其影响。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强", "核心 PPI 分项温和"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.2 个百分点之间",
+                "transmission": [
+                    "生产者通胀数据本身未带来足够大的意外。",
+                    "价格反应更多取决于对后续 CPI 的预示作用及市场已有的通胀路径判断。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "纳斯达克", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使整体符合预期，细分行业 PPI 或对 CPI 的传导暗示仍可能主导即时反应。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "通胀低于预期",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.2 个百分点",
+                "transmission": [
+                    "生产者通胀低于预期 ↓",
+                    "上游压力缓解 → 通胀回落预期 ↑ → 降息预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "折现率 ↓ → 利好纳斯达克 ↑",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "纳斯达克", "direction": "up", "label": "↑"},
+                ],
+                "counter_case": "若 PPI 回落主要由能源分项驱动而被视为一次性扰动，市场可能对整体数据反应平淡。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "ISM_MANUFACTURING": {
+        "label": "ISM 制造业 PMI",
+        "country": "US",
+        "metric": "ISM 制造业 PMI",
+        "unit": "点",
+        "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 2.0, "negative": -2.0},
+        "transmission_map": [
+            "ISM Manufacturing", "Activity vs Expectations", "US 10Y Yield", "DXY", "Gold / US500",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "景气超预期",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +2.0（PMI 明显高于预期）",
+                "transmission": [
+                    "制造业景气超预期 ↑",
+                    "经济韧性 → 衰退担忧 ↓ → 降息预期 ↓",
+                    "美国 10 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "盈利预期上修 vs 利率上移压制估值 → 标普 500 分化",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "PMI 分项（新订单、就业、物价）组合若显示“过热涨价”而非“健康扩张”，风险资产可能同步承压。",
+                "invalidation": ["美国 10 年期收益率未上行", "美元指数未走强", "新订单分项走弱"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±2.0 之间",
+                "transmission": [
+                    "PMI 数据本身未带来足够大的意外。",
+                    "价格反应更多取决于荣枯线附近的方向感及新订单 / 就业分项的边际变化。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "标普 500", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使整体符合预期，分项结构或价格支付分项仍可能主导即时反应。",
+                "invalidation": ["美国 10 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "景气不及预期",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -2.0（PMI 明显低于预期）",
+                "transmission": [
+                    "制造业景气不及预期 ↓",
+                    "经济走弱 → 衰退担忧 ↑ → 降息预期 ↑",
+                    "美国 10 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "降息预期支撑估值 vs 盈利预期下修 → 标普 500 分化",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "若走弱被解读为衰退确认，避险模式下美元未必下跌，黄金与股市可能同涨。",
+                "invalidation": ["美国 10 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "UNEMPLOYMENT": {
+        "label": "美国失业率",
+        "country": "US",
+        "metric": "美国失业率",
+        "unit": "%",
+        "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 0.2, "negative": -0.2},
+        "invert": True,
+        "transmission_map": [
+            "US Unemployment", "Labor Tightness", "US 2Y Yield", "DXY", "Gold / US500",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "失业率意外走低",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -0.2 个百分点（失业率意外走低 → 就业超预期紧俏）",
+                "transmission": [
+                    "失业率意外走低 ↑",
+                    "就业市场紧俏 → 薪资与通胀压力 ↑ → 降息预期 ↓",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "利率预期上移 → 长久期估值承压 → 标普 500 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "失业率走低若伴随劳动参与率下降（供给收缩而非需求强劲），通胀与政策含义可能被市场淡化。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强", "劳动参与率同步走低"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±0.2 个百分点之间",
+                "transmission": [
+                    "失业率数据本身未带来足够大的意外。",
+                    "价格反应更多取决于非农分项与劳动参与率的结构性变化。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "标普 500", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使整体符合预期，薪资与参与率等结构分项仍可能主导即时反应。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "失业率意外走高",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +0.2 个百分点（失业率意外走高 → 就业超预期疲软）",
+                "transmission": [
+                    "失业率意外走高 ↓",
+                    "就业市场转弱 → 衰退担忧 ↑ → 降息预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "降息预期支撑估值 vs 盈利预期下修 → 标普 500 分化",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "若失业率走高被解读为衰退确认，避险模式下美元未必下跌，黄金与股市可能同涨。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱"],
+            },
+        ],
+    },
+    "JOBLESS_CLAIMS": {
+        "label": "初请失业金人数",
+        "country": "US",
+        "metric": "初请失业金人数",
+        "unit": "K",
+        "sourceId": "bloomberg-econ",
+        "threshold": {"positive": 20, "negative": -20},
+        "invert": True,
+        "transmission_map": [
+            "Jobless Claims", "Labor Resilience", "US 2Y Yield", "DXY", "Gold / US500",
+        ],
+        "scenarios": [
+            {
+                "key": "HOT",
+                "name": "初请意外减少",
+                "tag": "鹰派意外",
+                "trigger_rule": "实际值 vs 预期 ≤ -20（初请意外减少 → 就业超预期韧性）",
+                "transmission": [
+                    "初请失业金意外减少 ↑",
+                    "就业韧性 → 裁员压力小 → 降息预期 ↓",
+                    "美国 2 年期国债收益率 ↑",
+                    "美元 ↑ → 欧元兑美元 ↓ / 黄金 ↓",
+                    "利率预期上移 → 长久期估值承压 → 标普 500 ↓",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "down", "label": "↓"},
+                    {"asset": "美元指数", "direction": "up", "label": "↑"},
+                    {"asset": "欧元兑美元", "direction": "down", "label": "↓"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "单周初请波动较大且常受季节性调整干扰，若与四周均值趋势相悖，市场可能选择淡化。",
+                "invalidation": ["美国 2 年期收益率未上行", "美元指数未走强", "四周均值趋势相反"],
+            },
+            {
+                "key": "INLINE",
+                "name": "符合预期",
+                "tag": "信号中性 / 政策意外有限",
+                "trigger_rule": "实际值 vs 预期落在 ±20 之间",
+                "transmission": [
+                    "初请数据本身未带来足够大的意外。",
+                    "价格反应更多取决于四周均值与续请失业金人数的趋势方向。",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "flat", "label": "震荡"},
+                    {"asset": "美元指数", "direction": "flat", "label": "震荡"},
+                    {"asset": "欧元兑美元", "direction": "flat", "label": "震荡"},
+                    {"asset": "标普 500", "direction": "flat", "label": "震荡"},
+                ],
+                "counter_case": "即使整体符合预期，续请人数或四周均值趋势仍可能主导即时反应。",
+                "invalidation": ["美国 2 年期收益率出现 >10bp 的方向性波动", "美元指数突破近期区间"],
+            },
+            {
+                "key": "COOL",
+                "name": "初请意外增加",
+                "tag": "鸽派意外",
+                "trigger_rule": "实际值 vs 预期 ≥ +20（初请意外增加 → 就业超预期疲软）",
+                "transmission": [
+                    "初请失业金意外增加 ↓",
+                    "就业转弱 → 衰退担忧 ↑ → 降息预期 ↑",
+                    "美国 2 年期国债收益率 ↓",
+                    "美元 ↓ → 欧元兑美元 ↑ / 黄金 ↑",
+                    "降息预期支撑估值 vs 盈利预期下修 → 标普 500 分化",
+                ],
+                "asset_impacts": [
+                    {"asset": "黄金", "direction": "up", "label": "↑"},
+                    {"asset": "美元指数", "direction": "down", "label": "↓"},
+                    {"asset": "欧元兑美元", "direction": "up", "label": "↑"},
+                    {"asset": "标普 500", "direction": "down", "label": "↓"},
+                ],
+                "counter_case": "单周跳升若被归因为季节性或一次性事件（如假期、天气），市场可能反应平淡。",
+                "invalidation": ["美国 2 年期收益率未下行", "美元指数未走弱", "四周均值趋势相反"],
+            },
+        ],
+    },
 }
 
 
@@ -1955,12 +2399,20 @@ def _type_threshold(event_type, cfg=None):
 
 def _match_scenario(surprise, cfg=None, event_type=None):
     """根据 surprise 确定性匹配情景 key：HOT / INLINE / COOL；无法计算返回 None。
-    阈值优先取事件类型模板的 threshold，缺省回退全局事件配置。"""
+    阈值优先取事件类型模板的 threshold，缺省回退全局事件配置。
+    invert 型指标（失业率、初请失业金等）数值越低越鹰派：实际 ≤ 预期 → HOT，实际 ≥ 预期 → COOL。"""
     try:
         s = float(surprise)
     except (TypeError, ValueError):
         return None
     sp, sn = _type_threshold(event_type, cfg)
+    tpl = EVENT_TYPE_DEFS.get(_norm_event_type(event_type)) if event_type else None
+    if tpl and tpl.get("invert"):
+        if s <= sn:
+            return "HOT"
+        if s >= sp:
+            return "COOL"
+        return "INLINE"
     if s >= sp:
         return "HOT"
     if s <= sn:
@@ -2652,6 +3104,7 @@ def api_cme_add_event():
         "importance": data.get("importance") or "medium",
         "source_url": (data.get("source_url") or "").strip(),
         "note": (data.get("note") or "").strip(),
+        "screenshots": [],
         "created_at": _now_ms(),
     }
     events = _load_events()
@@ -2704,6 +3157,26 @@ def api_cme_update_event(event_id):
                 _freeze_scenarios(ev, matched)
             if "note" in data:
                 ev["note"] = data["note"]
+            if "screenshots" in data:
+                shots = data["screenshots"]
+                if not isinstance(shots, list) or len(shots) > MAX_EVENT_SHOTS:
+                    return jsonify({"error": f"截图最多 {MAX_EVENT_SHOTS} 张"}), 400
+                cleaned = []
+                for s in shots:
+                    if not isinstance(s, dict):
+                        return jsonify({"error": "截图格式不正确"}), 400
+                    name = str(s.get("name") or "").strip()
+                    data_url = str(s.get("data_url") or "")
+                    if not name or not data_url.startswith("data:image/"):
+                        return jsonify({"error": "截图必须为图片格式"}), 400
+                    if len(data_url) > MAX_SHOT_DATA_LEN:
+                        return jsonify({"error": "单张截图过大，请压缩后重试"}), 400
+                    cleaned.append({
+                        "name": name,
+                        "data_url": data_url,
+                        "uploaded_at": s.get("uploaded_at") or _now_ms(),
+                    })
+                ev["screenshots"] = cleaned
             if "realized_moves" in data and isinstance(data["realized_moves"], dict):
                 ev["realized_moves"] = data["realized_moves"]
             if "status" in data and data["status"]:
